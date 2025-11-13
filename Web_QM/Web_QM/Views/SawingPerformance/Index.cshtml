@@ -1,0 +1,325 @@
+﻿@{
+    ViewData["Title"] = "Doanh số cưa";
+    int defaultMonth = ViewBag.DefaultMonth;
+    int defaultYear = ViewBag.DefaultYear;
+}
+<div class="card p-3 w-100">
+    <div class="row">
+        <div class="col-12 col-lg-9 mx-auto grid-margin stretch-card chart-container">
+            <h5 class="card-title text-center fw-bold fs-3">Biểu đồ doanh số Cưa</h5>
+            <div class="d-flex justify-content-center mb-3">
+                <div class="input-group" style="width: 200px;">
+                    <span class="input-group-text fw-bold" for="chartYearFilter" style="background-color: #e9ecef;">
+                        Chọn Năm:
+                    </span>
+                    <select id="yearInput" class="form-select">
+                    </select>
+                </div>
+            </div>
+            <canvas id="performanceChart"></canvas>
+        </div>
+
+        <div id="messageContainer" class="text-center mt-4"></div>
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="text-center text-4xl font-extrabold text-primary text-center mb-4">Doanh số cưa</h5>
+
+                    <form id="filterForm" class="row mb-4 align-items-end">
+                        <div class="col-md-4 mb-3">
+                            <label for="keyFilter" class="form-label">Tìm kiếm</label>
+                            <input type="text" id="keyFilter" name="key" class="form-control" placeholder="Mã NV hoặc Tên NV" />
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="monthFilter" class="form-label">Tháng</label>
+                            <select id="monthFilter" name="month" class="form-control">
+                                <option value="">Tất cả Tháng</option>
+                                @for (int i = 1; i <= 12; i++)
+                                {
+                                    <option value="@i" selected="@(i == defaultMonth ? "selected" : null)">Tháng @i</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="yearFilter" class="form-label">Năm</label>
+                            <select id="yearFilter" name="year" class="form-control">
+                                @for (int i = DateTime.Today.Year; i >= DateTime.Today.Year - 5; i--)
+                                {
+                                    <option value="@i" selected="@(i == defaultYear ? "selected" : null)">@i</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <button type="submit" id="filterButton" class="btn btn-primary w-100">
+                                <i class="fas fa-search"></i> Tìm kiếm
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr />
+
+                    <div class="table-responsive">
+                        <table id="performanceTable" class="table table-bordered table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 50px;">STT</th>
+                                    <th>Mã NV</th>
+                                    <th>Tên NV</th>
+                                    <th>Bộ phận</th>
+                                    <th>Doanh số (USD)</th>
+                                    <th>Thời gian làm việc (phút)</th>
+                                    <th>Doanh số/Thời gian</th>
+                                    <th>Tháng/Năm</th>
+                                </tr>
+                            </thead>
+                            <tbody id="performanceTableBody">
+                            </tbody>
+                        </table>
+                        <div id="loadingMessage" class="text-center p-3">Đang tải dữ liệu...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let monthlyChart = null;
+                async function fetchPerformanceData(year) {
+                    const messageContainer = document.getElementById('messageContainer');
+                    messageContainer.innerHTML = '<div class="text-blue-500">Đang tải dữ liệu...</div>';
+
+                    try {
+                        const response = await fetch(`/SawingPerformance/GetMonthlyCombinedPerformance?year=${year}`);
+                        const result = await response.json();
+
+                        if (result.success) {
+                            messageContainer.innerHTML = '';
+                            return { success: true, data: result.data };
+                        } else {
+                            messageContainer.innerHTML = `<div class="text-red-500">Lỗi khi nhận dữ liệu: ${result.message || "Không rõ."}</div>`;
+                            return { success: false, data: [] };
+                        }
+
+                    } catch (error) {
+                        messageContainer.innerHTML = '<div class="text-red-500">Lỗi kết nối API. Vui lòng kiểm tra console.</div>';
+                        console.error("Fetch Error:", error);
+                        return { success: false, data: [] };
+                    }
+                }
+
+                async function fetchAndDrawChart(year) {
+                    const apiResponse = await fetchPerformanceData(year);
+
+                    if (!apiResponse.success || apiResponse.data.length === 0) {
+                        if (monthlyChart) monthlyChart.destroy();
+                        if (!document.getElementById('messageContainer').innerHTML) {
+                            document.getElementById('messageContainer').innerHTML = `<div class="text-gray-500">Không có dữ liệu hiệu suất cho năm ${year}.</div>`;
+                        }
+                        return;
+                    }
+
+                    const data = apiResponse.data;
+                    const labels = data.map(d => `T${d.month}`);
+                    const averageSales = data.map(d => d.averageSales);
+                    const maxSaleRates = data.map(d => d.maxSaleRate);
+
+                    if (monthlyChart) monthlyChart.destroy();
+
+                    const ctx = document.getElementById('performanceChart').getContext('2d');
+
+                    monthlyChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    type: 'bar',
+                                    label: 'Trung bình tổ',
+                                    data: averageSales,
+                                    backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                    borderWidth: 1,
+                                    yAxisID: 'y'
+                                },
+                                {
+                                    type: 'line',
+                                    label: 'Doanh số cao nhất',
+                                    data: maxSaleRates,
+                                    backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                                    borderColor: 'rgba(255, 99, 132, 1)',
+                                    borderWidth: 3,
+                                    tension: 0.3,
+                                    fill: false,
+                                    yAxisID: 'y1'
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            interaction: {
+                                mode: 'index',
+                                intersect: false,
+                            },
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.dataset.label || '';
+                                            if (context.dataset.type === 'bar') {
+                                                label += ': ' + context.parsed.y.toFixed(2);
+                                            } else {
+                                                label += ': ' + context.parsed.y.toFixed(2);
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                },
+                                legend: {
+                                    labels: {
+                                        boxWidth: 20
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: { display: false }
+                                },
+                                y: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'left',
+                                    title: {
+                                        display: true,
+                                        text: 'Trung bình tổ'
+                                    },
+                                    min: 0,
+                                    max: 1.0,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value.toFixed(2);
+                                        }
+                                    }
+                                },
+                                y1: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'right',
+                                    title: {
+                                        display: true,
+                                        text: 'Doanh số cao nhất'
+                                    },
+                                    grid: {
+                                        drawOnChartArea: false,
+                                    },
+                                    min: 0,
+                                    max: 1.0,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value.toFixed(2);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+        function loadPerformance(filterParams = {}) {
+            const API_URL = '/SawingPerformance/GetPerformanceData';
+            const $tbody = $('#performanceTableBody');
+            const $loading = $('#loadingMessage');
+
+            $tbody.empty();
+            $loading.text('Đang tải dữ liệu...').show();
+
+            $.ajax({
+                url: API_URL,
+                type: 'GET',
+                dataType: 'json',
+                data: filterParams,
+                success: function(response) {
+                    $loading.hide();
+
+                    if (response.success && response.data) {
+                        const data = response.data;
+                        if (data.length === 0) {
+                            $loading.text('Không tìm thấy dữ liệu hiệu suất phù hợp.').show();
+                            return;
+                        }
+
+                        let htmlRows = '';
+                        data.forEach((row, index) => {
+                            const departmentName = row.department || 'N/A';
+
+                            htmlRows += `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${row.employeeCode || ''}</td>
+                                    <td>${row.employeeName || ''}</td>
+                                    <td>${departmentName}</td>
+                                    <td>$${(row.salesAmountUSD).toLocaleString('en-US')}</td>
+                                    <td>${(row.workMinute).toLocaleString('en-US')}</td>
+                                    <td>${(row.salesRate || 0).toFixed(2)}</td>
+                                    <td>${row.measurementMonth}/${row.measurementYear}</td>
+                                </tr>
+                            `;
+                        });
+                        $tbody.html(htmlRows);
+
+                    } else {
+                        $loading.text('Lỗi tải dữ liệu: ' + (response.message || 'Không rõ lỗi')).show();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $loading.text('Lỗi kết nối server. Vui lòng thử lại.').show();
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            const yearSelect = document.getElementById('yearInput');
+            const currentYear = new Date().getFullYear();
+            for (let i = currentYear; i >= currentYear - 5; i--) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.text = i;
+                if (i === currentYear) {
+                    option.selected = true;
+                }
+                yearSelect.appendChild(option);
+            }
+            yearSelect.addEventListener('change', (e) => {
+                const selectedYear = e.target.value;
+                fetchAndDrawChart(selectedYear);
+            });
+            fetchAndDrawChart(currentYear);
+
+            loadPerformance({
+                year: $('#yearFilter').val(),
+                month: $('#monthFilter').val()
+            });
+
+            $('#filterForm').on('submit', function(event) {
+                event.preventDefault();
+
+                const filterParams = {};
+                const key = $('#keyFilter').val();
+                const month = $('#monthFilter').val();
+                const year = $('#yearFilter').val();
+
+                if (key) filterParams.key = key;
+                if (month) filterParams.month = month;
+                if (year) filterParams.year = year;
+
+                loadPerformance(filterParams);
+            });
+        });
+    </script>
+}

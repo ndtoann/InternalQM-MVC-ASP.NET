@@ -1,0 +1,157 @@
+﻿@using Web_QM.Models.ViewModels;
+@model ManageAccountPermissionsViewModel
+@{
+    ViewData["Title"] = "Phân quyền";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Phân quyền cho nhân viên</h4>
+                    <div id="statusMessage" class="mt-2 mb-3"></div>
+
+                    <div class="row">
+                        <div class="col-lg-4 px-5">
+                            <div class="form-group">
+                                <p>Chọn Tài khoản:</p>
+                                <select id="accountId" name="SelectedAccountId" class="form-control js-example-basic-multiple w-100">
+                                    <option value="0">-- Chọn tài khoản --</option>
+                                    @foreach (var account in Model.AvailableAccounts)
+                                    {
+                                        <option value="@account.Id">@account.UserName</option>
+                                    }
+                                </select>
+                            </div>
+                            <button type="button" id="saveBtn" class="btn btn-primary mt-3" disabled>Lưu thay đổi</button>
+                        </div>
+
+                        <div class="col-lg-8 px-5">
+                            <p>Danh sách quyền:</p>
+                            <div id="permissionList" class="row">
+                                @if (Model.GroupedPermissions != null)
+                                {
+                                    @foreach (var group in Model.GroupedPermissions)
+                                    {
+                                        var collapseId = $"collapse-{group.Key.Replace(" ", "-")}";
+                                        <div class="card mb-3 col-12">
+                                            <div class="card-header bg-info module-header"
+                                                 data-target="#@collapseId"
+                                                 aria-expanded="false"
+                                                 aria-controls="@collapseId"
+                                                 style="cursor: pointer;">
+                                                <h5 class="mb-0 fw-bold">@group.Key <i class="mdi mdi-chevron-down float-right"></i></h5>
+                                            </div>
+                                            <div class="collapse" id="@collapseId">
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        @foreach (var permission in group.Value)
+                                                        {
+                                                            <div class="col-lg-6 p-1">
+                                                                <div class="form-check">
+                                                                    <input type="checkbox"
+                                                                           class="form-check-input permission-checkbox m-0"
+                                                                           value="@permission.Id"
+                                                                           id="permission-@permission.Id">
+                                                                    <label class="form-check-label fw-bold" for="permission-@permission.Id">
+                                                                        @permission.Description
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+
+            $("#saveBtn").prop('disabled', true);
+
+            $('.module-header').click(function() {
+                var target = $(this).attr('data-target');
+                $(target).collapse('toggle');
+            });
+
+            $("#accountId").change(function () {
+                var accountId = $(this).val();
+
+                $(".permission-checkbox").prop("checked", false);
+
+                if (accountId && accountId !== "0") {
+                    $("#saveBtn").prop('disabled', false);
+                    fetchPermissions(accountId);
+                } else {
+                    $("#saveBtn").prop('disabled', true);
+                }
+            });
+
+            function fetchPermissions(accountId) {
+                $.ajax({
+                    url: '@Url.Action("GetAccountPermissions", "AccountPermission", new { Area = "Admin" })',
+                    type: "GET",
+                    data: { accountId: accountId },
+                    success: function (assignedPermissionIds) {
+                        if (assignedPermissionIds) {
+                            assignedPermissionIds.forEach(function (permissionId) {
+                                $(`#permission-${permissionId}`).prop("checked", true);
+                            });
+                        }
+                    },
+                    error: function () {
+                        $('#statusMessage').html('<div class="alert alert-danger">Không thể tải quyền của tài khoản.</div>');
+                    }
+                });
+            }
+
+            $("#saveBtn").click(function () {
+                var selectedAccountId = $("#accountId").val();
+                if (!selectedAccountId || selectedAccountId === "0") {
+                    alert("Vui lòng chọn một tài khoản để phân quyền.");
+                    return;
+                }
+
+                var assignedPermissionIds = $(".permission-checkbox:checked").map(function () {
+                    return parseInt($(this).val());
+                }).get();
+
+                var postData = {
+                    SelectedAccountId: parseInt(selectedAccountId),
+                    AssignedPermissionIds: assignedPermissionIds
+                };
+
+                $('#statusMessage').html('<div class="alert alert-warning">Đang cập nhật...</div>');
+
+                $.ajax({
+                    url: '@Url.Action("UpdatePermissions", "AccountPermission", new { Area = "Admin" })',
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(postData),
+                    success: function (response) {
+                        if (response.success) {
+                            $('#statusMessage').html('<div class="alert alert-success">' + response.message + '</div>');
+                        } else {
+                            $('#statusMessage').html('<div class="alert alert-danger">Lỗi: ' + response.message + '</div>');
+                        }
+                    },
+                    error: function () {
+                        $('#statusMessage').html('<div class="alert alert-danger">Đã xảy ra lỗi khi gửi yêu cầu.</div>');
+                    }
+                });
+            });
+        });
+    </script>
+}

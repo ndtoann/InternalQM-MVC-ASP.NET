@@ -1,0 +1,181 @@
+﻿@using Web_QM.Models
+@model IEnumerable<Account>
+@{
+    ViewData["Title"] = "Tài khoản đăng nhập";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Danh sách tài khoản</h4>
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    <a class="btn btn-success mb-3" href="~/admin/account/add">Thêm tài khoản</a>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered" id="accountTable">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Tài khoản</th>
+                                    <th>Nhân viên</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    var count = 1;
+                                }
+                                @foreach (var item in Model)
+                                {
+                                    <tr data-id="@item.Id"
+                                        data-username="@item.UserName"
+                                        data-salt="@item.Salt"
+                                        data-staffname="@item.StaffName"
+                                        data-staffcode="@item.StaffCode"
+                                        data-createddate="@item.CreatedDate">
+                                        <td>@(count++)</td>
+                                        <td>@item.UserName</td>
+                                        <td>@item.StaffCode - @item.StaffName</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="changepassModal" tabindex="-1" aria-labelledby="changepassModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="changepassModalLabel">Đổi mật khẩu</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changePassForm" asp-area="Admin" asp-controller="Account" asp-action="ChangePass" method="post">
+                    <input type="hidden" id="accountId" name="Id" />
+                    <input type="hidden" id="userNameInput" name="UserName" />
+                    <input type="hidden" id="saltInput" name="Salt" />
+                    <input type="hidden" id="staffNameInput" name="StaffName" />
+                    <input type="hidden" id="staffCodeInput" name="StaffCode" />
+                    <input type="hidden" id="createdDateInput" name="CreatedDate" />
+                    <div class="form-group">
+                        <label for="newPass">Mật khẩu mới</label>
+                        <input type="password" class="form-control" id="newPass" name="newPass" minlength="6" pattern="^[A-Za-z0-9@@]*$" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="submit" class="btn btn-primary" form="changePassForm">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="contextMenu" class="dropdown-menu" style="position: absolute; display: none;">
+    <a class="dropdown-item" href="#" id="editLink">Sửa</a>
+    <a class="dropdown-item" href="#" id="changePassLink" data-bs-toggle="modal" data-bs-target="#changepassModal">Đổi mật khẩu</a>
+    <a class="dropdown-item" href="#" id="deleteLink">Xóa</a>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tableBody = document.querySelector('#accountTable tbody');
+            const contextMenu = document.getElementById('contextMenu');
+            let currentRow = null;
+
+            document.addEventListener('click', function () {
+                contextMenu.style.display = 'none';
+            });
+
+            tableBody.addEventListener('contextmenu', function (e) {
+                const row = e.target.closest('tr');
+                if (row) {
+                    e.preventDefault();
+                    currentRow = row;
+
+                    const id = row.getAttribute('data-id');
+                    const username = row.getAttribute('data-username');
+                    const salt = row.getAttribute('data-salt');
+                    const staffname = row.getAttribute('data-staffname');
+                    const staffcode = row.getAttribute('data-staffcode');
+                    const role = row.getAttribute('data-role');
+                    const createddate = row.getAttribute('data-createddate');
+
+                    const editLink = document.getElementById('editLink');
+                    const changePassLink = document.getElementById('changePassLink');
+                    const deleteLink = document.getElementById('deleteLink');
+
+                    editLink.href = `/admin/account/edit?id=${id}`;
+                    deleteLink.href = `/admin/account/delete?id=${id}`;
+
+                    changePassLink.setAttribute('data-id', id);
+                    changePassLink.setAttribute('data-username', username);
+                    changePassLink.setAttribute('data-salt', salt);
+                    changePassLink.setAttribute('data-staffname', staffname);
+                    changePassLink.setAttribute('data-staffcode', staffcode);
+                    changePassLink.setAttribute('data-createddate', createddate);
+
+                    contextMenu.style.top = `${e.pageY}px`;
+                    contextMenu.style.left = `${e.pageX}px`;
+                    contextMenu.style.display = 'block';
+                }
+            });
+
+            const changepassModal = document.getElementById('changepassModal');
+            if (changepassModal) {
+                changepassModal.addEventListener('show.bs.modal', function (event) {
+                    const button = event.relatedTarget;
+                    const id = button.getAttribute('data-id');
+                    const username = button.getAttribute('data-username');
+                    const salt = button.getAttribute('data-salt');
+                    const staffname = button.getAttribute('data-staffname');
+                    const staffcode = button.getAttribute('data-staffcode');
+                    const createdDate = button.getAttribute('data-createddate');
+
+                    changepassModal.querySelector('#accountId').value = id;
+                    changepassModal.querySelector('#userNameInput').value = username;
+                    changepassModal.querySelector('#saltInput').value = salt;
+                    changepassModal.querySelector('#staffNameInput').value = staffname;
+                    changepassModal.querySelector('#staffCodeInput').value = staffcode;
+                    changepassModal.querySelector('#createdDateInput').value = createdDate;
+
+                    changepassModal.querySelector('.modal-title').textContent = 'Đổi mật khẩu tài khoản ' + username;
+                });
+            }
+
+            // Xử lý sự kiện click nút xóa
+            document.getElementById('deleteLink').addEventListener('click', function(e) {
+                e.preventDefault();
+                const deleteUrl = e.target.href;
+
+                if (currentRow) {
+                    const username = currentRow.getAttribute('data-username');
+                    const confirmMessage = `Bạn có chắc chắn muốn xóa tài khoản "${username}" không?`;
+
+                    if (window.confirm(confirmMessage)) {
+                        window.location.href = deleteUrl;
+                    }
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,151 @@
+﻿@using Web_QM.Models
+@model Kaizen;
+@{
+    ViewData["Title"] = "Sửa Kaizen";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Sửa thông tin Kaizen</h4>
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    <form action="edit" class="forms-sample" method="post" enctype="multipart/form-data">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <input type="hidden" asp-for="Id" />
+                        <div class="row">
+                            <div class="form-group col-lg-4">
+                                <label asp-for="EmployeeCode">Mã nhân viên</label>
+                                <select asp-for="EmployeeCode" asp-items="ViewBag.ListEmployee" class="js-example-basic-multiple w-100">
+                                    <option value="">Chọn nhân viên</option>
+                                </select>
+                                <span asp-validation-for="EmployeeCode" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-lg-4">
+                                <label asp-for="DateMonth">Ngày - Tháng</label>
+                                <input asp-for="DateMonth" type="date" class="form-control">
+                                <span asp-validation-for="DateMonth" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-lg-4">
+                                <label asp-for="AppliedDepartment">BP áp dụng mở rộng Kaizen</label>
+                                <select asp-for="AppliedDepartment" asp-items="@(ViewData["Departments"] as List<SelectListItem>)" class="form-control"></select>
+                                <span asp-validation-for="AppliedDepartment" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group col-lg-6">
+                                <label asp-for="ImprovementGoal">Mục tiêu cải tiến </label>
+                                <input asp-for="ImprovementGoal" type="text" class="form-control" placeholder="Nhập mục tiêu cải tiến ">
+                                <span asp-validation-for="ImprovementGoal" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-lg-6">
+                                <label asp-for="ImprovementTitle">Tiêu đề cải tiến</label>
+                                <input asp-for="ImprovementTitle" type="text" class="form-control" placeholder="Nhập tiêu đề cải tiến">
+                                <span asp-validation-for="ImprovementTitle" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="CurrentSituation">Tình hình hiện tại</label>
+                            <textarea asp-for="CurrentSituation" class="form-control" style="min-height: 100px;"></textarea>
+                            <span asp-validation-for="CurrentSituation" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="ProposedIdea">Ý kiến cải tiến</label>
+                            <textarea asp-for="ProposedIdea" class="form-control" style="min-height: 100px;"></textarea>
+                            <span asp-validation-for="ProposedIdea" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="EstimatedBenefit">Hiệu quả-lợi ích</label>
+                            <textarea asp-for="EstimatedBenefit" class="form-control" style="min-height: 80px;"></textarea>
+                            <span asp-validation-for="EstimatedBenefit" class="text-danger"></span>
+                        </div>
+                        <div class="row">
+                            <div class="form-group col-lg-4">
+                                <label asp-for="TeamLeaderRating">Tổ trưởng</label>
+                                <select asp-for="TeamLeaderRating" class="form-control">
+                                    <option value="">Chọn đánh giá</option>
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                </select>
+                                <span asp-validation-for="TeamLeaderRating" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-lg-4">
+                                <label asp-for="ManagementReview">Ban quản lí đánh giá</label>
+                                <select asp-for="ManagementReview" class="form-control">
+                                    <option value="">Chọn đánh giá</option>
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                </select>
+                                <span asp-validation-for="ManagementReview" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-lg-4">
+                                <label asp-for="Picture">Hình ảnh đính kèm</label>
+                                @if (!string.IsNullOrEmpty(Model.Picture))
+                                {
+                                    <div class="form-group">
+                                        <img src="~/imgs/kaizens/@Model.Picture" alt="Image" style="max-width: 150px;" />
+                                    </div>
+                                }
+                                <input asp-for="Picture" class="form-control" type="file" name="kaizenFile" accept="image/*">
+                                <span asp-validation-for="Picture" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Deadline">Thời hạn hoàn thành</label>
+                            <input asp-for="Deadline" type="text" class="form-control" placeholder="Nhập ...">
+                            <span asp-validation-for="Deadline" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="StartTime">Thời gian bắt đầu sử dụng</label>
+                            <input asp-for="StartTime" type="text" class="form-control" placeholder="Nhập ...">
+                            <span asp-validation-for="StartTime" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="CurrentStatus">Tình trạng hiện tại</label>
+                            <input asp-for="CurrentStatus" type="text" class="form-control" placeholder="Nhập ...">
+                            <span asp-validation-for="CurrentStatus" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Note">Lưu ý</label>
+                            <input asp-for="Note" type="text" class="form-control" placeholder="Nhập lưu ý">
+                            <span asp-validation-for="Note" class="text-danger"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="ti-file btn-icon-prepend"></i>
+                            Lưu
+                        </button>
+                        <button type="reset" class="btn btn-warning btn-icon-text">
+                            <i class="ti-reload btn-icon-prepend"></i>
+                            Làm mới
+                        </button>
+                        <a href="~/admin/kaizen" class="btn btn-light">Trờ về</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

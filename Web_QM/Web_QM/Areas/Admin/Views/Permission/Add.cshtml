@@ -1,0 +1,46 @@
+﻿@using Web_QM.Models
+@model Permission;
+@{
+    ViewData["Title"] = "Thêm phân quyền";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Thêm phân quyền</h4>
+                    <form action="add" class="forms-sample" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <div class="form-group">
+                            <label asp-for="Description">Mô tả quyền</label>
+                            <input asp-for="Description" type="text" class="form-control">
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="ClaimValue">Giá trị</label>
+                            <input asp-for="ClaimValue" type="text" class="form-control">
+                            <span asp-validation-for="ClaimValue" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Module">Phân luồng</label>
+                            <input asp-for="Module" type="text" class="form-control">
+                            <span asp-validation-for="Module" class="text-danger"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="ti-file btn-icon-prepend"></i>
+                            Lưu
+                        </button>
+                        <a href="~/admin/permission" class="btn btn-light">Trờ về</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

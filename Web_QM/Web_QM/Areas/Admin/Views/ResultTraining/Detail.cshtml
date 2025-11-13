@@ -1,0 +1,423 @@
+﻿@using Web_QM.Models
+@model IEnumerable<ExamTrainingAnswer>
+@{
+    ViewData["Title"] = "Kết quả kiểm tra";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    <h4 class="card-title">Danh sách nhân viên làm bài kiểm tra: @ViewBag.ExamName</h4>
+                    <form class="form-sample" method="get">
+                        <div class="row align-items-center">
+                            <div class="col-lg-4 d-flex align-items-center">
+
+                                <input type="hidden" name="examid" value="@ViewBag.ExamId" />
+
+                                <div class="form-group me-2 flex-grow-1 mb-0">
+                                    <input type="text"
+                                           class="form-control"
+                                           name="name"
+                                           placeholder="Nhập vào đây để tìm kiếm"
+                                           value="@ViewBag.Name" />
+                                </div>
+
+                                <div class="form-group mb-0">
+                                    <button type="submit" class="btn btn-primary">
+                                        Tìm kiếm
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <h4>
+                        <a class="btn btn-success" href="~/admin/resulttraining/ExportToExcel?examid=@ViewBag.ExamId">Xuất excel</a>
+                        <a class="btn btn-success" href="~/admin/resulttraining/show?examId=@ViewBag.ExamId&isShow=1">Hiển thị kết quả</a>
+                        <a class="btn btn-success" href="~/admin/resulttraining/show?examId=@ViewBag.ExamId&isShow=0">Ẩn kết quả</a>
+                    </h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Mã Code</th>
+                                    <th>Tên Nhân Viên</th>
+                                    <th>Điểm trắc nghiệm</th>
+                                    <th>Điểm tự luận</th>
+                                    <th>Tổng điểm</th>
+                                    <th>Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeeTableBody">
+                                @{
+                                    int counter = 0;
+                                }
+                                @foreach (var item in Model)
+                                {
+                                    counter++;
+                                    <tr class="context-menu-row"
+                                        data-id="@item.Id"
+                                        data-employeename="@item.EmployeeName"
+                                        data-employeecode="@item.EmployeeCode"
+                                        data-listanswer="@item.ListAnswer"
+                                        data-tnpoint="@(item.TnPoint ?? 0)"
+                                        data-tlpoint="@(item.TlPoint ?? 0)"
+                                        data-isshow="@item.IsShow"
+                                        data-examid="@item.ExamTrainingId"
+                                        data-essayresultpdf="@item.EssayResultPDF"
+                                        data-note="@item.Note"
+                                        data-createddate="@item.CreatedDate">
+                                        <td>@counter</td>
+                                        <td>@item.EmployeeCode</td>
+                                        <td>@item.EmployeeName</td>
+                                        <td>
+                                            @{
+                                                double percentageTn = (double)item.TnPoint / ViewBag.CountQuestion * 100;
+                                                string colorClassTn = percentageTn <= 50 ? "text-danger" : (percentageTn <= 60 ? "text-warning" : "text-success");
+                                            }
+                                            <span class="@colorClassTn">
+                                                @($"{item.TnPoint}/{ViewBag.CountQuestion} - Đạt {Math.Round(percentageTn, 2)}%")
+                                            </span>
+                                            <a href="#" class="ms-2 view-mc-answers" data-bs-toggle="modal" data-bs-target="#mcAnswersModal" data-listanswer="@item.ListAnswer" data-employeename="@item.EmployeeName">
+                                                Xem
+                                            </a>
+                                        </td>
+                                        <td>
+                                            @{
+                                                double percentageTl = (double)item.TlPoint / ViewBag.TlTotal * 100;
+                                                string colorClassTl = percentageTl <= 50 ? "text-danger" : (percentageTl <= 60 ? "text-warning" : "text-success");
+                                            }
+                                            <span class="@colorClassTl">
+                                                @($"{item.TlPoint}/{ViewBag.TlTotal} - Đạt {Math.Round(percentageTl, 2)}%")
+                                            </span>
+                                            |
+                                            <span>
+                                                @if (!string.IsNullOrEmpty(item.EssayResultPDF))
+                                                {
+                                                    <a href="#" class="view-pdf-embed" data-pdf-url="@item.EssayResultPDF">
+                                                        Xem bài làm
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span>(Trống)</span>
+                                                }
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @{
+                                                double percentageTotal = (double)(item.TnPoint + item.TlPoint) / (ViewBag.CountQuestion + ViewBag.TlTotal) * 100;
+                                                string colorClassTT = percentageTotal <= 50 ? "text-danger" : (percentageTotal <= 60 ? "text-warning" : "text-success");
+                                            }
+                                            <span class="@colorClassTT">
+                                                @($"{item.TnPoint + item.TlPoint}/{ViewBag.CountQuestion + ViewBag.TlTotal} - Đạt {Math.Round(percentageTotal, 2)}%")
+                                            </span>
+                                        </td>
+                                        <td>@item.Note</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="contextMenu" class="dropdown-menu">
+    <a class="dropdown-item" href="#" id="update-action">Cập nhật</a>
+    <a class="dropdown-item" href="#" id="delete-action">Xóa</a>
+</div>
+
+<div class="modal fade" id="updateScoreModal" tabindex="-1" aria-labelledby="updateScoreModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="updateScoreModalLabel">Cập nhật điểm</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="updateScoreForm" enctype="multipart/form-data">
+                    <input type="hidden" id="employeeAnswerId" name="Id" />
+                    <input type="hidden" id="employeeNameInput" name="EmployeeName" />
+                    <input type="hidden" id="employeeCodeInput" name="EmployeeCode" />
+                    <input type="hidden" id="listAnswerInput" name="ListAnswer" />
+                    <input type="hidden" id="tnPointInput" name="TnPoint" />
+                    <input type="hidden" id="examIdInput" name="ExamTrainingId" />
+                    <input type="hidden" id="essayResultPDFInput" name="EssayResultPDF" />
+                    <input type="hidden" id="createdDateInput" name="CreatedDate" />
+                    <div class="form-group">
+                        <label for="tlPointInput">Điểm tự luận</label>
+                        <input type="number" class="form-control" id="tlPointInput" min="0" name="TlPoint" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="noteInput">Ghi chú</label>
+                        <input type="text" class="form-control" id="noteInput" min="0" name="Note">
+                    </div>
+                    <div class="form-group">
+                        <label for="pdfFileInput">Tải lên bài làm tự luận (PDF)</label>
+                        <input type="file" class="form-control" id="pdfFileInput" name="pdfFile" accept=".pdf">
+                    </div>
+                    <div class="form-group">
+                        <label for="isShowSelect">Trạng thái hiển thị</label>
+                        <select class="form-control" id="isShowSelect" name="IsShow">
+                            <option value="1">Hiển thị kết quả</option>
+                            <option value="0">Ẩn kết quả</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="saveChangesBtn">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="pdfEmbedModal" tabindex="-1" aria-labelledby="pdfEmbedModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="pdfEmbedModalLabel">Xem Bài Làm Tự Luận</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="height: 80vh;">
+                <div id="pdfEmbedContainer" style="width: 100%; height: 100%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mcAnswersModal" tabindex="-1" aria-labelledby="mcAnswersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="mcAnswersModalLabel">Đáp án Trắc nghiệm</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="answersContainer" class="d-flex flex-wrap">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // MẢNG CHỨA ĐÁP ÁN ĐÚNG TỪ VIEW BAG
+        const correctAnswers = @Html.Raw(Json.Serialize(ViewBag.CorrectAnswers));
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const tableBody = document.getElementById('employeeTableBody');
+            const contextMenu = document.getElementById('contextMenu');
+            let currentRowData = null;
+
+            tableBody.addEventListener('contextmenu', function (event) {
+                event.preventDefault();
+
+                const row = event.target.closest('tr.context-menu-row');
+                if (!row) {
+                    return;
+                }
+
+                currentRowData = row.dataset;
+
+                contextMenu.style.display = 'block';
+                contextMenu.style.left = event.pageX + 'px';
+                contextMenu.style.top = event.pageY + 'px';
+            });
+
+            document.addEventListener('click', function () {
+                contextMenu.style.display = 'none';
+            });
+
+            // Handle "Update" action
+            document.getElementById('update-action').addEventListener('click', function (event) {
+                event.preventDefault();
+                if (currentRowData) {
+                    const updateScoreModal = document.getElementById('updateScoreModal');
+
+                    updateScoreModal.querySelector('#employeeAnswerId').value = currentRowData.id;
+                    updateScoreModal.querySelector('#employeeNameInput').value = currentRowData.employeename;
+                    updateScoreModal.querySelector('#employeeCodeInput').value = currentRowData.employeecode;
+                    updateScoreModal.querySelector('#listAnswerInput').value = currentRowData.listanswer;
+                    updateScoreModal.querySelector('#tnPointInput').value = currentRowData.tnpoint;
+                    updateScoreModal.querySelector('#tlPointInput').value = currentRowData.tlpoint;
+                    updateScoreModal.querySelector('#examIdInput').value = currentRowData.examid;
+                    updateScoreModal.querySelector('#createdDateInput').value = currentRowData.createddate;
+                    updateScoreModal.querySelector('#isShowSelect').value = currentRowData.isshow;
+                    updateScoreModal.querySelector('#noteInput').value = currentRowData.note;
+                    updateScoreModal.querySelector('#essayResultPDFInput').value = currentRowData.essayresultpdf;
+
+                    updateScoreModal.querySelector('.modal-title').textContent = 'Cập nhật điểm cho ' + currentRowData.employeename;
+
+                    const modal = new bootstrap.Modal(updateScoreModal);
+                    modal.show();
+                }
+            });
+
+            // Handle "Delete" action
+            document.getElementById('delete-action').addEventListener('click', function (event) {
+                event.preventDefault();
+                if (currentRowData) {
+                    if (confirm('Xóa kết quả kiểm tra của nhân viên ' + currentRowData.employeename + '?') == true) {
+                        window.location.href = '/admin/resulttraining/delete?id=' + currentRowData.id;
+                    }
+                }
+            });
+
+            // Gửi form cập nhật điểm với file PDF bằng AJAX
+            document.getElementById('saveChangesBtn').addEventListener('click', async function (event) {
+                event.preventDefault();
+
+                const form = document.getElementById('updateScoreForm');
+                const formData = new FormData(form);
+
+                try {
+                    const response = await fetch('/Admin/ResultTraining/UpdatePoint', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        const errorMessage = await response.text();
+                        alert('Có lỗi xảy ra! Kiểm tra lại dữ liệu: ' + errorMessage);
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi gửi form:', error);
+                    alert('Đã xảy ra lỗi. Vui lòng thử lại sau!');
+                }
+            });
+
+            // Xử lý sự kiện nhấp chuột vào liên kết xem PDF
+            document.querySelectorAll('.view-pdf-embed').forEach(link => {
+                link.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const pdfUrl = this.getAttribute('data-pdf-url');
+                    const embedContainer = document.getElementById('pdfEmbedContainer');
+                    const modal = new bootstrap.Modal(document.getElementById('pdfEmbedModal'));
+
+                    if (embedContainer && pdfUrl) {
+                        embedContainer.innerHTML = '';
+                        const embedElement = document.createElement('embed');
+                        embedElement.src = pdfUrl;
+                        embedElement.type = 'application/pdf';
+                        embedElement.width = '100%';
+                        embedElement.height = '100%';
+                        embedElement.title = 'Web PDF Viewer';
+
+                        embedContainer.appendChild(embedElement);
+                        modal.show();
+                    }
+                });
+            });
+
+            // XỬ LÝ SỰ KIỆN NHẤP VÀO LINK XEM ĐÁP ÁN TRẮC NGHIỆM
+            const questions = @Html.Raw(Json.Serialize(ViewBag.Questions));
+            document.querySelectorAll('.view-mc-answers').forEach(link => {
+                link.addEventListener('click', function (event) {
+                    const listAnswerString = this.getAttribute('data-listanswer');
+                    const employeeName = this.getAttribute('data-employeename');
+                    const answersContainer = document.getElementById('answersContainer');
+                    answersContainer.innerHTML = '';
+
+                    const userAnswers = {};
+                    if (listAnswerString) {
+                        listAnswerString.split('-').forEach(item => {
+                            const [questionNumber, userAnswer] = item.split('.');
+                            if (questionNumber && userAnswer) {
+                                userAnswers[questionNumber] = userAnswer;
+                            }
+                        });
+                    }
+
+                    questions.forEach(q => {
+                        const questionNumber = q.questionNumber.toString();
+                        const userAnswer = userAnswers[questionNumber];
+                        const correctAnswer = q.correctOption;
+
+                        const questionDiv = document.createElement('div');
+                        questionDiv.className = 'card mb-3 shadow-sm';
+
+                        const cardBody = document.createElement('div');
+                        cardBody.className = 'card-body';
+
+                        const questionTitle = document.createElement('h5');
+                        questionTitle.className = 'card-title fs-6';
+                        questionTitle.innerHTML = `Câu ${questionNumber}: ${q.questionText}`;
+                        cardBody.appendChild(questionTitle);
+
+                        const optionList = document.createElement('ul');
+                        optionList.className = 'list-unstyled';
+
+                        const createOptionElement = (optionKey, optionHtml) => {
+                            const optionItem = document.createElement('li');
+                            optionItem.className = 'mb-1';
+
+                            let colorClass = '';
+                            let iconHtml = '';
+
+                            if (optionKey === correctAnswer) {
+                                colorClass = 'text-success fw-bold';
+                                iconHtml = '<i class="mdi mdi-check-circle-outline me-2"></i>';
+                            }
+
+                            if (userAnswer && optionKey === userAnswer) {
+                                if (userAnswer === correctAnswer) {
+                                    colorClass = 'text-success fw-bold';
+                                    iconHtml = '<i class="mdi mdi-check-circle-outline me-2"></i>';
+                                } else {
+                                    colorClass = 'text-danger fw-bold';
+                                    iconHtml = '<i class="mdi mdi-close-circle-outline me-2"></i>';
+                                }
+                            } else if (!userAnswer && optionKey === correctAnswer) {
+                                colorClass = 'text-info fw-bold';
+                                iconHtml = '<i class="mdi mdi-check-circle-outline me-2"></i>';
+                            }
+
+                            optionItem.className += ` ${colorClass}`;
+                            optionItem.innerHTML = `${iconHtml}<strong>${optionKey}</strong>. ${optionHtml}`;
+                            return optionItem;
+                        };
+
+                        optionList.appendChild(createOptionElement('A', q.optionA));
+                        optionList.appendChild(createOptionElement('B', q.optionB));
+                        optionList.appendChild(createOptionElement('C', q.optionC));
+                        optionList.appendChild(createOptionElement('D', q.optionD));
+
+                        cardBody.appendChild(optionList);
+                        questionDiv.appendChild(cardBody);
+                        answersContainer.appendChild(questionDiv);
+                    });
+
+                    const mcAnswersModalLabel = document.getElementById('mcAnswersModalLabel');
+                    mcAnswersModalLabel.textContent = `Đáp án Trắc nghiệm của ${employeeName}`;
+                });
+            });
+        });
+    </script>
+}

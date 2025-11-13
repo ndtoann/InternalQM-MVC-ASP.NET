@@ -1,0 +1,167 @@
+﻿@using System.Text.Json;
+@{
+    ViewData["Title"] = "Lịch Bảo Dưỡng Máy Móc";
+    var allMachineCodes = (List<string>)ViewBag.AllMachineCodes;
+    var availableYears = (List<int>)ViewBag.AvailableYears;
+    int defaultYear = ViewBag.DefaultYear;
+}
+
+<div class="d-flex justify-content-center py-3">
+    <h4 class="text-center text-4xl font-extrabold text-primary text-center mb-2">Lịch bảo dưỡng máy móc</h4>
+    <form id="yearForm" class="mt-2">
+        <div class="input-group" style="width: 200px;">
+            <label class="input-group-text" for="yearSelect">Chọn Năm:</label>
+            <select name="year" id="yearSelect" class="form-select">
+                @foreach (var year in availableYears)
+                {
+                    <option value="@year" selected="@(year == defaultYear)">@year</option>
+                }
+            </select>
+        </div>
+    </form>
+</div>
+
+<p><span class="text-success">Màu xanh: Đã hoàn thành </span> -- <span class="text-danger"> Màu đỏ: Chưa hoàn thành</span></p>
+
+<div style="overflow-x: auto; position: relative; height: 72vh;">
+    <div id="loadingOverlay" class="loading-overlay">
+        Đang tải dữ liệu...
+    </div>
+    <table class="maintenance-grid table table-hover">
+        <thead>
+            <tr>
+                <th class="header-code">Mã Máy</th>
+                @for (int month = 1; month <= 12; month++)
+                {
+                    <th class="month-cell">Tháng @month</th>
+                }
+            </tr>
+        </thead>
+        <tbody id="maintenanceTableBody">
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailModalLabel">Chi tiết Lịch Bảo Dưỡng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Mã Máy:</strong> <span id="modal-MachineCode"></span></p>
+                <p><strong>Ngày:</strong> <span id="modal-DateMonth"></span></p>
+                <p><strong>Nội dung:</strong> <span id="modal-MaintenanceContent"></span></p>
+                <p><strong>Nhân viên:</strong> <span id="modal-MaintenanceStaff"></span></p>
+                <p><strong>Trạng thái:</strong> <span id="modal-IsComplete"></span></p>
+                <p><strong>Ghi chú:</strong> <span id="modal-Note"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        var allMachineCodes = @Html.Raw(JsonSerializer.Serialize(ViewBag.AllMachineCodes));
+
+        function getColorClass(isComplete) {
+            return isComplete === 1 ? 'status-green' : 'status-red';
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const parts = dateString.split('-');
+            if (parts.length === 3) {
+                const [year, month, day] = parts;
+                return `${day}/${month}/${year}`;
+            }
+            return dateString;
+        }
+
+        function loadMaintenanceSchedule(year) {
+            var $tableBody = $('#maintenanceTableBody');
+            var $loadingOverlay = $('#loadingOverlay');
+
+            $loadingOverlay.css('display', 'flex');
+
+            $.ajax({
+                url: '@Url.Action("GetMaintenanceData", "Machine")',
+                type: 'GET',
+                data: { year: year },
+                success: function(scheduleMap) {
+                    $tableBody.empty();
+
+                    allMachineCodes.forEach(function(machineCode) {
+                        var rowHtml = '<tr><td class="header-code">' + machineCode + '</td>';
+
+                        for (var month = 1; month <= 12; month++) {
+                            rowHtml += '<td class="month-cell">';
+
+                            var hasDataForMonth = scheduleMap[machineCode] && scheduleMap[machineCode][month];
+
+                            if (hasDataForMonth) {
+                                var dailySchedules = scheduleMap[machineCode][month];
+
+                                var sortedDays = Object.keys(dailySchedules).sort((a, b) => parseInt(a) - parseInt(b));
+
+                                sortedDays.forEach(function(day) {
+                                    var schedules = dailySchedules[day];
+
+                                    schedules.forEach(function(maintenance) {
+                                        var jsonDetails = JSON.stringify(maintenance);
+
+                                        rowHtml += '<div class="schedule-item ' + getColorClass(maintenance.isComplete) + '" ' +
+                                                   'data-bs-toggle="modal" data-bs-target="#detailModal" ' +
+                                                   'data-details=\'' + jsonDetails.replace(/'/g, "&#39;") + '\'>' +
+                                                   'Xem</div>';
+                                    });
+                                });
+                            } else {
+                                rowHtml += '<div class="no-data"></div>';
+                            }
+                            rowHtml += '</td>';
+                        }
+                        rowHtml += '</tr>';
+                        $tableBody.append(rowHtml);
+                    });
+
+                    $loadingOverlay.css('display', 'none');
+                },
+                error: function(xhr, status, error) {
+                    alert('Lỗi khi tải dữ liệu: ' + error);
+                    $loadingOverlay.css('display', 'none');
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            var initialYear = $('#yearSelect').val();
+            loadMaintenanceSchedule(initialYear);
+
+            $('#yearSelect').on('change', function() {
+                var selectedYear = $(this).val();
+                loadMaintenanceSchedule(selectedYear);
+            });
+
+            var detailModal = document.getElementById('detailModal');
+            detailModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var details = JSON.parse(button.getAttribute('data-details'));
+
+                var formattedDate = formatDate(details.dateMonth);
+
+                document.getElementById('modal-MachineCode').textContent = details.machineCode;
+                document.getElementById('modal-DateMonth').textContent = formattedDate;
+                document.getElementById('modal-MaintenanceContent').textContent = details.maintenanceContent;
+                document.getElementById('modal-MaintenanceStaff').textContent = details.maintenanceStaff || 'Chưa cập nhật';
+                document.getElementById('modal-IsComplete').textContent = details.isComplete === 1 ? 'Đã hoàn thành' : 'Chưa hoàn thành';
+                document.getElementById('modal-Note').textContent = details.note || 'Không có';
+            });
+        });
+    </script>
+}

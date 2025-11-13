@@ -1,0 +1,154 @@
+﻿@using Web_QM.Models
+@model IEnumerable<ExamPeriodic>
+@{
+    ViewData["Title"] = "Bài kiểm tra";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Danh sách các bài kiểm tra</h4>
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    <form action="" class="form-sample" method="get">
+                        <div class="row align-items-center">
+
+                            <div class="col-lg-3">
+                                <div class="form-group mb-0">
+                                    <select class="form-control" name="isActive" asp-items="@(ViewData["IsActiveList"] as SelectList)"></select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6 d-flex align-items-center">
+
+                                <div class="form-group me-2 flex-grow-1 mb-0">
+                                    <input type="text"
+                                           class="form-control"
+                                           name="name"
+                                           placeholder="Nhập vào đây để tìm kiếm"
+                                           value="@ViewBag.Name" />
+                                </div>
+
+                                <div class="form-group mb-0">
+                                    <button type="submit" class="btn btn-primary">
+                                        Tìm kiếm
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <a class="btn btn-success mb-3" href="~/admin/exam/add">Thêm mới</a>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered" id="examTable">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Tên bài kiểm tra</th>
+                                    <th>Thời gian làm bài</th>
+                                    <th>Trạng thái</th>
+                                    <th>Ngày tạo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    var count = 1;
+                                }
+                                @foreach (var item in Model)
+                                {
+                                    <tr data-id="@item.Id"
+                                        data-examname="@item.ExamName">
+                                        <td>@(count++)</td>
+                                        <td class="fw-bold">@item.ExamName</td>
+                                        <td><label class="badge badge-success">@item.DurationMinute phút</label></td>
+                                        @if (@item.IsActive == 1)
+                                        {
+                                            <td><label class="badge badge-success">Sẵn sàng</label></td>
+                                        }
+                                        else
+                                        {
+                                            <td><label class="badge badge-danger">Tạm dừng</label></td>
+                                        }
+                                        <td><label class="badge badge-info">@item.CreatedDate</label></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="contextMenu" class="dropdown-menu" style="position: absolute; display: none;">
+    <a class="dropdown-item" href="#" id="duplicateLink">Sao chép</a>
+    <a class="dropdown-item" href="#" id="viewLink">Xem</a>
+    <a class="dropdown-item" href="#" id="editLink">Sửa</a>
+    <a class="dropdown-item" href="#" id="deleteLink">Xóa</a>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+        const tableBody = document.querySelector('#examTable tbody');
+        const contextMenu = document.getElementById('contextMenu');
+
+                document.addEventListener('click', function () {
+                    contextMenu.style.display = 'none';
+                });
+
+                tableBody.addEventListener('contextmenu', function (e) {
+                    const row = e.target.closest('tr');
+                    if (row) {
+                        e.preventDefault();
+
+                        const id = row.getAttribute('data-id');
+                        const examName = row.getAttribute('data-examname');
+
+                        const duplicateLink = document.getElementById('duplicateLink');
+                        const viewLink = document.getElementById('viewLink');
+                        const editLink = document.getElementById('editLink');
+                        const deleteLink = document.getElementById('deleteLink');
+
+                        duplicateLink.href = `/admin/exam/duplicateexam?examId=${id}`;
+                        viewLink.href = `/admin/exam/detail?id=${id}`;
+                        editLink.href = `/admin/exam/edit?id=${id}`;
+                        deleteLink.href = `/admin/exam/delete?id=${id}`;
+
+                        contextMenu.style.top = `${e.pageY}px`;
+                        contextMenu.style.left = `${e.pageX}px`;
+                        contextMenu.style.display = 'block';
+
+                        duplicateLink.onclick = function(event) {
+                            event.preventDefault();
+                            if (window.confirm('Xác nhận sao chép ' + examName + '?')) {
+                                window.location.href = this.href;
+                            }
+                        };
+
+                        deleteLink.onclick = function(event) {
+                            event.preventDefault();
+                            if (window.confirm('Xác nhận xóa ' + examName + '? Toàn bộ câu hỏi, kết quả kiểm tra cũng sẽ bị xóa!')) {
+                                window.location.href = this.href;
+                            }
+                        };
+                    }
+                });
+            });
+    </script>
+
+}

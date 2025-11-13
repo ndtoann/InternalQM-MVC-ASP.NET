@@ -1,0 +1,310 @@
+﻿@using Web_QM.Models
+@model List<EmployeeWorkHistory>
+
+@{
+    ViewData["Title"] = "Cập nhật Quá Trình Làm Việc";
+    var employeeId = (long)ViewBag.Id;
+    var employeeCode = (string)ViewBag.EmployeeCode;
+    var employeeName = (string)ViewBag.EmployeeName;
+}
+
+<style>
+    .timeline {
+        border-left: 3px solid #dee2e6;
+        padding: 0;
+        list-style: none;
+        position: relative;
+    }
+
+    .timeline-item {
+        margin-bottom: 30px;
+        position: relative;
+    }
+
+    .timeline-icon {
+        position: absolute;
+        left: -13px;
+        top: 0;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background-color: #0d6efd;
+        color: white;
+        text-align: center;
+        line-height: 25px;
+        z-index: 10;
+        border: 3px solid white;
+    }
+
+    .timeline-content {
+        padding-left: 30px;
+    }
+
+    .timeline-date {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+
+    .current-item .timeline-icon {
+        background-color: #198754;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-dark text-white p-3">
+            <h4 class="mb-0">
+                <i class="bi bi-clock-history me-2"></i> Hồ sơ & Lịch sử Công việc
+            </h4>
+        </div>
+        <div class="card-body p-4">
+
+            <div class="bg-light p-3 rounded mb-4 border-start border-5 border-primary">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Mã NV:</strong> <span class="fw-bold text-primary">@employeeCode</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Tên NV:</strong> <span class="fw-bold text-dark">@employeeName</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="mt-4 mb-4 text-info">
+                <i class="bi bi-calendar-range me-2"></i> Dòng thời gian làm việc
+            </h5>
+
+            @if (Model != null && Model.Any())
+            {
+                <ul class="timeline">
+                    @{
+                        var sortedHistory = Model.OrderByDescending(x => x.StartDate);
+                    }
+                    @foreach (var item in sortedHistory)
+                    {
+                        var isCurrent = !item.EndDate.HasValue;
+                        var endDateText = isCurrent
+                        ? "HIỆN TẠI"
+                        : item.EndDate.Value.ToString("dd/MM/yyyy");
+                        var dateRange = $"{item.StartDate.ToString("dd/MM/yyyy")} - {endDateText}";
+                        var iconClass = isCurrent ? "bi-check-circle-fill" : "bi-briefcase-fill";
+                        var itemClass = isCurrent ? "timeline-item current-item" : "timeline-item";
+
+                        <li class="@itemClass">
+                            <div class="timeline-icon">
+                                <i class="bi @iconClass" style="font-size: 0.75rem;"></i>
+                            </div>
+                            <div class="timeline-content card shadow-sm p-3 border-0">
+                                <div class="timeline-date">@dateRange</div>
+                                <h6 class="text-primary mb-1">Bộ phận: @item.Department</h6>
+                                <p class="text-muted mb-2">@(string.IsNullOrEmpty(item.Note) ? "Không có ghi chú đặc biệt." : item.Note)</p>
+
+                                <div class="mt-2 pt-2 border-top text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-info me-2" title="Chỉnh sửa"
+                                            onclick="openEditModal(@item.Id, '@item.Department', '@item.StartDate.ToString("yyyy-MM-dd")', '@(item.EndDate.HasValue ? item.EndDate.Value.ToString("yyyy-MM-dd") : "")', '@item.Note?.Replace("'", "\\'")')">
+                                        <i class="bi bi-pencil-square"></i> Cập nhật
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Xóa" onclick="confirmDelete(@item.Id)">
+                                        <i class="bi bi-trash"></i> Xóa
+                                    </button>
+                                </div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="alert alert-warning text-center" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> Nhân viên này chưa có bất kỳ lịch sử công việc nào.
+                </div>
+            }
+
+            <div class="mt-5 text-center">
+                <a data-bs-toggle="modal" data-bs-target="#addWorkHistoryModal" class="btn btn-primary btn-lg me-3">
+                    <i class="bi bi-plus-circle-fill me-2"></i> Thêm Vị trí mới
+                </a>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-lg">
+                    <i class="bi bi-arrow-left-circle me-2"></i> Quay lại
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addWorkHistoryModal" tabindex="-1" aria-labelledby="addWorkHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addWorkHistoryModalLabel">Thêm Vị trí Công việc Mới</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addWorkHistoryForm" method="post" action="/Admin/Employee/AddWorkHistory">
+                <div class="modal-body">
+                    <input type="hidden" name="EmployeeCode" value="@employeeCode" />
+                    <input type="hidden" name="EmployeeName" value="@employeeName" />
+
+                    <div class="mb-3">
+                        <label for="Add_Department" class="form-label">Bộ phận / Vị trí <span class="text-danger">*</span></label>
+                        <select class="form-control" id="Add_Department" name="Department" asp-items="@(ViewData["Departments"] as List<SelectListItem>)" required></select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="Add_StartDate" class="form-label">Ngày Bắt đầu <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="Add_StartDate" name="StartDate" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="Add_EndDate" class="form-label">Ngày Kết thúc (Nếu có)</label>
+                            <input type="date" class="form-control" id="Add_EndDate" name="EndDate">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="Add_Note" class="form-label">Ghi chú</label>
+                        <textarea class="form-control" id="Add_Note" name="Note" rows="3"></textarea>
+                    </div>
+                    <div id="addErrorAlert" class="alert alert-danger d-none mt-3"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary">Lưu Lịch sử</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editWorkHistoryModal" tabindex="-1" aria-labelledby="editWorkHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="editWorkHistoryModalLabel">Chỉnh sửa Lịch sử Công việc</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editWorkHistoryForm" method="post" action="/Admin/Employee/EditWorkHistory">
+                <div class="modal-body">
+                    <input type="hidden" id="Edit_Id" name="Id" />
+                    <input type="hidden" name="EmployeeCode" value="@employeeCode" />
+                    <input type="hidden" name="EmployeeName" value="@employeeName" />
+
+                    <div class="mb-3">
+                        <label for="Edit_Department" class="form-label">Bộ phận / Vị trí <span class="text-danger">*</span></label>
+                        <select class="form-control" id="Edit_Department" name="Department" asp-items="@(ViewData["Departments"] as List<SelectListItem>)" required></select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="Edit_StartDate" class="form-label">Ngày Bắt đầu <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="Edit_StartDate" name="StartDate" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="Edit_EndDate" class="form-label">Ngày Kết thúc (Nếu có)</label>
+                            <input type="date" class="form-control" id="Edit_EndDate" name="EndDate">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="Edit_Note" class="form-label">Ghi chú</label>
+                        <textarea class="form-control" id="Edit_Note" name="Note" rows="3"></textarea>
+                    </div>
+                    <div id="editErrorAlert" class="alert alert-danger d-none mt-3"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-info text-white">Cập nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openEditModal(id, department, startDate, endDate, note) {
+            $('#Edit_Id').val(id);
+            $('#Edit_Department').val(department);
+            $('#Edit_StartDate').val(startDate);
+            $('#Edit_EndDate').val(endDate);
+            $('#Edit_Note').val(note);
+
+            var editModal = new bootstrap.Modal(document.getElementById('editWorkHistoryModal'));
+            editModal.show();
+        }
+
+        function confirmDelete(id) {
+                if (confirm('Xác nhận xóa?')) {
+
+                    $.ajax({
+                        type: "GET",
+                        url: '/Admin/Employee/DeleteWorkHistory/' + id,
+                        dataType: "json",
+                        success: function (response) {
+                            if (response.success) {
+                                alert(response.message);
+                                window.location.reload();
+                            } else {
+                                alert("Xóa thất bại: " + response.message);
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            alert("Lỗi Server: Không thể gửi yêu cầu xóa. Vui lòng thử lại.");
+                        }
+                    });
+                }
+            }
+
+
+        $(document).ready(function () {
+            $('#addWorkHistoryForm').submit(function (e) {
+                e.preventDefault();
+                var form = $(this);
+                var url = form.attr('action');
+                var formData = form.serialize();
+
+                $.ajax({
+                    type: "POST",
+                    url: url,
+                    data: formData,
+                    success: function (response) {
+                        if (response.success) {
+                            alert(response.message);
+                            window.location.reload();
+                        } else {
+                            var errorMsg = response.message + (response.errors ? ": " + response.errors.join(", ") : "");
+                            $('#addErrorAlert').text(errorMsg).removeClass('d-none');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        $('#addErrorAlert').text("Lỗi kết nối Server: " + error).removeClass('d-none');
+                        console.log(error)
+                    }
+                });
+            });
+
+            $('#editWorkHistoryForm').submit(function (e) {
+                e.preventDefault();
+                var form = $(this);
+                var url = form.attr('action');
+                var formData = form.serialize();
+
+                $.ajax({
+                    type: "POST",
+                    url: url,
+                    data: formData,
+                    success: function (response) {
+                        if (response.success) {
+                            alert(response.message);
+                            window.location.reload();
+                        } else {
+                            var errorMsg = response.message + (response.errors ? ": " + response.errors.join(", ") : "");
+                            $('#editErrorAlert').text(errorMsg).removeClass('d-none');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        $('#editErrorAlert').text("Lỗi kết nối Server: " + error).removeClass('d-none');
+                    }
+                });
+            });
+        });
+    </script>
+}

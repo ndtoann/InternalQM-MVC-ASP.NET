@@ -1,0 +1,83 @@
+﻿@using Web_QM.Models
+@model ExamTrialRun
+@{
+    ViewData["Title"] = "Chuẩn bị";
+}
+
+<div class="container mx-auto">
+    <div class="quiz-card p-8 rounded-xl flex flex-col items-center text-center">
+        <h2 class="text-3xl md:text-4xl font-extrabold text-primary mb-4">
+            @Model.ExamName
+        </h2>
+        <p class="text-gray-600 mb-2">Thời gian làm bài: <span class="font-bold">@Model.DurationMinute phút</span></p>
+        <div class="text-sm text-gray-500 my-4">
+            <p><i class="fas fa-exclamation-triangle mr-2 text-yellow-500"></i>Chú ý: Không sử dụng tài liệu khác trong quá trình làm bài</p>
+            <p><i class="fas fa-exclamation-triangle mr-2 text-yellow-500"></i>Không thoát khỏi trang và truy cập trang khác khi đang làm bài</p>
+            <p><i class="fas fa-exclamation-triangle mr-2 text-yellow-500"></i>Thoát khỏi trang làm bài sẽ tự động nộp bài</p>
+            <p><i class="fas fa-exclamation-triangle mr-2 text-yellow-500"></i>Hết thời gian phải nộp bài</p>
+        </div>
+
+        @if (TempData["ErrorStart"] != null)
+        {
+            <div class="alert bg-red-100 border border-red-400 text-red-700 rounded-lg relative" role="alert">
+                <span class="block sm:inline">@TempData["ErrorStart"]</span>
+                <span class="absolute top-0 bottom-0 right-0 px-4 py-3">
+                </span>
+            </div>
+        }
+
+        <div class="w-full max-w-sm my-6">
+            <label for="emplCode" class="block text-gray-700 text-sm font-bold mb-2">Nhập mã nhân viên để vào làm bài</label>
+            <input type="text" name="emplCode" id="emplCode" placeholder="Mã nhân viên" class="input-field shadow-sm appearance-none rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+
+        <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center">
+            <a href="/testingsystem" class="back-button bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-full shadow-md">
+                <i class="fas fa-arrow-left mr-2"></i>Quay lại
+            </a>
+            <a class="join-button bg-primary text-white font-bold py-3 px-6 rounded-full shadow-md cursor-pointer" id="join-quiz">
+                <i class="fas fa-play mr-2"></i>Vào làm bài
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    </script>
+    <script>
+        var quizId = @Model.Id;
+
+        document.getElementById('join-quiz').addEventListener('click', function() {
+            const emplCode = document.getElementById('emplCode').value;
+
+            if (!emplCode) {
+                Swal.fire({
+                    title: 'Lỗi',
+                    text: 'Vui lòng nhập mã nhân viên để tiếp tục.',
+                    icon: 'error',
+                    confirmButtonColor: '#2196f3',
+                    confirmButtonText: 'Đóng'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Xác nhận?',
+                text: "Bạn đã sẵn sàng để bắt đầu làm bài?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#2196f3',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Vào làm bài',
+                cancelButtonText: 'Hủy bỏ',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '@Url.Action("cncstart", "testingsystem", new { id = "quizIdPlaceholder", emplCode = "emplCodePlaceholder" })'
+                        .replace("quizIdPlaceholder", quizId)
+                        .replace("emplCodePlaceholder", emplCode);
+                }
+            });
+        });
+    </script>
+}

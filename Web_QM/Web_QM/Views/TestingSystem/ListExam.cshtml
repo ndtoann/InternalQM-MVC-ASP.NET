@@ -1,0 +1,43 @@
+﻿@using Web_QM.Models
+@model IEnumerable<ExamPeriodic>
+@{
+    ViewData["Title"] = "Hệ thống kiểm tra Quang Minh";
+}
+
+<div class="container mx-auto">
+    <div class="flex items-center mb-6">
+        <h2 id="department-title" class="text-3xl md:text-4xl font-extrabold text-primary text-center flex-grow">
+            @ViewBag.Department - Danh sách Bài kiểm tra
+        </h2>
+    </div>
+
+    <div id="exam-list" class="space-y-6 hidden-until-loaded">
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var item in Model)
+            {
+                <a href="/testingsystem/prepare/@item.Id" class="exam-card flex flex-col md:flex-row items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                    <div class="flex-grow text-center md:text-left mb-4 md:mb-0">
+                        <h3 class="text-xl font-semibold text-gray-900">@item.ExamName</h3>
+                    </div>
+                    <div class="start-button flex items-center justify-center px-6 py-3 rounded-full font-bold shadow-md">
+                        <i class="fas fa-play mr-2"></i>Bắt đầu
+                    </div>
+                </a>
+            }
+        }
+        else
+        {
+            <p class="text-center text-gray-500">Hiện tại chưa có bài kiểm tra nào cho bộ phận này.</p>
+        }
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const elements = document.querySelectorAll('.hidden-until-loaded');
+        elements.forEach(el => {
+            el.classList.remove('hidden-until-loaded');
+        });
+    });
+</script>

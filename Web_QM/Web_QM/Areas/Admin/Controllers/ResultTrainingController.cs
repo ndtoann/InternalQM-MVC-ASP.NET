@@ -1,0 +1,302 @@
+﻿using ClosedXML.Excel;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Web_QM.Models;
+using Web_QM.Models.ViewModels;
+
+namespace Web_QM.Areas.Admin.Controllers
+{
+    [Area("Admin")]
+    public class ResultTrainingController : Controller
+    {
+        private readonly QMContext _context;
+
+        public ResultTrainingController(QMContext context)
+        {
+            _context = context;
+        }
+
+        [Authorize(Policy = "ViewResultExam")]
+        public async Task<IActionResult> Index(string name)
+        {
+            var examStats = await _context.ExamTrainings
+                                    .GroupJoin(
+                                        _context.ExamTrainingAnswers,
+                                        exam => exam.Id,
+                                        answer => answer.ExamTrainingId,
+                                        (exam, employeeAnswers) => new ExamTrainingAnswerView
+                                        {
+                                            examId = exam.Id,
+                                            examName = exam.ExamName,
+                                            employeeCount = employeeAnswers.Count()
+                                        }
+                                    )
+                                    .Where(x => string.IsNullOrEmpty(name) || x.examName.ToLower().Contains(name.ToLower()))
+                                    .OrderByDescending(e => e.examId)
+                                    .Take(200)
+                                    .ToListAsync();
+
+            ViewBag.Name = name;
+            return View(examStats);
+        }
+
+        [Authorize(Policy = "ViewResultExam")]
+        public async Task<IActionResult> Detail(long examid, string name)
+        {
+            var exam = await _context.ExamTrainings.AsNoTracking().FirstOrDefaultAsync(e => e.Id == examid);
+
+            if (exam == null)
+            {
+                return NotFound();
+            }
+            var query = _context.ExamTrainingAnswers
+                .AsNoTracking()
+                .Where(e => e.ExamTrainingId == examid);
+
+            if (!string.IsNullOrEmpty(name))
+            {
+                string nameLower = name.ToLower();
+                query = query.Where(e => e.EmployeeCode.ToLower().Contains(nameLower) || e.EmployeeName.ToLower().Contains(nameLower));
+            }
+
+            var listEmpl = await query
+                .OrderBy(e => e.EmployeeCode)
+                .ToListAsync();
+
+            var questionsFromDb = await _context.QuestionTrainings
+                .AsNoTracking()
+                .Where(q => q.ExamTrainingId == examid)
+                .OrderBy(q => q.DisplayOrder)
+                .ToListAsync();
+
+            var questions = questionsFromDb
+                .Select((q, index) => new
+                {
+                    QuestionId = q.Id,
+                    QuestionNumber = index + 1,
+                    QuestionText = q.QuestionText,
+                    OptionA = q.OptionA,
+                    OptionB = q.OptionB,
+                    OptionC = q.OptionC,
+                    OptionD = q.OptionD,
+                    CorrectOption = q.CorrectOption
+                })
+                .ToList();
+
+            ViewBag.Questions = questions;
+            ViewBag.ExamId = examid;
+            ViewBag.ExamName = exam?.ExamName ?? "N/A";
+            ViewBag.CountQuestion = questions.Count;
+            ViewBag.TlTotal = exam?.TlTotal;
+            ViewBag.Name = name;
+
+            return View(listEmpl);
+        }
+
+        [Authorize(Policy = "EditResultExam")]
+        [HttpPost]
+        public async Task<IActionResult> UpdatePoint(ExamTrainingAnswer employeeAnswer, IFormFile pdfFile)
+        {
+            if (employeeAnswer == null)
+            {
+                return NotFound();
+            }
+            if (employeeAnswer.TlPoint < 0 || employeeAnswer.TlPoint == null)
+            {
+                return NotFound();
+            }
+            try
+            {
+                string essayResultPdfPath = await SavePdfFile(employeeAnswer.ExamTrainingId, employeeAnswer.EmployeeCode, pdfFile);
+                if (!string.IsNullOrEmpty(essayResultPdfPath))
+                {
+                    employeeAnswer.EssayResultPDF = essayResultPdfPath;
+                }
+                employeeAnswer.UpdatedDate = DateTime.Now.ToString("HH:mm:ss-dd/MM/yyyy");
+                _context.ExamTrainingAnswers.Update(employeeAnswer);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Cập nhật thành công!";
+                return RedirectToAction(nameof(Detail), new { examid = employeeAnswer.ExamTrainingId });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                TempData["ErrorMessage"] = "Xảy ra lỗi. Vui lòng thử lại sau!";
+                return RedirectToAction(nameof(Detail), new { examid = employeeAnswer.ExamTrainingId });
+            }
+        }
+
+        private async Task<string> SavePdfFile(long examId, string employeeCode, IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return null;
+            }
+
+            if (file.ContentType != "application/pdf")
+            {
+                return null;
+            }
+
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "files", "answers");
+            if (!Directory.Exists(uploadsFolder))
+            {
+                Directory.CreateDirectory(uploadsFolder);
+            }
+            var fileName = $"Đáp án đào tạo-{examId}-{employeeCode}.pdf";
+            var filePath = Path.Combine(uploadsFolder, fileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+            return $"/files/answers/{fileName}";
+        }
+
+        [Authorize(Policy = "DeleteResultExam")]
+        public async Task<IActionResult> Delete(long id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+            var emplAnswerToDelete = await _context.ExamTrainingAnswers.FindAsync(id);
+            if (emplAnswerToDelete == null)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                DeletePdfFile(emplAnswerToDelete.ExamTrainingId, emplAnswerToDelete.EmployeeCode);
+                _context.ExamTrainingAnswers.Remove(emplAnswerToDelete);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Đã xóa bài làm nhân viên này!";
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                TempData["ErrorMessage"] = "Xảy ra lỗi. Vui lòng thử lại sau!";
+            }
+
+            return RedirectToAction(nameof(Detail), new { examid = emplAnswerToDelete.ExamTrainingId });
+        }
+
+        private async Task<bool> DeletePdfFile(long examId, string employeeCode)
+        {
+            try
+            {
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "files", "answers");
+                var fileName = $"Đáp án đào tạo-{examId}-{employeeCode}.pdf";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                if (System.IO.File.Exists(filePath))
+                {
+                    System.IO.File.Delete(filePath);
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        [Authorize(Policy = "ViewResultExam")]
+        public async Task<IActionResult> ExportToExcel(long? examId)
+        {
+            if (examId == null)
+            {
+                return NotFound();
+            }
+            var exam = await _context.ExamTrainings.FirstOrDefaultAsync(e => e.Id == examId);
+            if (exam == null)
+            {
+                return NotFound();
+            }
+            string examName = exam.ExamName;
+
+            var employeeAnswers = await _context.ExamTrainingAnswers.Where(a => a.ExamTrainingId == examId).ToListAsync();
+
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("data");
+
+                worksheet.Cell(1, 1).Value = examName;
+                worksheet.Range("A1:H1").Merge().Style.Font.Bold = true;
+                worksheet.Range("A1:H1").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                worksheet.Cell(2, 1).Value = "STT";
+                worksheet.Cell(2, 3).Value = "Mã nhân viên";
+                worksheet.Cell(2, 2).Value = "Tên nhân viên";
+                worksheet.Cell(2, 4).Value = "Câu trả lời";
+                worksheet.Cell(2, 5).Value = "Điểm Trắc nghiệm";
+                worksheet.Cell(2, 6).Value = "Điểm Tự luận";
+                worksheet.Cell(2, 7).Value = "Ghi chú";
+                worksheet.Cell(2, 8).Value = "Ngày làm bài";
+
+                int row = 3;
+                int stt = 1;
+                foreach (var answer in employeeAnswers)
+                {
+                    worksheet.Cell(row, 1).Value = stt++;
+                    worksheet.Cell(row, 3).Value = answer.EmployeeCode;
+                    worksheet.Cell(row, 2).Value = answer.EmployeeName;
+                    worksheet.Cell(row, 4).Value = answer.ListAnswer;
+                    worksheet.Cell(row, 5).Value = answer.TnPoint;
+                    worksheet.Cell(row, 6).Value = answer.TlPoint;
+                    worksheet.Cell(row, 7).Value = answer.Note;
+                    worksheet.Cell(row, 8).Value = answer.CreatedDate;
+                    row++;
+                }
+
+                worksheet.Columns().AdjustToContents();
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    var content = stream.ToArray();
+
+                    return File(
+                        content,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "KQKT_" + examName.Replace(" ", "_") + ".xlsx"
+                    );
+                }
+            }
+        }
+
+        [Authorize(Policy = "EditResultExam")]
+        public async Task<IActionResult> Show(long examId, int isShow)
+        {
+            if (examId == null || isShow == null)
+            {
+                return NotFound();
+            }
+            var recordsToUpdate = await _context.ExamTrainingAnswers.Where(e => e.ExamTrainingId == examId).ToListAsync();
+            if (recordsToUpdate == null)
+            {
+                return NotFound();
+            }
+
+            foreach (var record in recordsToUpdate)
+            {
+                record.IsShow = isShow;
+                record.UpdatedDate = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Cập nhật thành công!";
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                TempData["ErrorMessage"] = "Xảy ra lỗi. Vui lòng thử lại sau!";
+            }
+
+            return RedirectToAction(nameof(Detail), new { examid = examId });
+        }
+    }
+}

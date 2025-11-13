@@ -1,0 +1,695 @@
+﻿@using System.Security.Claims;
+@{
+    var employeeCode = User.Claims.FirstOrDefault(c => c.Type == "EmployeeCode")?.Value;
+    var employeeName = User.Claims.FirstOrDefault(c => c.Type == "EmployeeName")?.Value;
+    ViewData["Title"] = "Quang Minh - Tra cứu lương";
+}
+
+<div class="salary-slip-container">
+    <h1 class="header-title">BẢNG THANH TOÁN TIỀN LƯƠNG THÁNG .... NĂM 2025</h1>
+
+    <div class="date-selector">
+        <label for="month-year-select">Chọn Tháng/Năm:</label>
+        <input type="month" id="month-year-select" name="month-year" value="@(DateTime.Now.ToString("yyyy-MM"))">
+    </div>
+
+    <div class="info-section">
+        <div><label>Mã nhân viên:</label> <span id="employeeCodeDisplay">@employeeCode</span></div>
+        <div><label>Tên nhân viên:</label> <span id="employeeNameDisplay">@employeeName</span></div>
+        <div><label>Mức lương ngày:</label> <span id="dailyBasePay"></span></div>
+        <div><label>Lương giờ:</label> <span id="hourlyBasePay"></span></div>
+        <div><label>Lương đóng BH:</label> <span id="insuranceSalaryDisplay"></span></div>
+    </div>
+
+    <div class="action-status-section" id="action-status-area" style="display:none;">
+        <div>
+            <input type="hidden" id="current-salary-id" />
+            <input type="hidden" id="current-salary-status" />
+        </div>
+        <div>
+            <label>Trạng thái:</label> <span class="status-display" id="salaryStatusDisplay"></span>
+        </div>
+    </div>
+
+    <table class="salary-table">
+        <thead>
+            <tr>
+                <th>Hạng mục</th>
+                <th>Thời gian</th>
+                <th>Số tiền</th>
+                <th>Ghi chú</th>
+                <th>Đã ứng</th>
+                <th>Còn lại</th>
+            </tr>
+        </thead>
+        <tbody id="salary-table-body">
+            <tr><td colspan="6" style="text-align: center;" id="loading-status"></td></tr>
+
+            <tr>
+                <td class="item-name">Số ngày trách nhiệm(ngày)</td>
+                <td id="responsibleDays"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Thời gian làm việc chính thức ngày thường (giờ)</td>
+                <td id="regularHours"></td>
+                <td id="regularHourPay"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">TG thêm giờ ngày thường (giờ)</td>
+                <td id="regularOvertimeHours"></td>
+                <td id="regularOvertimeHourPay"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">TG thêm giờ CN (giờ)</td>
+                <td id="sundayOvertimeHours"></td>
+                <td id="sundayOvertimeHourPay"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">TG thêm giờ ngày lễ, tết (giờ)</td>
+                <td id="holidayOvertimeHours"></td>
+                <td id="holidayOvertimeHourPay"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">TG thêm giờ sau 23 giờ (giờ)</td>
+                <td id="lateNightOvertimeHours"></td>
+                <td id="lateNightOvertimeHourPay"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">TG làm ca 3 (giờ)</td>
+                <td id="shift3Hours"></td>
+                <td id="shift3HourPay"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">TG làm thêm giờ ca 3 (giờ)</td>
+                <td id="shift3OvertimeHours"></td>
+                <td id="shift3OvertimeHourPay"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">TG làm thêm giờ ca 3 CN (giờ)</td>
+                <td id="shift3SundayOvertimeHours"></td>
+                <td id="shift3SundayOvertimeHourPay"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Phí công tác + điện thoại</td>
+                <td></td>
+                <td id="businessTripAndPhoneFee"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Tiền ăn</td>
+                <td></td>
+                <td id="mealAllowance"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Trách nhiệm ngày</td>
+                <td id="dailyResponsibilityPay"></td>
+                <td id="dailyResponsibilityTotal"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Phụ cấp xăng xe</td>
+                <td></td>
+                <td id="fuelAllowance"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Phụ cấp làm ngoài</td>
+                <td></td>
+                <td id="externalWorkAllowance"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Trợ cấp nhà trọ</td>
+                <td></td>
+                <td id="housingSubsidy"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Tiền chuyên cần</td>
+                <td></td>
+                <td id="diligencePay"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Không phạm lỗi</td>
+                <td></td>
+                <td id="noViolationBonus"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Phụ cấp độc hại</td>
+                <td></td>
+                <td id="hazardousAllowance"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Phụ cấp căng thẳng CNC</td>
+                <td></td>
+                <td id="cncStressAllowance"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Phụ cấp thâm niên</td>
+                <td></td>
+                <td id="seniorityAllowance"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Phụ cấp bằng</td>
+                <td></td>
+                <td id="certificateAllowance"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Phụ cấp môi trường làm việc</td>
+                <td></td>
+                <td id="workingEnvironmentAllowance"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Phụ cấp vị trí làm việc</td>
+                <td></td>
+                <td id="jobPositionAllowance"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Phụ cấp chạy thử máy</td>
+                <td></td>
+                <td id="machineTestRunAllowance"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Phụ cấp đo máy RVF</td>
+                <td></td>
+                <td id="rvfMachineMeasurementAllowance"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Phụ cấp rửa hàng Inox</td>
+                <td></td>
+                <td id="stainlessSteelCleaningAllowance"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Phụ cấp trồng xưởng</td>
+                <td></td>
+                <td id="factoryGuardAllowance"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Phụ cấp nâng nhóc</td>
+                <td></td>
+                <td id="heavyDutyAllowance"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr class="total-row">
+                <td class="item-name">Tổng Cộng (Trợ cấp + Lương giờ)</td>
+                <td></td>
+                <td id="grossTotal"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Phạt SS</td>
+                <td></td>
+                <td id="penalty5S"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Tiền cơm</td>
+                <td></td>
+                <td id="mealAllowance-subtraction"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">BHXH 10.5%</td>
+                <td></td>
+                <td id="socialInsurance"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Công đoàn</td>
+                <td></td>
+                <td id="unionFee"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="item-name">Thuế TNCN</td>
+                <td></td>
+                <td id="pit"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr class="total-row">
+                <td class="item-name">Tổng</td>
+                <td></td>
+                <td id="total"></td>
+                <td></td>
+                <td id="advanceSalary"></td>
+                <td id="totalSalary"></td>
+            </tr>
+            <tr>
+                <td class="item-name">Số ngày phép còn lại</td>
+                <td id="paidLeaveDay"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="row text-center py-3" id="action-buttons-area" style="display:none;">
+        <div class="col-lg-6">
+            <a href="#" class="btn btn-warning" id="btn-complain">⚠️ Khiếu nại</a>
+        </div>
+        <div class="col-lg-6">
+            <a href="#" class="btn btn-success" id="btn-confirm">✅ Xác nhận OK</a>
+        </div>
+    </div>
+
+    <div class="row text-center py-3" id="waiting-status-area" style="display:none;">
+        <div class="col-12">
+            <span class="btn btn-info disabled" style="cursor: default;">⏳ Đang chờ xử lý khiếu nại</span>
+        </div>
+    </div>
+
+    <div class="row text-center py-3" id="ok-status-area" style="display:none;">
+        <div class="col-12">
+            <span class="btn btn-success disabled" style="cursor: default;">✅ Phiếu lương đã hoàn thành</span>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="complainModal" tabindex="-1" role="dialog" aria-labelledby="complainModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="complainModalLabel">Gửi Ý Kiến Khiếu Nại</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="complain-message">Nội dung khiếu nại:</label>
+                    <textarea class="form-control" id="complain-message" rows="5" placeholder="Nhập chi tiết về vấn đề lương của bạn..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="btn-send-complain">Gửi Khiếu Nại</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function () {
+
+            function formatCurrency(number) {
+                if (number === null || number === undefined || isNaN(number)) return '';
+                const roundedNumber = Math.round(number);
+                return roundedNumber.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            }
+
+            function updateStatusDisplay(salaryId, status) {
+                const displayArea = $('#action-status-area');
+                const statusSpan = $('#salaryStatusDisplay');
+                const idSpan = $('#salaryIdDisplay');
+                const buttonsArea = $('#action-buttons-area');
+                const waitingArea = $('#waiting-status-area');
+                const okArea = $('#ok-status-area');
+
+                $('#current-salary-id').val(salaryId);
+                $('#current-salary-status').val(status);
+                idSpan.text(salaryId || 'N/A');
+                displayArea.show();
+                statusSpan.removeClass('status-0 status-1 status-2 status-3');
+                buttonsArea.hide();
+                waitingArea.hide();
+                okArea.hide();
+
+                if (status === 1) {
+                    statusSpan.text('Chờ xác nhận').addClass('status-0');
+                    buttonsArea.show();
+
+                } else if (status === 2) {
+                    statusSpan.text('Đã hoàn thành').addClass('status-1');
+                    okArea.show();
+
+                } else if (status === 3) {
+                    statusSpan.text('Đang chờ khiếu nại').addClass('status-2');
+                    waitingArea.show();
+
+                } else {
+                    statusSpan.text('Không có dữ liệu/Đã bỏ qua').addClass('status-0');
+                }
+            }
+
+            function resetTableData() {
+                $('#dailyBasePay').text('');
+                $('#hourlyBasePay').text('');
+                $('#insuranceSalaryDisplay').text('');
+
+                $('#salary-table-body td[id]').not('#loading-status').text('');
+                $('#loading-status').text('');
+
+                $('#action-status-area').hide();
+                $('#action-buttons-area').hide();
+                $('#waiting-status-area').hide();
+                $('#ok-status-area').hide();
+            }
+
+            function loadSalaryData(monthYear) {
+                if (!monthYear) {
+                    $('#loading-status').text('Vui lòng chọn Tháng/Năm.');
+                    resetTableData();
+                    return;
+                }
+
+                const [year, month] = monthYear.split('-');
+                $('.header-title').text(`BẢNG THANH TOÁN TIỀN LƯƠNG THÁNG ${month} NĂM ${year}`);
+
+                $('#loading-status').text('Đang tải dữ liệu...');
+                resetTableData();
+
+
+                $.ajax({
+                    url: '@Url.Action("GetSalaryData", "EmployeeSalary")',
+                    type: 'GET',
+                    data: { monthYear: monthYear },
+                    success: function (response) {
+                        $('#loading-status').text('');
+
+                        if (response.success && response.data) {
+                            const data = response.data;
+
+                            const salaryId = data.id || null;
+                            const status = data.status || 0;
+                            updateStatusDisplay(salaryId, status);
+
+                            const baseSalary = data.baseSalary || 0;
+                            const responsibleDays = data.responsibleDays || 0;
+                            const insuranceSalary = data.insuranceSalary || 0;
+
+                            const dailyBasePay = baseSalary / 25;
+                            const hourlyBasePay = dailyBasePay / 8;
+
+                            $('#dailyBasePay').text(formatCurrency(dailyBasePay));
+                            $('#hourlyBasePay').text(formatCurrency(hourlyBasePay));
+                            $('#insuranceSalaryDisplay').text(formatCurrency(insuranceSalary));
+
+                            const factorRegular = 1;
+                            const factorRegularOvertime = 1.5;
+                            const factorSundayOvertime = 2.0;
+                            const factorHolidayOvertime = 3.0;
+                            const factorLateNightOvertime = 1.8;
+                            const factorShift3 = 1.3;
+                            const factorShift3Overtime = 1.8;
+                            const factorShift3SundayOvertime = 2.3;
+
+                            const regularHourPay = (data.regularHours || 0) * hourlyBasePay * factorRegular;
+                            const regularOvertimeHourPay = (data.regularOvertimeHours || 0) * hourlyBasePay * factorRegularOvertime;
+                            const sundayOvertimeHourPay = (data.sundayOvertimeHours || 0) * hourlyBasePay * factorSundayOvertime;
+                            const holidayOvertimeHourPay = (data.holidayOvertimeHours || 0) * hourlyBasePay * factorHolidayOvertime;
+                            const lateNightOvertimeHourPay = (data.lateNightOvertimeHours || 0) * hourlyBasePay * factorLateNightOvertime;
+                            const shift3HourPay = (data.shift3Hours || 0) * hourlyBasePay * factorShift3;
+                            const shift3OvertimeHourPay = (data.shift3OvertimeHours || 0) * hourlyBasePay * factorShift3Overtime;
+                            const shift3SundayOvertimeHourPay = (data.shift3SundayOvertimeHours || 0) * hourlyBasePay * factorShift3SundayOvertime;
+
+                            const totalHourPay = regularHourPay + regularOvertimeHourPay + sundayOvertimeHourPay +
+                                                 holidayOvertimeHourPay + lateNightOvertimeHourPay + shift3HourPay +
+                                                 shift3OvertimeHourPay + shift3SundayOvertimeHourPay;
+
+                            const mealAllowanceTotal = (data.mealAllowance || 0) * responsibleDays;
+                            const dailyResponsibilityTotal = (data.dailyResponsibilityPay || 0) * responsibleDays;
+
+                            const socialInsuranceDeduction = insuranceSalary * 0.105;
+
+                            const totalAllowances = (data.businessTripAndPhoneFee || 0) + mealAllowanceTotal + dailyResponsibilityTotal +
+                                                     (data.fuelAllowance || 0) + (data.externalWorkAllowance || 0) + (data.housingSubsidy || 0) +
+                                                     (data.diligencePay || 0) + (data.noViolationBonus || 0) + (data.hazardousAllowance || 0) +
+                                                     (data.cncStressAllowance || 0) + (data.seniorityAllowance || 0) + (data.certificateAllowance || 0) +
+                                                     (data.workingEnvironmentAllowance || 0) + (data.jobPositionAllowance || 0) + (data.machineTestRunAllowance || 0) +
+                                                     (data.rvfMachineMeasurementAllowance || 0) + (data.stainlessSteelCleaningAllowance || 0) + (data.factoryGuardAllowance || 0) +
+                                                     (data.heavyDutyAllowance || 0);
+
+                            const grossTotal = totalHourPay + totalAllowances;
+
+                            const totalDeductions = (data.penalty5S || 0) + mealAllowanceTotal + socialInsuranceDeduction +
+                                                     (data.unionFee || 0) + (data.pit || 0);
+
+                            const actualTotalSalary = grossTotal - totalDeductions;
+
+                            $('#responsibleDays').text(data.responsibleDays || '');
+                            $('#regularHours').text(data.regularHours || '');
+                            $('#regularOvertimeHours').text(data.regularOvertimeHours || '');
+                            $('#sundayOvertimeHours').text(data.sundayOvertimeHours || '');
+                            $('#holidayOvertimeHours').text(data.holidayOvertimeHours || '');
+                            $('#lateNightOvertimeHours').text(data.lateNightOvertimeHours || '');
+                            $('#shift3Hours').text(data.shift3Hours || '');
+                            $('#shift3OvertimeHours').text(data.shift3OvertimeHours || '');
+                            $('#shift3SundayOvertimeHours').text(data.shift3SundayOvertimeHours || '');
+                            $('#paidLeaveDay').text(data.paidLeaveDay || '');
+
+                            $('#regularHourPay').text(formatCurrency(regularHourPay));
+                            $('#regularOvertimeHourPay').text(formatCurrency(regularOvertimeHourPay));
+                            $('#sundayOvertimeHourPay').text(formatCurrency(sundayOvertimeHourPay));
+                            $('#holidayOvertimeHourPay').text(formatCurrency(holidayOvertimeHourPay));
+                            $('#lateNightOvertimeHourPay').text(formatCurrency(lateNightOvertimeHourPay));
+                            $('#shift3HourPay').text(formatCurrency(shift3HourPay));
+                            $('#shift3OvertimeHourPay').text(formatCurrency(shift3OvertimeHourPay));
+                            $('#shift3SundayOvertimeHourPay').text(formatCurrency(shift3SundayOvertimeHourPay));
+
+                            $('#businessTripAndPhoneFee').text(formatCurrency(data.businessTripAndPhoneFee));
+                            $('#mealAllowance').text(formatCurrency(mealAllowanceTotal));
+                            $('#dailyResponsibilityPay').text(formatCurrency(data.dailyResponsibilityPay));
+                            $('#dailyResponsibilityTotal').text(formatCurrency(dailyResponsibilityTotal));
+                            $('#fuelAllowance').text(formatCurrency(data.fuelAllowance));
+                            $('#externalWorkAllowance').text(formatCurrency(data.externalWorkAllowance));
+                            $('#housingSubsidy').text(formatCurrency(data.housingSubsidy));
+                            $('#diligencePay').text(formatCurrency(data.diligencePay));
+                            $('#noViolationBonus').text(formatCurrency(data.noViolationBonus));
+                            $('#hazardousAllowance').text(formatCurrency(data.hazardousAllowance));
+                            $('#cncStressAllowance').text(formatCurrency(data.cncStressAllowance));
+                            $('#seniorityAllowance').text(formatCurrency(data.seniorityAllowance));
+                            $('#certificateAllowance').text(formatCurrency(data.certificateAllowance));
+                            $('#workingEnvironmentAllowance').text(formatCurrency(data.workingEnvironmentAllowance));
+                            $('#jobPositionAllowance').text(formatCurrency(data.jobPositionAllowance));
+                            $('#machineTestRunAllowance').text(formatCurrency(data.machineTestRunAllowance));
+                            $('#rvfMachineMeasurementAllowance').text(formatCurrency(data.rvfMachineMeasurementAllowance));
+                            $('#stainlessSteelCleaningAllowance').text(formatCurrency(data.stainlessSteelCleaningAllowance));
+                            $('#factoryGuardAllowance').text(formatCurrency(data.factoryGuardAllowance));
+                            $('#heavyDutyAllowance').text(formatCurrency(data.heavyDutyAllowance));
+
+                            $('#penalty5S').text(formatCurrency(data.penalty5S));
+                            $('#mealAllowance-subtraction').text(formatCurrency(mealAllowanceTotal));
+                            $('#socialInsurance').text(formatCurrency(socialInsuranceDeduction));
+                            $('#unionFee').text(formatCurrency(data.unionFee));
+                            $('#pit').text(formatCurrency(data.pit));
+
+                            $('#grossTotal').text(formatCurrency(grossTotal));
+
+                            const advanceSalary = data.advanceSalary || 0;
+                            $('#total').text(formatCurrency(actualTotalSalary));
+                            $('#advanceSalary').text(formatCurrency(advanceSalary));
+                            const netSalary = actualTotalSalary - advanceSalary;
+                            $('#totalSalary').text(formatCurrency(netSalary));
+
+
+                        } else {
+                            $('#loading-status').text(response.message || 'Không tìm thấy dữ liệu lương cho tháng này.');
+                            resetTableData();
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        let errorMessage = 'Lỗi không xác định khi tải dữ liệu.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        } else if (xhr.statusText) {
+                            errorMessage = `Lỗi hệ thống: ${xhr.statusText} (${xhr.status})`;
+                        }
+
+                        $('#loading-status').text(errorMessage);
+                        resetTableData();
+                    }
+                });
+            }
+
+            $('#btn-complain').on('click', function(e) {
+                e.preventDefault();
+                const salaryId = $('#current-salary-id').val();
+                if (salaryId) {
+                    $('#complain-message').val('');
+                    $('#complainModal').modal('show');
+                } else {
+                    Swal.fire('Lỗi', 'Không tìm thấy phiếu lương!', 'error');
+                }
+            });
+
+            $('#btn-send-complain').on('click', function() {
+                const monthlyPayId = $('#current-salary-id').val();
+                const complainText = $('#complain-message').val().trim();
+
+                if (!complainText) {
+                    Swal.fire('Lỗi', 'Vui lòng nhập nội dung khiếu nại.', 'warning');
+                    return;
+                }
+
+                $('#complainModal').modal('hide');
+
+                Swal.fire({
+                    title: 'Đang gửi...',
+                    text: 'Hệ thống đang xử lý khiếu nại của bạn.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                $.ajax({
+                    url: '@Url.Action("ComplaintSalary", "EmployeeSalary")',
+                    type: 'POST',
+                    data: { monthlyPayId: monthlyPayId, compaintContent: complainText },
+                    success: function (response) {
+                        if (response.success) {
+                            Swal.fire('Thành công!', response.message || 'Khiếu nại của bạn đã được gửi.', 'success');
+                            loadSalaryData($('#month-year-select').val());
+                        } else {
+                            Swal.fire('Thất bại', response.message || 'Không thể gửi khiếu nại.', 'error');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        Swal.fire('Lỗi hệ thống', 'Có lỗi xảy ra khi gửi khiếu nại. Vui lòng thử lại.', 'error');
+                    }
+                });
+            });
+
+            $('#btn-confirm').on('click', function(e) {
+                e.preventDefault();
+                const monthlyPayId = $('#current-salary-id').val();
+
+                if (!monthlyPayId) {
+                    Swal.fire('Lỗi', 'Không tìm thấy ID phiếu lương để xác nhận.', 'error');
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Xác nhận Phiếu lương?',
+                    text: "Xác nhận không có vấn đè gì? Hành động này không thể hoàn tác.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Đồng ý, Xác nhận!',
+                    cancelButtonText: 'Hủy'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '@Url.Action("ConfirmSalarySlip", "EmployeeSalary")',
+                            type: 'POST',
+                            data: { monthlyPayId: monthlyPayId },
+                            success: function (response) {
+                                if (response.success) {
+                                    Swal.fire('Đã Xác nhận!', response.message || 'Xác nhận thành công!', 'success');
+                                    loadSalaryData($('#month-year-select').val());
+                                } else {
+                                    Swal.fire('Thất bại', response.message || 'Xảy ra lỗi, vui lòng thử lại!', 'error');
+                                }
+                            },
+                            error: function (xhr, status, error) {
+                                Swal.fire('Lỗi hệ thống', 'Có lỗi xảy ra khi xác nhận. Vui lòng thử lại.', 'error');
+                            }
+                        });
+                    }
+                });
+            });
+
+            loadSalaryData($('#month-year-select').val());
+
+            $('#month-year-select').on('change', function () {
+                loadSalaryData($(this).val());
+            });
+        });
+    </script>
+}

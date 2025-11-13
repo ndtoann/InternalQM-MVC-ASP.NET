@@ -1,0 +1,778 @@
+﻿@{
+    ViewData["Title"] = "Quang Minh - Thống kê lỗi SX";
+}
+
+<div class="row">
+    <div class="card p-3 w-100">
+        <div class="d-flex justify-content-center">
+            <div class="input-group" style="width: 200px;">
+                <span class="input-group-text fw-bold" for="selectYear" style="background-color: #e9ecef;">
+                    Chọn Năm:
+                </span>
+                <select id="selectYear" class="form-select">
+                </select>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="grid-margin stretch-card">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="card-title text-center fw-bold fs-3" id="errorChartTitle">Thống kê lỗi năm</h4>
+                            <canvas id="errorChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="grid-margin stretch-card">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="card-title text-center fw-bold fs-3" id="lineChartTitle">Thống kê lỗi theo NCC năm</h4>
+                            <canvas id="errorLineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="text-center text-4xl font-extrabold text-primary text-center mb-2">Danh sách lỗi sản xuất</h4>
+                    <div class="d-flex justify-content-start mb-3">
+                        <a href="#" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#importModal" asp-policy="AddProductionDefect">
+                            <i class="fas fa-upload me-1"></i> Import
+                        </a>
+                        <a href="#" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#addModal" asp-policy="AddProductionDefect">
+                            <i class="fas fa-plus me-1"></i> Thêm mới
+                        </a>
+                        <a href="/DataError/ExportToExcel" class="btn btn-info" asp-policy="ViewProductionDefect">
+                            <i class="fas fa-file-excel me-1"></i> Xuất Excel
+                        </a>
+                    </div>
+
+                    <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="importModalLabel">Import dữ liệu</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="importForm" method="post" enctype="multipart/form-data">
+                                        <p class="mb-3">
+                                            Vui lòng chọn file Excel để import. File phải đúng định dạng mẫu.
+                                        </p>
+                                        <div class="mb-3">
+                                            <label for="importFile" class="form-label">Chọn file:</label>
+                                            <input class="form-control" type="file" id="file" name="file" accept=".xlsx, .xls">
+                                        </div>
+                                        <a href="/DataError/DownloadTemplate" class="text-primary d-block mb-3">
+                                            <i class="fas fa-download me-1"></i> Tải file mẫu tại đây
+                                        </a>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                                    <button type="submit" class="btn btn-primary" form="importForm">Import</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="errorTable"
+                               class="table table-striped table-bordered table-hover"
+                               data-toggle="table"
+                               data-pagination="true"
+                               data-search="true"
+                               data-show-columns="true"
+                               data-show-toggle="true"
+                               data-sort-order="asc"
+                               data-url="/DataError/GetDataErrors"
+                               data-data-field="data"
+                               data-page-size="100"
+                               data-height="1000">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th data-field="stt" data-width="50" data-formatter="sttFormatter">STT</th>
+                                    <th data-field="orderNo" data-sortable="true">Order</th>
+                                    <th data-field="partName" data-sortable="true">Part Name</th>
+                                    <th data-field="qtyOrder" data-sortable="true">Qty order</th>
+                                    <th data-field="qtyNG" data-sortable="true" class="text-danger">Qty NG</th>
+                                    <th data-field="ngRate" data-sortable="true" data-formatter="ngRateFormatter" class="text-danger" data-sorter="ngRateSorter">Tỷ lệ NG</th>
+                                    <th data-field="dateMonth" data-sortable="true" data-formatter="dateFormatter">Ngày /Tháng</th>
+                                    <th data-field="errorDetected" data-sortable="true">Phát hiện lỗi</th>
+                                    <th data-field="errorType" data-sortable="true">Dạng lỗi</th>
+                                    <th data-field="errorCause" data-sortable="true">Nguyên nhân lỗi</th>
+                                    <th data-field="errorContent">Nội dung</th>
+                                    <th data-field="toleranceAssessment">Nhận định dung sai</th>
+                                    <th data-field="reason" data-sortable="true">Nguyên nhân</th>
+                                    <th data-field="countermeasure" data-sortable="true">Đối sách</th>
+                                    <th data-field="ncc" data-sortable="true">NCC</th>
+                                    <th data-field="department" data-sortable="true">Bộ phận</th>
+                                    <th data-field="employeeCode" data-sortable="true">NV mắc lỗi</th>
+                                    <th data-field="errorCompletionDate" data-sortable="true" data-formatter="dateFormatter">Ngày hoàn thành giấy báo lỗi</th>
+                                    <th data-field="remedialMeasures" data-sortable="true">Biện pháp khắc phục</th>
+                                    <th data-field="note" data-sortable="true">Ghi chú</th>
+                                    <th data-field="timeWriteError" data-sortable="true">Thời gian viết giấy lỗi</th>
+                                    <th data-field="reviewNnds" data-sortable="true">Rà soát việc thực hiện NNĐS</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* modal thêm mới *@
+<div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addModalLabel">Thêm mới báo cáo lỗi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addForm">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="newOrderNo" class="form-label">Order <strong class="text-danger">*</strong></label>
+                            <input type="text" class="form-control" id="newOrderNo" name="newOrderNo">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="newPartName" class="form-label">Part Name <strong class="text-danger">*</strong></label>
+                            <input type="text" class="form-control" id="newPartName" name="newPartName">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="newQtyOrder" class="form-label">Qty Order <strong class="text-danger">*</strong></label>
+                            <input type="number" class="form-control" id="newQtyOrder" name="newQtyOrder">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="newQtyNG" class="form-label">Qty NG <strong class="text-danger">*</strong></label>
+                            <input type="number" class="form-control" id="newQtyNG" name="newQtyNG">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="newDateMonth" class="form-label">Ngày /Tháng <strong class="text-danger">*</strong></label>
+                            <input type="date" class="form-control" id="newDateMonth" name="newDateMonth">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="newErrorDetected" class="form-label">Phát hiện lỗi <strong class="text-danger">*</strong></label>
+                            <input type="text" class="form-control" id="newErrorDetected" name="newErrorDetected">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="newErrorType" class="form-label">Dạng lỗi <strong class="text-danger">*</strong></label>
+                            <input type="text" class="form-control" id="newErrorType" name="newErrorType">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="newErrorCause" class="form-label">Nguyên nhân lỗi</label>
+                            <input type="text" class="form-control" id="newErrorCause" name="newErrorCause">
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="newErrorContent" class="form-label">Nội dung lỗi <strong class="text-danger">*</strong></label>
+                            <textarea class="form-control" id="newErrorContent" name="newErrorContent" rows="3" spellcheck="false"></textarea>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="newToleranceAssessment" class="form-label">Nhận định dung sai</label>
+                            <input type="text" class="form-control" id="newToleranceAssessment" name="newToleranceAssessment">
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="newReason" class="form-label">Nguyên nhân</label>
+                            <textarea class="form-control" id="newReason" name="newReason" rows="3" spellcheck="false"></textarea>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="newCountermeasure" class="form-label">Đối sách</label>
+                            <textarea class="form-control" id="newCountermeasure" name="newCountermeasure" rows="3" spellcheck="false"></textarea>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="newNcc" class="form-label">NCC <strong class="text-danger">*</strong></label>
+                            <input type="text" class="form-control" id="newNcc" name="newNcc">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="newDepartment" class="form-label">Bộ phận</label>
+                            <input type="text" class="form-control" id="newDepartment" name="newDepartment">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="newEmployeeCode" class="form-label">NV mắc lỗi</label>
+                            <input type="text" class="form-control" id="newEmployeeCode" name="newEmployeeCode">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="newErrorCompletionDate" class="form-label">Ngày hoàn thành giấy báo lỗi</label>
+                            <input type="date" class="form-control" id="newErrorCompletionDate" name="newErrorCompletionDate">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="newRemedialMeasures" class="form-label">Biện pháp khắc phục</label>
+                            <input type="text" class="form-control" id="newRemedialMeasures" name="newRemedialMeasures">
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="newNote" class="form-label">Ghi chú</label>
+                            <textarea class="form-control" id="newNote" name="newNote" rows="1" spellcheck="false"></textarea>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="newTimeWriteError" class="form-label">Thời gian viết giấy lỗi</label>
+                            <input type="text" class="form-control" id="newTimeWriteError" name="newTimeWriteError">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="newReviewNnds" class="form-label">Rà soát NNĐS</label>
+                            <input type="text" class="form-control" id="newReviewNnds" name="newReviewNnds">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="saveNewBtn">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* modal sửa *@
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editModalLabel">Chỉnh sửa báo cáo lỗi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="errorId" name="errorId">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="orderNo" class="form-label">Order <strong class="text-danger">*</strong></label>
+                            <input type="text" class="form-control" id="orderNo" name="orderNo">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="partName" class="form-label">Part Name <strong class="text-danger">*</strong></label>
+                            <input type="text" class="form-control" id="partName" name="partName">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="qtyOrder" class="form-label">Qty Order <strong class="text-danger">*</strong></label>
+                            <input type="number" class="form-control" id="qtyOrder" name="qtyOrder">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="qtyNG" class="form-label">Qty NG <strong class="text-danger">*</strong></label>
+                            <input type="number" class="form-control" id="qtyNG" name="qtyNG">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="dateMonth" class="form-label">Ngày /Tháng <strong class="text-danger">*</strong></label>
+                            <input type="date" class="form-control" id="dateMonth" name="dateMonth">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="errorDetected" class="form-label">Phát hiện lỗi <strong class="text-danger">*</strong></label>
+                            <input type="text" class="form-control" id="errorDetected" name="errorDetected">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="errorType" class="form-label">Dạng lỗi</label>
+                            <input type="text" class="form-control" id="errorType" name="errorType">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="errorCause" class="form-label">Nguyên nhân lỗi</label>
+                            <input type="text" class="form-control" id="errorCause" name="errorCause">
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="errorContent" class="form-label">Nội dung lỗi <strong class="text-danger">*</strong></label>
+                            <textarea class="form-control" id="errorContent" name="errorContent" rows="3" spellcheck="false"></textarea>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="toleranceAssessment" class="form-label">Nhận định dung sai</label>
+                            <input type="text" class="form-control" id="toleranceAssessment" name="toleranceAssessment">
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="reason" class="form-label">Nguyên nhân</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="3" spellcheck="false"></textarea>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="countermeasure" class="form-label">Đối sách</label>
+                            <textarea class="form-control" id="countermeasure" name="countermeasure" rows="3" spellcheck="false"></textarea>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="ncc" class="form-label">NCC <strong class="text-danger">*</strong></label>
+                            <input type="text" class="form-control" id="ncc" name="ncc">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="department" class="form-label">Bộ phận</label>
+                            <input type="text" class="form-control" id="department" name="department">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="employeeCode" class="form-label">NV mắc lỗi</label>
+                            <input type="text" class="form-control" id="employeeCode" name="employeeCode">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="errorCompletionDate" class="form-label">Ngày hoàn thành giấy báo lỗi</label>
+                            <input type="date" class="form-control" id="errorCompletionDate" name="errorCompletionDate">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="remedialMeasures" class="form-label">Biện pháp khắc phục</label>
+                            <input type="text" class="form-control" id="remedialMeasures" name="remedialMeasures">
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="note" class="form-label">Ghi chú</label>
+                            <textarea class="form-control" id="note" name="note" rows="1" spellcheck="false"></textarea>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="timeWriteError" class="form-label">Thời gian viết giấy lỗi</label>
+                            <input type="text" class="form-control" id="timeWriteError" name="timeWriteError">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="reviewNnds" class="form-label">Rà soát NNĐS</label>
+                            <input type="text" class="form-control" id="reviewNnds" name="reviewNnds">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="saveChangesBtn">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function sttFormatter(value, row, index) {
+            const table = $('#errorTable').bootstrapTable('getOptions');
+            return table.pageSize * (table.pageNumber - 1) + index + 1;
+        }
+
+        function dateFormatter(value) {
+            if (!value || value === "0001-01-01T00:00:00") {
+                return '';
+            }
+            const date = new Date(value);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        function ngRateFormatter(value, row) {
+            const qtyNG = row.qtyNG;
+            const qtyOrder = row.qtyOrder;
+
+            if (qtyOrder > 0) {
+                const percentage = (qtyNG / qtyOrder) * 100;
+                return `${percentage.toFixed(2)}%`;
+            } else {
+                return 'N/A';
+            }
+        }
+
+        function ngRateSorter(a, b, rowA, rowB) {
+            const ngRateA = (rowA.qtyOrder > 0) ? (rowA.qtyNG / rowA.qtyOrder) : -1;
+            const ngRateB = (rowB.qtyOrder > 0) ? (rowB.qtyNG / rowB.qtyOrder) : -1;
+            return ngRateA - ngRateB;
+        }
+
+        function closeModalAndRefreshTable(modalId) {
+            const modalElement = document.getElementById(modalId);
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            modalInstance.hide();
+            $(modalElement).on('hidden.bs.modal', function() {
+                $('#errorTable').bootstrapTable('refresh');
+                $(this).off('hidden.bs.modal');
+            });
+        }
+
+        let errorChartInstance = null;
+        let errorLineChartInstance = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectYear = document.getElementById('selectYear');
+            const currentYear = new Date().getFullYear();
+
+            for (let year = currentYear; year >= 2020; year--) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                if (year === currentYear) {
+                    option.selected = true;
+                }
+                selectYear.appendChild(option);
+            }
+
+            selectYear.addEventListener('change', function() {
+                const selectedYear = this.value;
+                loadChartsByYear(selectedYear);
+            });
+            loadChartsByYear(currentYear);
+        
+        function drawErrorChart(labels, qmErrorsData, otherNccErrorsData, year) {
+            const ctx = document.getElementById('errorChart').getContext('2d');
+            const titleElement = document.getElementById('errorChartTitle');
+            titleElement.textContent = `Thống kê lỗi năm ${year}`;
+
+            const data = {
+                labels: labels,
+                datasets: [{
+                    label: 'Lỗi của QM',
+                    data: qmErrorsData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Lỗi của NCC',
+                    data: otherNccErrorsData,
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            };
+
+            if (errorChartInstance) {
+                errorChartInstance.data = data;
+                errorChartInstance.update();
+            } else {
+                errorChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                        },
+                        scales: {
+                            x: { stacked: true, title: { display: true, text: 'Tháng' } },
+                            y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Tổng số lỗi' } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function drawErrorLineChart(chartData, year) {
+            const ctx = document.getElementById('errorLineChart').getContext('2d');
+            const titleElement = document.getElementById('lineChartTitle');
+            titleElement.textContent = `Thống kê lỗi theo NCC năm ${year}`;
+
+            const colors = [
+                'rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)'
+            ];
+
+            chartData.datasets.forEach((dataset, index) => {
+                dataset.borderColor = colors[index % colors.length];
+                dataset.backgroundColor = colors[index % colors.length];
+                dataset.hidden = true;
+            });
+
+            if (errorLineChartInstance) {
+                errorLineChartInstance.data = chartData;
+                errorLineChartInstance.update();
+            } else {
+                errorLineChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                        },
+                        scales: {
+                            x: { title: { display: true, text: 'Tháng' } },
+                            y: { beginAtZero: true, title: { display: true, text: 'Số lượng lỗi (QtyNG)' } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function loadChartsByYear(year) {
+            fetch(`/DataError/GetErrorChartData?year=${year}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Lỗi mạng hoặc server!');
+                    return response.json();
+                })
+                .then(chartData => {
+                    const labels = chartData.map(item => item.month);
+                    const qmErrorsData = chartData.map(item => parseInt(item.qmErrors));
+                    const otherNccErrorsData = chartData.map(item => parseInt(item.otherNccErrors));
+                    drawErrorChart(labels, qmErrorsData, otherNccErrorsData, year);
+                })
+                .catch(error => {
+                    console.error('Lỗi khi lấy dữ liệu Biểu đồ Cột:', error);
+                });
+
+            fetch(`/DataError/GetLineChartData?year=${year}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Lỗi mạng hoặc server!');
+                    return response.json();
+                })
+                .then(chartData => {
+                    drawErrorLineChart(chartData, year);
+                })
+                .catch(error => {
+                    console.error('Lỗi khi lấy dữ liệu Biểu đồ Đường:', error);
+                });
+        }
+
+            $('#saveNewBtn').click(function() {
+                const dataToAdd = {
+                    orderNo: $('#newOrderNo').val(),
+                    partName: $('#newPartName').val(),
+                    qtyOrder: parseInt($('#newQtyOrder').val()),
+                    qtyNG: parseInt($('#newQtyNG').val()),
+                    dateMonth: $('#newDateMonth').val(),
+                    errorDetected: $('#newErrorDetected').val(),
+                    errorType: $('#newErrorType').val(),
+                    errorCause: $('#newErrorCause').val(),
+                    errorContent: $('#newErrorContent').val(),
+                    toleranceAssessment: $('#newToleranceAssessment').val(),
+                    reason: $('#newReason').val(),
+                    countermeasure: $('#newCountermeasure').val(),
+                    ncc: $('#newNcc').val(),
+                    department: $('#newDepartment').val(),
+                    employeeCode: $('#newEmployeeCode').val(),
+                    errorCompletionDate: $('#newErrorCompletionDate').val(),
+                    remedialMeasures: $('#newRemedialMeasures').val(),
+                    note: $('#newNote').val(),
+                    timeWriteError: $('#newTimeWriteError').val(),
+                    reviewNnds: $('#newReviewNnds').val(),
+                };
+
+                $.ajax({
+                    url: '/DataError/Add',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(dataToAdd),
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Thành công!',
+                                text: response.message,
+                                icon: 'success',
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                confirmButtonText: 'OK'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    closeModalAndRefreshTable('addModal');
+                                    location.reload();
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Lỗi!',
+                                text: response.message,
+                                icon: 'error',
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        Swal.fire('Lỗi', 'Xảy ra lỗi, vui lòng thử lại sau!', 'error');
+                    }
+                });
+            });
+
+            $.contextMenu({
+                selector: '#errorTable tr',
+                callback: function(key, options) {
+                    const rowIndex = $(this).data('index');
+                    const rowData = $('#errorTable').bootstrapTable('getData')[rowIndex];
+
+                    if (!rowData) {
+                        Swal.fire('Lỗi', 'Không tìm thấy dữ liệu hàng.', 'error');
+                        return;
+                    }
+
+                    if (key === 'edit') {
+                        $('#errorId').val(rowData.id);
+                        $('#orderNo').val(rowData.orderNo);
+                        $('#partName').val(rowData.partName);
+                        $('#qtyOrder').val(rowData.qtyOrder);
+                        $('#qtyNG').val(rowData.qtyNG);
+                        $('#dateMonth').val(rowData.dateMonth ? new Date(rowData.dateMonth).toISOString().split('T')[0] : '');
+                        $('#errorDetected').val(rowData.errorDetected);
+                        $('#errorType').val(rowData.errorType);
+                        $('#errorCause').val(rowData.errorCause);
+                        $('#errorContent').val(rowData.errorContent);
+                        $('#toleranceAssessment').val(rowData.toleranceAssessment);
+                        $('#reason').val(rowData.reason);
+                        $('#countermeasure').val(rowData.countermeasure);
+                        $('#ncc').val(rowData.ncc);
+                        $('#department').val(rowData.department);
+                        $('#employeeCode').val(rowData.employeeCode);
+                        $('#errorCompletionDate').val(rowData.errorCompletionDate ? new Date(rowData.errorCompletionDate).toISOString().split('T')[0] : '');
+                        $('#remedialMeasures').val(rowData.remedialMeasures);
+                        $('#note').val(rowData.note);
+                        $('#timeWriteError').val(rowData.timeWriteError);
+                        $('#reviewNnds').val(rowData.reviewNnds);
+
+                        const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+                        editModal.show();
+                    } else if (key === 'delete') {
+                        Swal.fire({
+                            title: 'Bạn có chắc chắn?',
+                            text: `Bạn sẽ không thể hoàn tác thao tác xóa lỗi Order: ${rowData.orderNo}!`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#3085d6',
+                            confirmButtonText: 'Đồng ý xóa!',
+                            cancelButtonText: 'Hủy',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                $.ajax({
+                                    url: `/DataError/Delete/${rowData.id}`,
+                                    type: 'GET',
+                                    success: function(response) {
+                                        if (response.success) {
+                                            Swal.fire('Đã xóa!', response.message, 'success');
+                                            $('#errorTable').bootstrapTable('refresh');
+                                        } else {
+                                            Swal.fire('Lỗi!', response.message, 'error');
+                                        }
+                                    },
+                                    error: function(xhr, status, error) {
+                                        Swal.fire('Lỗi mạng!', 'Xảy ra lỗi, vui lòng thử lại sau.', 'error');
+                                    }
+                                });
+                            }
+                        });
+                    }
+                },
+                items: {
+                    "edit": { name: "Sửa", icon: "edit" },
+                    "delete": { name: "Xóa", icon: "delete" }
+                }
+            });
+
+            // Xử lý sự kiện lưu thay đổi
+            $('#saveChangesBtn').click(function() {
+                const dataToUpdate = {
+                    id: $('#errorId').val(),
+                    orderNo: $('#orderNo').val(),
+                    partName: $('#partName').val(),
+                    qtyOrder: parseInt($('#qtyOrder').val()),
+                    qtyNG: parseInt($('#qtyNG').val()),
+                    dateMonth: $('#dateMonth').val(),
+                    errorDetected: $('#errorDetected').val(),
+                    errorType: $('#errorType').val(),
+                    errorCause: $('#errorCause').val(),
+                    errorContent: $('#errorContent').val(),
+                    toleranceAssessment: $('#toleranceAssessment').val(),
+                    reason: $('#reason').val(),
+                    countermeasure: $('#countermeasure').val(),
+                    ncc: $('#ncc').val(),
+                    department: $('#department').val(),
+                    employeeCode: $('#employeeCode').val(),
+                    errorCompletionDate: $('#errorCompletionDate').val(),
+                    remedialMeasures: $('#remedialMeasures').val(),
+                    note: $('#note').val(),
+                    timeWriteError: $('#timeWriteError').val(),
+                    reviewNnds: $('#reviewNnds').val(),
+                };
+
+                const errorId = dataToUpdate.id;
+
+                $.ajax({
+                    url: `/DataError/Update/${errorId}`,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(dataToUpdate),
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Thành công!',
+                                text: response.message,
+                                icon: 'success',
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                confirmButtonText: 'OK'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    closeModalAndRefreshTable('editModal');
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Lỗi!',
+                                text: response.message,
+                                icon: 'error',
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        Swal.fire('Lỗi', 'Xảy ra lỗi, vui lòng thử lại sau!', 'error');
+                    }
+                });
+            });
+        });
+
+        $(document).ready(function() {
+            $('#importForm').on('submit', function (e) {
+                e.preventDefault();
+
+                var formData = new FormData(this);
+                var url = '@Url.Action("ImportExcel", "DataError")';
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Thành công!',
+                            text: 'Dữ liệu đã được import thành công.',
+                            confirmButtonText: 'OK'
+                        }).then((result) => {
+                                if (result.isConfirmed) {
+                                    location.reload();
+                                }
+                            });
+                    },
+                    error: function (xhr, status, error) {
+                        var errorMessage = "Có lỗi xảy ra khi xử lý yêu cầu.";
+                        try {
+                            var errorResponse = JSON.parse(xhr.responseText);
+                            errorMessage = errorResponse.message;
+                        } catch (e) {
+                        }
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Lỗi Import!',
+                            html: `<p>${errorMessage}</p>`,
+                            confirmButtonText: 'Đóng'
+                        });
+                    }
+                });
+            });
+        });
+
+        $(document).ready(function() {
+            $.extend($.fn.bootstrapTable.defaults, {
+                formatRecordsPerPage: function (pageNumber) {
+                    return ``;
+                },
+                formatShowingRows: function (pageFrom, pageTo, totalRows) {
+                    return `Hiển thị từ ${pageFrom} đến ${pageTo} trên tổng số ${totalRows} hàng`;
+                },
+                formatSearch: function () {
+                    return 'Tìm kiếm';
+                },
+                formatNoMatches: function () {
+                    return 'Không tìm thấy dữ liệu phù hợp';
+                }
+            });
+
+            $('#errorTable').bootstrapTable();
+        });
+    </script>
+}

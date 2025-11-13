@@ -1,0 +1,174 @@
+﻿@{
+    ViewData["Title"] = "Hệ thống kiểm tra Quang Minh";
+}
+
+<div class="test-main-container">
+    <h2 class="text-4xl md:text-5xl font-extrabold text-center mb-10 text-primary">
+        Chọn Bộ Phận Của Bạn
+    </h2>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 hidden-until-loaded">
+        <!-- Thẻ Bài kiểm tra cho nhân viên mới -->
+        <a class="department-link" href="/testingsystem/testtrainingview">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-seedling text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">Kiểm tra sau đào tạo</div>
+            </div>
+        </a>
+        <!-- Thẻ Bộ phận Kỹ Thuật -->
+        <a class="department-link" href="/testingsystem/listexam?department=Kỹ Thuật">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-gears text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">Kỹ Thuật</div>
+            </div>
+        </a>
+        <!-- Thẻ Bộ phận Kế Hoạch -->
+        <a class="department-link" href="/testingsystem/listexam?department=Kế Hoạch">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-list-check text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">Kế Hoạch</div>
+            </div>
+        </a>
+        <!-- Thẻ Bộ phận Hành chính - Kế toán -->
+        <a class="department-link" href="/testingsystem/listexam?department=HC-KT">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-coins text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">Hành chính-Kế toán</div>
+            </div>
+        </a>
+        <!-- Thẻ Bộ phận KCS -->
+        <a class="department-link" href="/testingsystem/listexam?department=KCS">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-clipboard-list text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">KCS</div>
+            </div>
+        </a>
+        <!-- Thẻ Bộ phận CNC -->
+        <a class="department-link" href="/testingsystem/CNCview">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-microchip text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">CNC</div>
+            </div>
+        </a>
+        <!-- Thẻ Bộ phận cắt dây -->
+        <a class="department-link" href="/testingsystem/listexam?department=Cắt dây">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-cut text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">Cắt dây</div>
+            </div>
+        </a>
+        <!-- Thẻ Bộ phận Phay -->
+        <a class="department-link" href="/testingsystem/listexam?department=Phay">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-screwdriver-wrench text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">Phay</div>
+            </div>
+        </a>
+        <!-- Thẻ Bộ phận Tiện -->
+        <a class="department-link" href="/testingsystem/listexam?department=Tiện">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-wrench text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">Tiện</div>
+            </div>
+        </a>
+        <!-- Thẻ Bộ phận Taro -->
+        <a class="department-link" href="/testingsystem/listexam?department=Taro">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-bolt text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">Taro</div>
+            </div>
+        </a>
+        <!-- Thẻ Bộ phận Bavia -->
+        <a class="department-link" href="/testingsystem/listexam?department=Bavia">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-eraser text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">Bavia</div>
+            </div>
+        </a>
+        <!-- Thẻ Bộ phận Đánh Bóng -->
+        <a class="department-link" href="/testingsystem/listexam?department=Đánh Bóng">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-brush text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">Đánh Bóng</div>
+            </div>
+        </a>
+        <!-- Thẻ Bộ phận Hàn-Cưa -->
+        <a class="department-link" href="/testingsystem/listexam?department=Hàn-Cưa">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-fire text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">Hàn-Cưa</div>
+            </div>
+        </a>
+        <!-- Thẻ Bộ phận Kho -->
+        <a class="department-link" href="/testingsystem/listexam?department=Kho">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-warehouse text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">Kho</div>
+            </div>
+        </a>
+        <!-- Thẻ Bộ phận Kho NVL -->
+        <a class="department-link" href="/testingsystem/listexam?department=Kho NVL">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-truck-fast text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">Kho NVL</div>
+            </div>
+        </a>
+        <!-- Thẻ Bộ phận Kho TP/BTP -->
+        <a class="department-link" href="/testingsystem/listexam?department=Kho TP/BTP">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-boxes-stacked text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">Kho TP/BTP</div>
+            </div>
+        </a>
+        <!-- Thẻ Bộ phận Kho phôi -->
+        <a class="department-link" href="/testingsystem/listexam?department=Kho phôi">
+            <div class="department-card flex flex-col items-center p-6 rounded-xl cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105">
+                <div class="department-icon w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-4 text-primary transition-colors duration-200">
+                    <i class="fa-solid fa-cube text-2xl"></i>
+                </div>
+                <div class="text-center department-name text-lg font-bold">Kho phôi</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const elements = document.querySelectorAll('.hidden-until-loaded');
+        elements.forEach(el => {
+            el.classList.remove('hidden-until-loaded');
+        });
+    });
+</script>

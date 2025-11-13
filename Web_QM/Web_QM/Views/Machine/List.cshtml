@@ -1,0 +1,315 @@
+﻿@{
+    ViewData["Title"] = "Quang Minh - Danh sách máy";
+    string jsonChartData = ViewBag.ChartData;
+    string jsonTypeMachineChartData = ViewBag.TypeMachineChartData;
+}
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title fw-bold fs-3" id="machineChartTitle"></h4>
+                    <canvas id="machineCountChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title fw-bold fs-3" id="typeMachineChartTitle"></h4>
+                    <canvas id="typeMachineCountChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="text-center text-4xl font-extrabold text-primary text-center mb-2">Danh sách máy</h4>
+                    <p class="text-primary fw-bold">Tổng số máy: @ViewBag.CountMachine</p>
+                    <p>
+                        <span class="text-success">@ViewBag.CountMachineActive máy đang hoạt động</span> |
+                        <span class="text-warning">@ViewBag.CountMachineInActive máy ngưng hoạt động</span> |
+                        <span class="text-danger">@ViewBag.CountMachineSold máy đã bán</span>
+                    </p>
+                    <div class="card mb-4">
+                        <div class="card-body">
+
+                            <form id="filterForm">
+                                <div class="row g-3 align-items-end">
+
+                                    <div class="col-md-4">
+                                        <label for="searchKeyword" class="form-label">Tìm kiếm</label>
+                                        <input type="text" class="form-control" id="searchKeyword" placeholder="Nhập từ khóa...">
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <label for="selectDepartment" class="form-label">Bộ phận</label>
+                                        <select id="selectDepartment" asp-items="@(ViewData["Departments"] as List<SelectListItem>)" class="form-select">
+                                            <option value="">-- Chọn Bộ phận --</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <label for="selectStatus" class="form-label">Trạng thái</label>
+                                        <select id="selectStatus" class="form-select">
+                                            <option value="">-- Chọn Trạng thái --</option>
+                                            <option value="Đang hoạt động">Đang hoạt động</option>
+                                            <option value="Ngưng hoạt động">Ngưng hoạt động</option>
+                                            <option value="Đã bán">Đã bán</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        <button type="submit" id="btnFilterSearch" class="btn btn-primary w-100">
+                                            <i class="fas fa-search"></i> Tìm kiếm
+                                        </button>
+                                    </div>
+
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+
+                    <div class="table-responsive overflow-auto" style="height: 800px;">
+                        <table id="machineTable" class="table table-bordered table-hover">
+                            <thead class="table-dark" style="position: sticky; top: 0; z-index: 1;">
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Bộ phận</th>
+                                    <th>Loại máy</th>
+                                    <th>Mã máy</th>
+                                    <th>Tên máy</th>
+                                    <th>Hình ảnh</th>
+                                    <th>Nơi đăng ký</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="machineTableBody">
+                            </tbody>
+                        </table>
+                        <div id="loadingMessage" class="text-center p-3">Đang tải dữ liệu...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+        function machineLinkFormatter(value, row) {
+            var id = row.id;
+            var url = '/machine/detail/' + id;
+            return `<a href="${url}" class="text-decoration-none">${value}</a>`;
+        }
+
+        function pictureFormatter(value, row) {
+            if (!value) return '<span>Không có ảnh</span>';
+            const baseURL = '/imgs/machines/';
+            const imageURL = baseURL + value;
+            return `<img src="${imageURL}" alt="Hình ảnh máy ${row.machineName || ''}" loading="lazy" style="max-width: 150px; max-height: 150px; object-fit: cover;">`;
+        }
+
+        function rowStyle(row) {
+            const statusStr = row.status;
+            if (statusStr == 'Đã bán' || statusStr == 'Ngưng hoạt động') {
+                return 'table-danger';
+            }
+            return '';
+        }
+
+        function loadMachineData() {
+            const API_URL = '/machine/getMachines';
+            const $tableBody = $('#machineTableBody');
+            const $loadingMessage = $('#loadingMessage');
+
+            $tableBody.empty();
+            $loadingMessage.text('Đang tải dữ liệu...').show();
+
+            const keyword = $('#searchKeyword').val();
+            const department = $('#selectDepartment').val();
+            const status = $('#selectStatus').val();
+
+            const requestParams = {
+                keyword: keyword,
+                department: department,
+                status: status
+            };
+
+            $.ajax({
+                url: API_URL,
+                type: 'GET',
+                dataType: 'json',
+                data: requestParams,
+                success: function(response) {
+                    $loadingMessage.hide();
+
+                    const machineData = response.data || [];
+
+                    if (machineData.length === 0) {
+                        $loadingMessage.text('Không tìm thấy dữ liệu phù hợp.').show();
+                        return;
+                    }
+
+                    let htmlRows = '';
+                    machineData.forEach((machine, index) => {
+                        const rowClass = rowStyle(machine);
+
+                        const imageHtml = pictureFormatter(machine.picture, machine);
+
+                        const machineCodeLink = machineLinkFormatter(machine.machineCode, machine);
+                        const machineNameLink = machineLinkFormatter(machine.machineName, machine);
+
+                        htmlRows += `
+                            <tr class="${rowClass}">
+                                <td>${index + 1}</td>
+                                <td>${machine.department || ''}</td>
+                                <td>${machine.typeMachine || ''}</td>
+                                <td>${machineCodeLink}</td>
+                                <td>${machineNameLink}</td>
+                                <td>${imageHtml}</td>
+                                <td>${machine.place || ''}</td>
+                                <td>${machine.status || ''}</td>
+                            </tr>
+                        `;
+                    });
+
+                    $tableBody.html(htmlRows);
+                },
+                error: function() {
+                    $loadingMessage.text('Lỗi khi tải dữ liệu. Vui lòng thử lại.').show();
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            $('#filterForm').on('submit', function(e) {
+                e.preventDefault();
+                loadMachineData();
+            });
+
+            $('#searchKeyword').on('keypress', function(e) {
+                if (e.which == 13) {
+                    e.preventDefault();
+                    loadMachineData();
+                }
+            });
+
+            $('#selectDepartment, #selectStatus').on('change', function() {
+                loadMachineData();
+            });
+
+            loadMachineData();
+
+            var jsonString = '@Html.Raw(jsonChartData)';
+            var chartDataArray = JSON.parse(jsonString);
+
+            var departments = chartDataArray.map(item => item.Department);
+            var counts = chartDataArray.map(item => item.MachineCount);
+
+            var ctx = document.getElementById('machineCountChart').getContext('2d');
+            var machineChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: departments,
+                    datasets: [{
+                        label: 'Số lượng Máy',
+                        data: counts,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Số lượng Máy'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Bộ phận'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Số lượng Máy các Bộ phận',
+                            font: {
+                                size: 18
+                            }
+                        }
+                    }
+                }
+            });
+
+            var jsonTypeMachineString = '@Html.Raw(jsonTypeMachineChartData)';
+            var typeMachineChartDataArray = JSON.parse(jsonTypeMachineString);
+
+            var typeMachines = typeMachineChartDataArray.map(item => item.TypeMachine);
+            var typeMachineCounts = typeMachineChartDataArray.map(item => item.MachineCount);
+
+            var ctxType = document.getElementById('typeMachineCountChart').getContext('2d');
+            var typeMachineChart = new Chart(ctxType, {
+                type: 'bar',
+                data: {
+                    labels: typeMachines,
+                    datasets: [{
+                        label: 'Số lượng',
+                        data: typeMachineCounts,
+                        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Số lượng Máy'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Loại Máy'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Số lượng Máy theo Loại Máy',
+                            font: {
+                                size: 18
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

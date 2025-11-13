@@ -1,0 +1,129 @@
+﻿@using Web_QM.Models.ViewModels
+@model IEnumerable<SearchView>
+@{
+    ViewData["Title"] = "Kết quả kiểm tra định kỳ";
+}
+
+<style>
+    .search-input {
+        transition: all 0.2s ease-in-out;
+        border-color: #d1d5db;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #2196f3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.2);
+        }
+
+    .search-button {
+        transition: all 0.2s ease-in-out;
+    }
+
+        .search-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+    .table-header th {
+        background-color: #f3f4f6;
+    }
+
+    .table-body tr:nth-child(odd) {
+        background-color: #f9fafb;
+    }
+
+    .table-body tr:hover {
+        background-color: #e5e7eb;
+    }
+
+    .text-danger {
+        color: #dc2626;
+    }
+
+    .text-warning {
+        color: #f59e0b;
+    }
+
+    .text-success {
+        color: #10b981;
+    }
+</style>
+
+<div class="container mx-auto mt-10 p-8 rounded-xl">
+    <h1 class="text-4xl font-extrabold text-primary text-center mb-2">
+        Tra cứu kết quả kiểm tra định kỳ
+    </h1>
+    <p class="text-center text-gray-500 mb-8">Nhập mã nhân viên của bạn để xem kết quả.</p>
+
+    <div class="search-form-container bg-white p-6 mb-8 rounded-xl shadow-md">
+        <form asp-action="searching" method="get" class="w-full">
+            <div class="relative flex items-center w-full">
+                <input type="text" id="key" name="key" required value="@ViewBag.Key" placeholder="Nhập mã nhân viên của bạn..." class="flex-grow py-4 px-6 rounded-l-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300">
+                <button type="submit" class="bg-primary text-white font-bold py-4 px-8 rounded-r-full shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="result-table-container">
+        @if (Model != null && Model.Any())
+        {
+            <div class="overflow-x-auto rounded-lg shadow-md">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="table-header">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider rounded-tl-lg">#</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nhân viên</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Bài kiểm tra</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Điểm Trắc Nghiệm</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider rounded-tr-lg">Điểm Tự Luận</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 table-body">
+                        @{
+                            var count = 1;
+                        }
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@(count++)</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">@item.EmployeeCode - @item.EmployeeName</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">@item.ExamName</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    @{
+                                        double percentageTn = (double)item.TnPoint / item.TnTotal * 100;
+                                        string colorClassTn = percentageTn <= 50 ? "text-danger" : (percentageTn <= 60 ? "text-warning" : "text-success");
+                                    }
+                                    <span class="font-semibold @colorClassTn">
+                                        @($"{item.TnPoint}/{item.TnTotal} - Đạt {Math.Round(percentageTn, 2)}%")
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    @{
+                                        double percentageTl = (double)item.TlPoint / item.TlTotal * 100;
+                                        string colorClassTl = percentageTl <= 50 ? "text-danger" : (percentageTl <= 60 ? "text-warning" : "text-success");
+                                    }
+                                    <span class="font-semibold @colorClassTl">
+                                        @($"{item.TlPoint}/{item.TlTotal} - Đạt {Math.Round(percentageTl, 2)}%")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center p-8 bg-white rounded-xl shadow-md">
+                <h5 class="text-xl text-gray-500">
+                    <i class="fas fa-info-circle mr-2"></i>Không có kết quả nào được tìm thấy.
+                </h5>
+            </div>
+        }
+    </div>
+</div>
+
+

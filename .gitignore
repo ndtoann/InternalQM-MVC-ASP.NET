@@ -1,0 +1,68 @@
+# Visual Studio
+.vs/
+.vsps/
+*.user
+*.suo
+*.sln.docstates
+*.vshost.*
+
+# NuGet
+*.nupkg
+.nuget/
+**/bin/
+**/obj/
+**/packages/
+packages/
+# Mở rộng cho các thư mục gói khác (nếu có)
+**/node_modules/
+
+# Build files
+**/*.pdb
+**/*.idb
+**/*.sbr
+**/*.o
+**/*.obj
+**/*.pch
+**/*.ilk
+**/*.log
+**/*.bak
+**/*.exe
+**/*.dll
+**/*.tlb
+**/*.tli
+**/*.tlh
+**/*.lib
+**/*.bin
+**/*.scc
+**/*.manifest
+**/*.pdb
+**/*.scc
+**/*.vshost.*
+
+# Application settings
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Staging.json
+appsettings.*.json
+appsettings.json
+
+# User secrets
+**/appsettings.json
+**/appsettings.Production.json
+**/appsettings.Staging.json
+
+# Visual Studio Code
+.vscode/
+
+# Ignore test results
+**/TestResults/
+
+# Ignore generated documentation files
+**/Documentation/
+
+# Ignore publish output
+**/publish/
+**/bin/Release/
+**/obj/Release/
+**/debug/
+**/release/

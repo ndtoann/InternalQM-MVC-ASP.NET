@@ -1,0 +1,397 @@
+﻿@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Quang Minh - Năng suất";
+}
+
+<div class="row">
+    <div class="card p-3 w-100">
+        <div class="row">
+            <div class="col-lg-6 grid-margin stretch-card">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title text-center fw-bold fs-3">Năng suất Trung bình</h5>
+                        <div class="d-flex justify-content-center mb-3">
+                            <div class="input-group" style="width: 200px;">
+                                <span class="input-group-text fw-bold" for="chartYearFilter" style="background-color: #e9ecef;">
+                                    Chọn Năm:
+                                </span>
+                                <select id="chartYearFilter" class="form-select">
+                                    @for (int i = DateTime.Today.Year; i >= DateTime.Today.Year - 5; i--)
+                                    {
+                                        <option value="@i" selected="@(i == ViewBag.DefaultYear ? "selected" : null)">@i</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <canvas id="monthlyAvgProductivityChart"></canvas>
+                        <div id="chart1Message" class="text-center p-3" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 grid-margin stretch-card">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title text-center fw-bold fs-3">Năng suất các Bộ phận</h5>
+                        <div class="d-flex justify-content-center mb-3 gap-3">
+                            <div class="input-group" style="width: 150px;">
+                                <span class="input-group-text fw-bold" for="chartMonthFilter" style="background-color: #e9ecef;">
+                                    Tháng:
+                                </span>
+                                <select id="chartMonthFilter" class="form-select">
+                                    @for (int i = 1; i <= 12; i++)
+                                    {
+                                        <option value="@i" selected="@(i == ViewBag.DefaultMonth ? "selected" : null)">@i</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="input-group" style="width: 150px;">
+                                <span class="input-group-text fw-bold" for="chart2YearFilter" style="background-color: #e9ecef;">
+                                    Năm:
+                                </span>
+                                <select id="chart2YearFilter" class="form-select">
+                                    @for (int i = DateTime.Today.Year; i >= DateTime.Today.Year - 5; i--)
+                                    {
+                                        <option value="@i" selected="@(i == ViewBag.DefaultYear ? "selected" : null)">@i</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <canvas id="departmentProductivityChart"></canvas>
+                        <div id="chart2Message" class="text-center p-3" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="text-center text-4xl font-extrabold text-primary text-center mb-4">Danh sách Năng suất Nhân viên</h4>
+
+                    <form id="filterForm" class="row mb-4 align-items-end">
+                        <div class="col-md-3 mb-3">
+                            <label for="keyFilter" class="form-label">Tìm kiếm</label>
+                            <input type="text" id="keyFilter" name="key" class="form-control" placeholder="Mã NV hoặc Tên NV" />
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="departmentFilter" class="form-label">Bộ phận</label>
+                            <select id="departmentFilter" name="department" class="form-control">
+                                <option value="">-- Chọn Bộ phận --</option>
+                                @if (ViewBag.Departments != null)
+                                {
+                                    foreach (var deptName in ViewBag.Departments)
+                                    {
+                                        <option value="@deptName.DepartmentName">@deptName.DepartmentName</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label for="monthFilter" class="form-label">Tháng</label>
+                            <select id="monthFilter" name="month" class="form-control">
+                                <option value="">-- Chọn Tháng --</option>
+                                @for (int i = 1; i <= 12; i++)
+                                {
+                                    <option value="@i" selected="@(i == ViewBag.DefaultMonth ? "selected" : null)">Tháng @i</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label for="yearFilter" class="form-label">Năm</label>
+                            <select id="yearFilter" name="year" class="form-control">
+                                @for (int i = DateTime.Today.Year; i >= DateTime.Today.Year - 5; i--)
+                                {
+                                    <option value="@i" selected="@(i == ViewBag.DefaultYear ? "selected" : null)">@i</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <button type="submit" id="filterButton" class="btn btn-primary w-100">
+                                <i class="fas fa-search"></i> Tìm kiếm
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr />
+
+                    <div class="table-responsive overflow-auto" style="height: 800px;">
+                        <table id="productivityTable" class="table table-bordered table-hover">
+                            <thead class="table-dark" style="position: sticky; top: 0; z-index: 1;">
+                                <tr>
+                                    <th style="width: 50px;">STT</th>
+                                    <th>Mã NV</th>
+                                    <th>Tên NV</th>
+                                    <th>Bộ phận</th>
+                                    <th>Năng suất (%)</th>
+                                    <th>Tháng/Năm</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productivityTableBody">
+                            </tbody>
+                        </table>
+                        <div id="loadingMessage" class="text-center p-3">Đang tải dữ liệu...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let monthlyAvgChart = null;
+        let departmentChart = null;
+
+        function loadProductivity(filterParams = {}) {
+            const API_URL = '/Productivity/GetProductivityData';
+            const $tbody = $('#productivityTableBody');
+            const $loading = $('#loadingMessage');
+
+            $tbody.empty();
+            $loading.text('Đang tải dữ liệu...').show();
+
+            $.ajax({
+                url: API_URL,
+                type: 'GET',
+                dataType: 'json',
+                data: filterParams,
+                success: function(response) {
+                    $loading.hide();
+
+                    if (response.success && response.data) {
+                        const data = response.data;
+                        if (data.length === 0) {
+                            $loading.text('Không tìm thấy dữ liệu năng suất phù hợp.').show();
+                            return;
+                        }
+
+                        let htmlRows = '';
+                        data.forEach((row, index) => {
+                            htmlRows += `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${row.employeeCode || ''}</td>
+                                    <td>${row.employeeName || ''}</td>
+                                    <td>${row.department || ''}</td>
+                                    <td>${(row.productivityScore).toFixed(2)}%</td>
+                                    <td>${row.measurementMonth}/${row.measurementYear}</td>
+                                </tr>
+                            `;
+                        });
+                        $tbody.html(htmlRows);
+
+                    } else {
+                        $loading.text('Lỗi tải dữ liệu: ' + (response.message || 'Không rõ lỗi')).show();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $loading.text('Lỗi kết nối server. Vui lòng thử lại.').show();
+                }
+            });
+        }
+
+        function fetchAndDrawMonthlyAvgChart(year) {
+            const API_URL = '/Productivity/GetMonthlyAverageProductivity';
+            const $message = $('#chart1Message');
+            $message.text('Đang tải dữ liệu biểu đồ...').show();
+            $.ajax({
+                url: API_URL,
+                type: 'GET',
+                data: { year: year },
+                success: function(response) {
+                    if (monthlyAvgChart) monthlyAvgChart.destroy();
+                    $message.hide();
+                    if (response.success && response.data && response.data.length > 0) {
+                        const data = response.data;
+                        const scores = data.map(d => parseFloat(d.averageScore).toFixed(2));
+                        const months = data.map(d => `T${d.month}`);
+                        const ctx = document.getElementById('monthlyAvgProductivityChart').getContext('2d');
+
+                        monthlyAvgChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: months,
+                                datasets: [{
+                                    label: `Năng suất TB`,
+                                    data: scores,
+                                    backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    borderWidth: 1,
+                                    barPercentage: 0.8,
+                                    categoryPercentage: 0.9
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        max: 200,
+                                        title: {
+                                            display: true,
+                                            text: 'Năng suất (%)'
+                                        },
+                                        ticks: {
+                                            callback: function(value) { return value + '%'; }
+                                        }
+                                    },
+                                    x: {
+                                        title: {
+                                            display: true,
+                                            text: 'Tháng'
+                                        }
+                                    }
+                                },
+                                plugins: {
+                                    datalabels: {
+                                        anchor: 'end',
+                                        align: 'top',
+                                        formatter: (value) => value + '%',
+                                        color: '#333',
+                                        font: { weight: 'bold', size: 10 }
+                                    },
+                                    legend: { display: false },
+                                    tooltip: { callbacks: { label: (context) => `${context.dataset.label}: ${context.parsed.y}%` } }
+                                }
+                            }
+                        });
+
+                    } else {
+                        $message.text(`Không có dữ liệu năng suất theo bộ phận cho ${month}/${year}.`).show();
+                    }
+                },
+                error: function() {
+                    if (monthlyAvgChart) monthlyAvgChart.destroy();
+                    $message.text('Lỗi tải dữ liệu.').show();
+                }
+            });
+        }
+
+        function fetchAndDrawDepartmentChart(year, month) {
+            const API_URL = '/Productivity/GetDepartmentProductivityByMonth';
+            const $message = $('#chart2Message');
+            $message.text('Đang tải dữ liệu biểu đồ...').show();
+            $.ajax({
+                url: API_URL,
+                type: 'GET',
+                data: { year: year, month: month },
+                success: function(response) {
+                    if (departmentChart) departmentChart.destroy();
+                    $message.hide();
+
+                    if (response.success && response.data && response.data.length > 0) {
+                        const data = response.data;
+                        const departments = data.map(d => d.department);
+                        const scores = data.map(d => parseFloat(d.averageScore).toFixed(2));
+
+                        const backgroundColors = [
+                            '#4CAF50', '#2196F3', '#FF9800', '#F44336', '#9C27B0',
+                            '#00BCD4', '#FFEB3B', '#795548', '#607D8B', '#03A9F4'
+                        ];
+                        const ctx = document.getElementById('departmentProductivityChart').getContext('2d');
+
+                        departmentChart = new Chart(ctx, {
+                            type: 'bar', 
+                            data: {
+                                labels: departments,
+                                datasets: [{
+                                    label: 'Năng suất TB (%)',
+                                    data: scores,
+                                    backgroundColor: backgroundColors,
+                                    borderColor: '#fff',
+                                    borderWidth: 1,
+                                }]
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                responsive: true,
+                                scales: {
+                                    x: {
+                                        beginAtZero: true,
+                                        max: 200,
+                                        title: {
+                                            display: true,
+                                            text: 'Năng suất (%)'
+                                        },
+                                        ticks: {
+                                            callback: function(value) { return value + '%'; }
+                                        }
+                                    },
+                                    y: {
+                                        title: {
+                                            display: true,
+                                            text: 'Bộ phận'
+                                        }
+                                    }
+                                },
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                const label = context.label || '';
+                                                const score = parseFloat(context.raw);
+                                                return `${label}: ${score.toFixed(2)}%`;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                    } else {
+                        $message.text(`Không có dữ liệu năng suất theo bộ phận cho ${month}/${year}.`).show();
+                    }
+                },
+                error: function() {
+                    if (departmentChart) departmentChart.destroy();
+                    $message.text('Lỗi tải dữ liệu.').show();
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            loadProductivity({
+                year: $('#yearFilter').val(),
+                month: $('#monthFilter').val()
+            });
+
+            const defaultYear = $('#chartYearFilter').val();
+            const defaultMonth = $('#chartMonthFilter').val();
+            fetchAndDrawMonthlyAvgChart(defaultYear);
+            fetchAndDrawDepartmentChart(defaultYear, defaultMonth);
+
+            $('#filterForm').on('submit', function(event) {
+                event.preventDefault();
+                const filterParams = {};
+                const key = $('#keyFilter').val();
+                const department = $('#departmentFilter').val();
+                const month = $('#monthFilter').val();
+                const year = $('#yearFilter').val();
+
+                if (key) filterParams.key = key;
+                if (department) filterParams.department = department;
+                if (month) filterParams.month = month;
+                if (year) filterParams.year = year;
+
+                loadProductivity(filterParams);
+            });
+
+            $('#chartYearFilter').on('change', function() {
+                const year = $(this).val();
+                fetchAndDrawMonthlyAvgChart(year);
+            });
+
+            $('#chartMonthFilter, #chart2YearFilter').on('change', function() {
+                const year = $('#chart2YearFilter').val();
+                const month = $('#chartMonthFilter').val();
+                fetchAndDrawDepartmentChart(year, month);
+            });
+        });
+    </script>
+}

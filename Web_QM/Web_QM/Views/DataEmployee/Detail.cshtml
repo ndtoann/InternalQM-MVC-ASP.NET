@@ -1,0 +1,1381 @@
+﻿@using Web_QM.Models
+@model Employee;
+@{
+    ViewData["Title"] = $"Thông tin nhân viên - {Model.EmployeeCode}";
+}﻿
+
+<div class="content-wrapper">
+    <div class="detail-empl row">
+        <div class="info col-lg-3 text-center p-3 border border-4 fw-bolder fs-5">
+            <h4>@Model.EmployeeCode - @Model.EmployeeName</h4>
+            <p>Bộ phận: @Model.Department</p>
+            <p>Giới tính: @Model.Gender</p>
+            <p>
+                Ngày sinh:
+                @if (Model.DateOfBirth.HasValue)
+                {
+                    @Model.DateOfBirth.Value.ToString("dd/MM/yyyy")
+                }
+                else
+                {
+                    <span>00/00/0000</span>
+                }
+            </p>
+            <p>
+                Ngày vào công ty: @Model.HireDate.ToString("dd/MM/yyyy")
+            </p>
+            <p>
+                @{
+                    var hireDate = Model.HireDate.ToDateTime(TimeOnly.MinValue);
+                    var currentDate = DateTime.Now;
+                    int years = currentDate.Year - hireDate.Year;
+                    if (currentDate.Month < hireDate.Month || (currentDate.Month == hireDate.Month && currentDate.Day < hireDate.Day))
+                    {
+                        years--;
+                    }
+                    int months = currentDate.Month - hireDate.Month;
+                    if (months < 0)
+                    {
+                        months += 12;
+                    }
+                    if (currentDate.Day < hireDate.Day)
+                    {
+                        months--;
+                        if (months < 0)
+                        {
+                            months += 12;
+                        }
+                    }
+                    int days = currentDate.Day - hireDate.Day;
+                    if (days < 0)
+                    {
+                        int daysInPreviousMonth = DateTime.DaysInMonth(currentDate.Year, currentDate.Month - 1 == 0 ? 12 : currentDate.Month - 1);
+                        days += daysInPreviousMonth;
+                    }
+                    if (hireDate > currentDate)
+                    {
+                        years = 0;
+                        months = 0;
+                        days = 0;
+                    }
+                    string seniorityText = $"{years} năm, {months} tháng, {days} ngày";
+                }
+
+                <span>(Thâm niên: @seniorityText)</span>
+            </p>
+            <p>Chức vụ: @Model.Position</p>
+            <p>Ghi chú: @Model.Note</p>
+            <div class="p-5">
+                @if (!string.IsNullOrEmpty(Model.Avatar))
+                {
+                    <img src="~/imgs/avatars/@Model.Avatar" alt="Avatar" style="max-width: 400px; margin: auto;" />
+                }
+                else
+                {
+                    <img src="~/imgs/avatars/default.png" alt="Avatar" style="max-width: 400px; margin: auto;" />
+                }
+            </div>
+        </div>
+        <div class="data col-lg-9 overflow-auto" style="height: 800px;">
+            @* quá trình làm việc *@
+            <div class="data-error border-bottom border-4 p-3">
+                <h4 class="fw-bolder fs-5">1. Quá trình làm việc</h4>
+                <div class="table-responsive overflow-auto" style="height: 300px;">
+                    <table class="table table-bordered table-hover">
+                        <thead class="bg-info" style="position: sticky; top: 0; z-index: 1;">
+                            <tr>
+                                <th>Giai đoạn</th>
+                                <th>Bộ phận</th>
+                                <th>Năng suất</th>
+                                <th>Số kaizen</th>
+                                <th>Số lỗi sản xuất</th>
+                                <th>Vi phạm 5S</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in ViewBag.WorkHistory)
+                            {
+                                DateOnly actualEndDate = DateOnly.FromDateTime(DateTime.Today);
+                                if (item.EndDate != null)
+                                {
+                                    actualEndDate = item.EndDate;
+                                }
+                                <tr>
+                                    <td class="fw-bold">
+                                        @{
+                                            string endDateText;
+                                            if (item.EndDate != null)
+                                            {
+                                                endDateText = item.EndDate.ToString("dd/MM/yyyy");
+                                            }
+                                            else
+                                            {
+                                                endDateText = "HIỆN TẠI";
+                                            }
+                                        }
+
+                                        Từ @item.StartDate.ToString("dd/MM/yyyy") - đến @endDateText
+                                    </td>
+                                    <td>@item.Department</td>
+                                    <td>
+                                        @if(Model.Department == "Hàn-Cưa")
+                                        {
+                                            <a href="#"
+                                               class="list-group-item list-group-item-action"
+                                               data-bs-toggle="modal"
+                                               data-bs-target="#sawingModal"
+                                               data-employee-code="@Model.EmployeeCode"
+                                               data-phase-start-year="@item.StartDate.Year"
+                                               data-phase-end-year="@(item.EndDate != null ? item.EndDate.Year : DateTime.Now.Year)"
+                                               data-phase-description="@item.StartDate - @endDateText">
+                                                <span class="badge bg-primary">Doanh số cưa</span>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a href="#"
+                                               class="list-group-item list-group-item-action productivity-link"
+                                               data-bs-toggle="modal"
+                                               data-bs-target="#productivityModal"
+                                               data-employee-code="@Model.EmployeeCode"
+                                               data-phase-start-year="@item.StartDate.Year"
+                                               data-phase-end-year="@(item.EndDate != null ? item.EndDate.Year : DateTime.Now.Year)"
+                                               data-phase-description="@item.StartDate - @endDateText">
+                                                <span class="badge bg-primary">Xem Năng suất</span>
+                                            </a>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a href="#" class="kaizen-link list-group-item list-group-item-action"
+                                           data-toggle="modal"
+                                           data-target="#kaizenDetailModal"
+                                           data-start="@item.StartDate.ToString("yyyy-MM-dd")"
+                                           data-end="@actualEndDate.ToString("yyyy-MM-dd")">
+                                            <span class="badge bg-primary">@item.KaizenCount</span>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="#" class="error-link list-group-item list-group-item-action"
+                                           data-toggle="modal"
+                                           data-target="#errorDetailModal"
+                                           data-start="@item.StartDate.ToString("yyyy-MM-dd")"
+                                           data-end="@actualEndDate.ToString("yyyy-MM-dd")">
+                                            <span class="badge bg-danger">@item.ErrorCount</span>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="#" class="violation5S-link list-group-item list-group-item-action"
+                                           data-toggle="modal"
+                                           data-target="#violation5SDetailModal"
+                                           data-start="@item.StartDate.ToString("yyyy-MM-dd")"
+                                           data-end="@actualEndDate.ToString("yyyy-MM-dd")">
+                                            <span class="badge bg-danger">@item.Violation5SCount</span>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            @* feedback *@
+            <div class="feedback border-bottom border-4 p-3">
+                <h4 class="fw-bolder fs-5">
+                    2. Phản hồi về nhân viên
+                    <a href="#"
+                       data-bs-toggle="modal"
+                       data-bs-target="#addFeedbackModal"
+                       data-employee-id="@Model.Id"
+                       class="btn btn-outline-info" asp-policy="ClientAddFeedbackEmpl">
+                        Thêm ghi chú
+                   </a>
+                </h4>
+                <div class="table-responsive overflow-auto" style="height: 300px;">
+                    <table class="table table-bordered table-hover">
+                        <thead class="bg-info" style="position: sticky; top: 0; z-index: 1;">
+                            <tr>
+                                <th>STT</th>
+                                <th>Người gửi</th>
+                                <th>Phản hồi</th>
+                                <th>Ngày phản hồi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                var count1 = 1;
+                            }
+                            @foreach (var item in ViewBag.Feedbacks)
+                            {
+                                <tr>
+                                    <td>@(count1++)</td>
+                                    <td>@item.FeedbackerName</td>
+                                    <td>@item.Comment</td>
+                                    <td>@item.CreatedDate</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @* đào tạo *@
+            <div class="data-training border-bottom border-4 p-3">
+                <h4 class="fw-bolder fs-5">3. Dữ liệu đào tạo</h4>
+                <div class="table-responsive overflow-auto" style="height: 300px;">
+                    <table class="table table-bordered table-hover">
+                        <thead class="bg-info" style="position: sticky; top: 0; z-index: 1;">
+                            <tr>
+                                <th>STT</th>
+                                <th>Đợt đào tạo</th>
+                                <th>Kết quả</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                var count3 = 1;
+                            }
+                            @foreach (var item in ViewBag.EvaluationPeriods)
+                            {
+                                <tr>
+                                    <td>@(count3++)</td>
+                                    <td>
+                                        <a href="#"
+                                           class="list-group-item list-group-item-action"
+                                           data-employee-id="@Model.Id"
+                                           data-evaluation-period="@item.EvaluationPeriod"
+                                           data-score="@item.Score"
+                                           data-bs-toggle="modal"
+                                           data-bs-target="#trainingResultModal">
+                                            @item.EvaluationPeriod
+                                        </a>
+                                    </td>
+                                    <td>Đạt @item.Score %</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table-responsive overflow-auto" style="height: 300px;">
+                    <h4>Kết quả kiểm tra sau đào tạo</h4>
+                    <table class="table table-bordered table-hover">
+                        <thead class="bg-info">
+                            <tr>
+                                <th>STT</th>
+                                <th>Bài kiểm tra</th>
+                                <th>Điểm thi trắc nghiệm</th>
+                                <th>Điểm thi tự luận</th>
+                                <th>Tổng điểm</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                var count2 = 1;
+                            }
+                            @foreach (var item in ViewBag.ExamTrainingAnswers)
+                            {
+                                <tr>
+                                    <td>@(count2++)</td>
+                                    <td>@item.QuizName</td>
+                                    <td>
+                                        @{
+                                            double percentageTn = (double)item.PointTn / item.CountQuestion * 100;
+                                            string colorClassTn = percentageTn <= 50 ? "text-danger" : (percentageTn <= 60 ? "text-warning" : "text-success");
+                                        }
+                                        <span class="@colorClassTn">
+                                            @($"{item.PointTn}/{item.CountQuestion} - Đạt {Math.Round(percentageTn, 2)}%")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @{
+                                            double percentageTl = (double)item.PointTl / item.ToltalTl * 100;
+                                            string colorClassTl = percentageTl <= 50 ? "text-danger" : (percentageTl <= 60 ? "text-warning" : "text-success");
+                                        }
+                                        <span class="@colorClassTl">
+                                            @($"{item.PointTl}/{item.ToltalTl} - Đạt {Math.Round(percentageTl, 2)}%")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @{
+                                            double percentageTotal = (double)(item.PointTn + item.PointTl) / (item.CountQuestion + item.ToltalTl) * 100;
+                                            string colorClassTT = percentageTotal <= 50 ? "text-danger" : (percentageTotal <= 60 ? "text-warning" : "text-success");
+                                        }
+                                        <span class="@colorClassTT">
+                                            @($"{item.PointTn + item.PointTl}/{item.CountQuestion + item.ToltalTl} - Đạt {Math.Round(percentageTotal, 2)}%")
+                                        </span>
+                                    </td>
+                                    <td>@item.Note</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @* kiểm tra *@
+            <div class="data-exam border-bottom border-4 p-3">
+                <h4 class="fw-bolder fs-5">4. Dữ liệu kiểm tra định kỳ</h4>
+                <div class="table-responsive overflow-auto" style="height: 300px;">
+                    <table class="table table-bordered table-hover">
+                        <thead class="bg-info" style="position: sticky; top: 0; z-index: 1;">
+                            <tr>
+                                <th>STT</th>
+                                <th>Bài kiểm tra</th>
+                                <th>Điểm thi trắc nghiệm</th>
+                                <th>Điểm thi tự luận</th>
+                                <th>Tổng điểm</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                var count4 = 1;
+                            }
+                            @foreach (var item in ViewBag.ExamPeriodicAnswers)
+                            {
+                                <tr>
+                                    <td>@(count4++)</td>
+                                    <td>@item.QuizName</td>
+                                    <td>
+                                        @{
+                                            double percentageTn = (double)item.PointTn / item.CountQuestion * 100;
+                                            string colorClassTn = percentageTn <= 50 ? "text-danger" : (percentageTn <= 60 ? "text-warning" : "text-success");
+                                        }
+                                        <span class="@colorClassTn">
+                                            @($"{item.PointTn}/{item.CountQuestion} - Đạt {Math.Round(percentageTn, 2)}%")
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        @{
+                                            double percentageTl = (double)item.PointTl / item.ToltalTl * 100;
+                                            string colorClassTl = percentageTl <= 50 ? "text-danger" : (percentageTl <= 60 ? "text-warning" : "text-success");
+                                        }
+                                        <span class="@colorClassTl">
+                                            @($"{item.PointTl}/{item.ToltalTl} - Đạt {Math.Round(percentageTl, 2)}%")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @{
+                                            double percentageTotal = (double)(item.PointTn + item.PointTl) / (item.CountQuestion + item.ToltalTl) * 100;
+                                            string colorClassTT = percentageTotal <= 50 ? "text-danger" : (percentageTotal <= 60 ? "text-warning" : "text-success");
+                                        }
+                                        <span class="@colorClassTT">
+                                            @($"{item.PointTn + item.PointTl}/{item.CountQuestion + item.ToltalTl} - Đạt {Math.Round(percentageTotal, 2)}%")
+                                        </span>
+                                    </td>
+                                    <td>@item.Note</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="data-exam border-bottom border-4 p-3">
+                <h4 class="fw-bolder fs-5">5. Dữ liệu chạy thử</h4>
+                <h5>- Lý thuyết</h5>
+                <div class="table-responsive overflow-auto" style="height: 300px;">
+                    <table class="table table-bordered table-hover">
+                        <thead class="bg-info" style="position: sticky; top: 0; z-index: 1;">
+                            <tr>
+                                <th>STT</th>
+                                <th>Đợt đánh giá</th>
+                                @* <th>Cấp độ</th> *@
+                                <th>Đúng</th>
+                                <th>Sai</th>
+                                <th>Liệt</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                var count5 = 1;
+                            }
+                            @foreach (var item in ViewBag.TrialRunAnswer)
+                            {
+                                <tr>
+                                    <td>@(count5++)</td>
+                                    <td>@item.ExamName</td>
+                                    @* <td>@item.TestLevel</td> *@
+                                    @{
+                                        var totalQuestions = item.Correct + item.Incorrect + item.CriticalFail;
+
+                                        var correctPercentage = (double)item.Correct / totalQuestions * 100;
+                                        var correctClass = "";
+                                        if (item.CriticalFail == 0)
+                                        {
+                                            if (correctPercentage >= 60)
+                                            {
+                                                correctClass = "text-success";
+                                            }
+                                            else if (correctPercentage >= 50)
+                                            {
+                                                correctClass = "text-warning";
+                                            }
+                                            else
+                                            {
+                                                correctClass = "text-danger";
+                                            }
+                                        }
+                                        else
+                                        {
+                                            correctClass = "text-danger";
+                                        }
+                                    }
+                                    <td class="@correctClass">@item.Correct</td>
+                                    <td>@item.Incorrect</td>
+                                    <td>@item.CriticalFail</td>
+                                    <td>@item.Note</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <h5>- Thực hành</h5>
+                <div class="table-responsive overflow-auto" style="height: 300px;">
+                    <table class="table table-bordered table-hover">
+                        <thead class="bg-info">
+                            <tr>
+                                <th>Đợt đánh giá</th>
+                                <th>Cấp độ</th>
+                                <th>Kết quả</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var test in ViewBag.TestPractices as List<TestPractice>)
+                            {
+                                <tr>
+                                    <td>
+                                        <a href="#" class="list-group-item list-group-item-action view-details-btn"
+                                           data-bs-toggle="modal"
+                                           data-bs-target="#testPracticeDetailModal"
+                                           data-test-id="@test.Id">
+                                            @test.TestName
+                                        </a>
+                                    </td>
+                                    <td>@test.TestLevel</td>
+                                    <td class="@(test.Result == "OK" ? "text-success" : "text-danger")">@test.Result</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* modal doanh số cưa *@
+<div class="modal fade" id="sawingModal" tabindex="-1" aria-labelledby="sawingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productivityModalLabel">Doanh số Cưa Giai đoạn: <span id="modal-phase-description"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <label for="selectSawingYear" class="col-sm-2 col-form-label">Chọn Năm:</label>
+                    <div class="col-sm-4">
+                        <select id="selectSawingYear" class="form-select"></select>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="sawingChart"></canvas>
+                </div>
+                <div id="chartSawing-loading-status" class="text-center mt-3 d-none">
+                    <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* modal năng suất *@
+<div class="modal fade" id="productivityModal" tabindex="-1" aria-labelledby="productivityModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productivityModalLabel">Năng suất Giai đoạn: <span id="modal-phase-description"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <label for="selectYear" class="col-sm-2 col-form-label">Chọn Năm:</label>
+                    <div class="col-sm-4">
+                        <select id="selectYear" class="form-select"></select>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="productivityChart"></canvas>
+                </div>
+                <div id="chart-loading-status" class="text-center mt-3 d-none">
+                    <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* modal kaizen *@
+<div class="modal fade" id="kaizenDetailModal" tabindex="-1" aria-labelledby="kaizenModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="kaizenModalLabel">Danh sách Kaizen</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <label for="selectKaizenYear" class="col-sm-2 col-form-label">Chọn Năm:</label>
+                    <div class="col-sm-4">
+                        <select id="selectKaizenYear" class="form-select"></select>
+                    </div>
+                </div>
+                <div id="kaizenModalContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* modal xem lỗi sx *@
+<div class="modal fade" id="errorDetailModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="errorModalLabel">Danh sách Lỗi Sản xuất</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <label for="selectErrorYear" class="col-sm-2 col-form-label">Chọn Năm:</label>
+                    <div class="col-sm-4">
+                        <select id="selectErrorYear" class="form-select"></select>
+                    </div>
+                </div>
+                <div id="errorModalContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* modal xem lỗi 5S *@
+<div class="modal fade" id="violation5SDetailModal" tabindex="-1" aria-labelledby="violation5SModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="violation5SModalLabel">Danh sách Lỗi 5S</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <label for="select5SYear" class="col-sm-2 col-form-label">Chọn Năm:</label>
+                    <div class="col-sm-4">
+                        <select id="select5SYear" class="form-select"></select>
+                    </div>
+                </div>
+                <div id="violation5SModalContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* modal xem dữ liệu đào tạo *@
+<div class="modal fade" id="trainingResultModal" tabindex="-1" aria-labelledby="trainingResultModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="trainingResultModalLabel">
+                    Kết quả đào tạo đợt
+                    <span id="modalEvaluationPeriod"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Nội dung đào tạo</th>
+                            <th>Kết quả</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trainingResultTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* modal thêm feedback *@
+<div class="modal fade" id="addFeedbackModal" tabindex="-1" aria-labelledby="addFeedbackModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content rounded-lg shadow-lg">
+            <div class="modal-header bg-primary text-white border-bottom-0 rounded-top-lg">
+                <h5 class="modal-title" id="addFeedbackModalLabel">Thêm ghi chú phản hồi</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="feedbackForm">
+                    <input type="hidden" id="employeeIdInput" name="EmployeeId">
+                    <div class="mb-3">
+                        <label for="feedbackTextarea" class="form-label fw-semibold">Nội dung phản hồi:</label>
+                        <textarea class="form-control rounded-lg shadow-sm" id="feedbackTextarea" name="Comment" rows="5" placeholder="Nhập phản hồi tại đây..." required></textarea>
+                    </div>
+                </form>
+                <div id="statusMessage" class="mt-3 text-center d-none"></div>
+            </div>
+            <div class="modal-footer justify-content-center border-top-0 p-3">
+                <button type="button" class="btn btn-outline-secondary rounded-pill me-2" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" form="feedbackForm" class="btn btn-primary rounded-pill">Lưu ghi chú</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* modal xem dữ liệu chạy thử thực hành *@
+<div class="modal fade" id="testPracticeDetailModal" tabindex="-1" aria-labelledby="testPracticeDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="testPracticeDetailModalLabel">Chi tiết dữ liệu Chạy thử</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h4><strong>Đợt đánh giá:</strong> <span id="modalTestName"></span></h4>
+                <h4><strong>Cấp độ:</strong> <span id="modalTestLevel"></span></h4>
+                <h4><strong>Tên chi tiết:</strong> <span id="modalPartName"></span></h4>
+                <h4><strong>Kết quả cuối cùng:</strong> <span id="modalResult"></span></h4>
+
+                <h5 class="mt-4">Chi tiết Nguyên công</h5>
+                <table class="table table-bordered table-lg">
+                    <thead>
+                        <tr>
+                            <th>Nguyên công</th>
+                            <th>Thời gian chuẩn bị định mức</th>
+                            <th>Thời gian chuẩn bị thực tế</th>
+                            <th>Số lần Offset định mức</th>
+                            <th>Số lần Offset thực tế</th>
+                            <th>Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalDetailsBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section scripts {
+    <script>
+        let productivityChart = null;
+        let sawingChart = null;
+        let currentEmployeeCode = '';
+        let phaseStartYear = 0;
+        let phaseEndYear = 0;
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        // doanh số cưa
+        function renderSawingChart(data) {
+            const ctx = document.getElementById('sawingChart').getContext('2d');
+            const labels = data.map(item => item.monthLabel);
+            const scores = data.map(item => item.score);
+
+            if (sawingChart) {
+                sawingChart.destroy();
+            }
+
+            sawingChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Doanh số Cưa (USD)',
+                        data: scores,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1,
+                            title: {
+                                display: true,
+                                text: 'Doanh số/Thời gian'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadChartDataSawing(employeeCode, selectedYear) {
+            $('#chartSawing-loading-status').removeClass('d-none');
+
+            $.ajax({
+                url: "/DataEmployee/GetChartSawing",
+                type: 'GET',
+                data: {
+                    employeeCode: employeeCode,
+                    selectedYear: selectedYear
+                },
+                success: function (data) {
+                    $('#chartSawing-loading-status').addClass('d-none');
+                    if (data && data.length > 0) {
+                        renderSawingChart(data);
+                    } else {
+                        if (sawingChart) sawingChart.destroy();
+                        $('#sawingChart').parent().append('<p id="no-data-msg" class="text-center text-muted">Không có dữ liệu cho năm này.</p>');
+                    }
+                },
+                error: function () {
+                    $('#chartSawing-loading-status').addClass('d-none');
+                    alert('Lỗi khi tải dữ liệu');
+                }
+            });
+        }
+
+        // năng suất
+        function renderProductivityChart(data) {
+            const ctx = document.getElementById('productivityChart').getContext('2d');
+            const labels = data.map(item => item.monthLabel);
+            const scores = data.map(item => item.score);
+
+            if (productivityChart) {
+                productivityChart.destroy();
+            }
+
+            productivityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Năng suất (%)',
+                        data: scores,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 200,
+                            title: {
+                                display: true,
+                                text: 'Năng suất (%)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadChartData(employeeCode, selectedYear) {
+            $('#chart-loading-status').removeClass('d-none');
+
+            $.ajax({
+                url: "/DataEmployee/GetProductivityData",
+                type: 'GET',
+                data: {
+                    employeeCode: employeeCode,
+                    selectedYear: selectedYear
+                },
+                success: function (data) {
+                    $('#chart-loading-status').addClass('d-none');
+                    if (data && data.length > 0) {
+                        renderProductivityChart(data);
+                    } else {
+                        if (productivityChart) productivityChart.destroy();
+                        $('#productivityChart').parent().append('<p id="no-data-msg" class="text-center text-muted">Không có dữ liệu năng suất cho năm này.</p>');
+                    }
+                },
+                error: function () {
+                    $('#chart-loading-status').addClass('d-none');
+                    alert('Lỗi khi tải dữ liệu!');
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            //gọi biểu đồ doanh số cưa
+            $('#sawingModal').on('show.bs.modal', function (event) {
+                const button = $(event.relatedTarget);
+
+                currentEmployeeCode = button.data('employee-code');
+                phaseStartYear = button.data('phase-start-year');
+                phaseEndYear = button.data('phase-end-year');
+                const phaseDescription = button.data('phase-description');
+
+                $('#modal-phase-description').text(phaseDescription);
+
+                const selectYear = $('#selectSawingYear');
+                selectYear.empty();
+
+                let currentYear = new Date().getFullYear();
+                let yearToSelect = currentYear >= phaseStartYear && currentYear <= phaseEndYear ? currentYear : phaseEndYear;
+
+                for (let y = phaseEndYear; y >= phaseStartYear; y--) {
+                    const isSelected = (y === yearToSelect);
+                    selectYear.append(`<option value="${y}" ${isSelected ? 'selected' : ''}>Năm ${y}</option>`);
+                }
+
+                $('#no-data-msg').remove();
+
+                if (currentEmployeeCode && yearToSelect) {
+                    loadChartDataSawing(currentEmployeeCode, yearToSelect);
+                }
+            });
+
+            $('#selectSawingYear').on('change', function () {
+                const selectedYear = $(this).val();
+                $('#no-data-msg').remove();
+
+                if (currentEmployeeCode && selectedYear) {
+                    loadChartDataSawing(currentEmployeeCode, selectedYear);
+                }
+            });
+            $('#sawingModal').on('hidden.bs.modal', function () {
+                if (sawingChart) {
+                    sawingChart.destroy();
+                    sawingChart = null;
+                }
+            });
+            // gọi biểu đồ năng suất
+            $('#productivityModal').on('show.bs.modal', function (event) {
+                const button = $(event.relatedTarget);
+
+                currentEmployeeCode = button.data('employee-code');
+                phaseStartYear = button.data('phase-start-year');
+                phaseEndYear = button.data('phase-end-year');
+                const phaseDescription = button.data('phase-description');
+
+                $('#modal-phase-description').text(phaseDescription);
+
+                const selectYear = $('#selectYear');
+                selectYear.empty();
+
+                let currentYear = new Date().getFullYear();
+                let yearToSelect = currentYear >= phaseStartYear && currentYear <= phaseEndYear ? currentYear : phaseEndYear;
+
+                for (let y = phaseEndYear; y >= phaseStartYear; y--) {
+                    const isSelected = (y === yearToSelect);
+                    selectYear.append(`<option value="${y}" ${isSelected ? 'selected' : ''}>Năm ${y}</option>`);
+                }
+
+                $('#no-data-msg').remove();
+
+                if (currentEmployeeCode && yearToSelect) {
+                    loadChartData(currentEmployeeCode, yearToSelect);
+                }
+            });
+
+            $('#selectYear').on('change', function () {
+                const selectedYear = $(this).val();
+                $('#no-data-msg').remove();
+
+                if (currentEmployeeCode && selectedYear) {
+                    loadChartData(currentEmployeeCode, selectedYear);
+                }
+            });
+            $('#productivityModal').on('hidden.bs.modal', function () {
+                if (productivityChart) {
+                    productivityChart.destroy();
+                    productivityChart = null;
+                }
+            });
+        });
+
+        const padTo2Digits = (num) => {
+            return num.toString().padStart(2, '0');
+        };
+
+        // tạo bảng view dữ liệu chung cho quá trình làm việc
+        function createTableHtml(data, type) {
+            if (!data || data.length === 0) {
+                return `<p class="text-center text-muted">Không có bản ghi nào trong giai đoạn này.</p>`;
+            }
+
+            let tableHtml = '<table class="table table-sm table-striped table-bordered"><thead class="bg-info" style="position: sticky; top: 0; z-index: 1;"><tr>';
+
+            let headers = [];
+
+            if (type === 'Kaizen') {
+                headers = [
+                    { prop: 'dateMonth', title: 'Ngày/Tháng' },
+                    { prop: 'improvementGoal', title: 'Mục tiêu cải tiến' },
+                    { prop: 'improvementTitle', title: 'Tiêu đề cải tiến' },
+                    { prop: 'currentSituation', title: 'Tình hình hiện tại' },
+                    { prop: 'proposedIdea', title: 'Ý kiến cải tiến' },
+                    { prop: 'estimatedBenefit', title: 'Hiệu quả - Lợi ích' },
+                    { prop: 'teamLeaderRating', title: 'Đánh giá tổ trưởng' },
+                    { prop: 'managementReview', title: 'Đánh giá BQL' }
+                ];
+            } else if (type === 'Error') {
+                headers = [
+                    { prop: 'dateMonth', title: 'Ngày/Tháng' },
+                    { prop: 'orderNo', title: 'Số Order' },
+                    { prop: 'partName', title: 'Tên chi tiết' },
+                    { prop: 'qtyOrder', title: 'SL Order' },
+                    { prop: 'qtyNG', title: 'SL NG' },
+                    { prop: 'errorType', title: 'Dạng lỗi' },
+                    { prop: 'errorCause', title: 'Nguyên nhân lỗi' },
+                    { prop: 'errorContent', title: 'Nội dung lỗi' },
+                    { prop: 'reason', title: 'Nguyên nhân' },
+                    { prop: 'countermeasure', title: 'Đối sách' },
+                    { prop: 'ncc', title: 'NCC' }
+                ];
+            } else if (type === 'Violation5S') {
+                headers = [
+                    { prop: 'dateMonth', title: 'Ngày/Tháng' },
+                    { prop: 'content5S', title: 'Nội dung lỗi' },
+                    { prop: 'qty', title: 'Số lần vi phạm' },
+                ];
+            }
+
+            headers.forEach(h => {
+                tableHtml += `<th>${h.title}</th>`;
+            });
+            tableHtml += '</tr></thead><tbody>';
+
+            $.each(data, function (index, detail) {
+                tableHtml += '<tr>';
+
+                headers.forEach(h => {
+                    let cellValue = detail[h.prop];
+                    if (h.prop === 'dateMonth' && cellValue) {
+                        const date = new Date(cellValue);
+                        const day = padTo2Digits(date.getDate());
+                        const month = padTo2Digits(date.getMonth() + 1);
+                        const year = date.getFullYear();
+                        cellValue = `${day}/${month}/${year}`;
+                    }
+
+                    cellValue = cellValue || '-';
+
+                    tableHtml += `<td>${cellValue}</td>`;
+                });
+                tableHtml += '</tr>';
+            });
+
+            tableHtml += '</tbody></table>';
+            return tableHtml;
+        }
+
+        // kaizen
+        let currentKaizenData = {
+            employeeCode: '',
+            startDate: '',
+            endDate: ''
+        };
+        function loadKaizenData(employeeCode, startDate, endDate, selectedYear) {
+            $('#kaizenModalContent').html('<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...</p>');
+
+            $.ajax({
+                url: '@Url.Action("GetActivityDetails", "DataEmployee")',
+                type: 'GET',
+                data: {
+                    employeeCode: employeeCode,
+                    type: 'Kaizen',
+                    startDate: startDate,
+                    endDate: endDate,
+                    selectedYear: selectedYear
+                },
+                success: function (data) {
+                    const htmlContent = createTableHtml(data, 'Kaizen');
+                    $('#kaizenModalContent').html(htmlContent);
+
+                    if (selectedYear) {
+                        $('#kaizenDetailModal').modal('show');
+                    }
+                },
+                error: function () {
+                    $('#kaizenModalContent').html('<div class="alert alert-danger">Lỗi khi tải dữ liệu kaizen.</div>');
+                }
+            });
+        }
+        // click vô link kaizen
+        $('.kaizen-link').on('click', function (e) {
+            e.preventDefault();
+            const link = $(this);
+            const startDate = link.data('start');
+            const endDate = link.data('end');
+            const employeeCode = '@Model.EmployeeCode';
+
+            currentKaizenData = { employeeCode, startDate, endDate };
+
+            const formattedStartDate = formatDate(startDate);
+            const formattedEndDate = formatDate(endDate);
+            $('#kaizenModalLabel').text(`Danh sách kaizen (Từ ${formattedStartDate} đến ${formattedEndDate})`);
+
+            if (parseInt(link.text().trim()) === 0) {
+                $('#kaizenModalContent').html('<p class="text-center text-muted">Không có bản ghi kaizen nào trong giai đoạn này.</p>');
+                $('#kaizenDetailModal').modal('show');
+                return;
+            }
+            const startYear = new Date(startDate).getFullYear();
+            const endYear = new Date(endDate).getFullYear();
+            const currentYear = new Date().getFullYear();
+
+            const selectYear = $('#selectKaizenYear');
+            selectYear.empty();
+
+            let defaultYear = currentYear >= startYear && currentYear <= endYear ? currentYear : endYear;
+
+            for (let y = endYear; y >= startYear; y--) {
+                const isSelected = (y === defaultYear);
+                selectYear.append(`<option value="${y}" ${isSelected ? 'selected' : ''}>Năm ${y}</option>`);
+            }
+
+            loadKaizenData(employeeCode, startDate, endDate, defaultYear);
+        });
+        $('#selectKaizenYear').on('change', function() {
+            const selectedYear = $(this).val();
+
+            if (currentKaizenData.employeeCode && selectedYear) {
+                loadKaizenData(
+                    currentKaizenData.employeeCode,
+                    currentKaizenData.startDate,
+                    currentKaizenData.endDate,
+                    selectedYear
+                );
+            }
+        });
+
+        // lỗi sản xuất
+        let currentErrorData = {
+            employeeCode: '',
+            startDate: '',
+            endDate: ''
+        };
+        function loadErrorData(employeeCode, startDate, endDate, selectedYear) {
+            $('#errorModalContent').html('<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...</p>');
+
+            $.ajax({
+                url: '@Url.Action("GetActivityDetails", "DataEmployee")',
+                type: 'GET',
+                data: {
+                    employeeCode: employeeCode,
+                    type: 'Error',
+                    startDate: startDate,
+                    endDate: endDate,
+                    selectedYear: selectedYear
+                },
+                success: function (data) {
+                    const htmlContent = createTableHtml(data, 'Error');
+                    $('#errorModalContent').html(htmlContent);
+
+                    if (selectedYear) {
+                        $('#errorDetailModal').modal('show');
+                    }
+                },
+                error: function () {
+                    $('#errorModalContent').html('<div class="alert alert-danger">Lỗi khi tải dữ liệu Lỗi sản xuất.</div>');
+                }
+            });
+        }
+        // click vô link lỗi sx
+        $('.error-link').on('click', function (e) {
+            e.preventDefault();
+            const link = $(this);
+            const startDate = link.data('start');
+            const endDate = link.data('end');
+            const employeeCode = '@Model.EmployeeCode';
+
+            currentErrorData = { employeeCode, startDate, endDate };
+
+            const formattedStartDate = formatDate(startDate);
+            const formattedEndDate = formatDate(endDate);
+            $('#errorModalLabel').text(`Danh sách Lỗi sản xuất (Từ ${formattedStartDate} đến ${formattedEndDate})`);
+
+            if (parseInt(link.text().trim()) === 0) {
+                $('#errorModalContent').html('<p class="text-center text-muted">Không có bản ghi Lỗi sản xuất nào trong giai đoạn này.</p>');
+                $('#errorDetailModal').modal('show');
+                return;
+            }
+            const startYear = new Date(startDate).getFullYear();
+            const endYear = new Date(endDate).getFullYear();
+            const currentYear = new Date().getFullYear();
+
+            const selectYear = $('#selectErrorYear');
+            selectYear.empty();
+
+            let defaultYear = currentYear >= startYear && currentYear <= endYear ? currentYear : endYear;
+
+            for (let y = endYear; y >= startYear; y--) {
+                const isSelected = (y === defaultYear);
+                selectYear.append(`<option value="${y}" ${isSelected ? 'selected' : ''}>Năm ${y}</option>`);
+            }
+
+            loadErrorData(employeeCode, startDate, endDate, defaultYear);
+        });
+        $('#selectErrorYear').on('change', function() {
+            const selectedYear = $(this).val();
+
+            if (currentErrorData.employeeCode && selectedYear) {
+                loadErrorData(
+                    currentErrorData.employeeCode,
+                    currentErrorData.startDate,
+                    currentErrorData.endDate,
+                    selectedYear
+                );
+            }
+        });
+
+        // lỗi 5S
+        let current5SData = {
+            employeeCode: '',
+            startDate: '',
+            endDate: ''
+        };
+        function loadViolation5SData(employeeCode, startDate, endDate, selectedYear) {
+            $('#violation5SModalContent').html('<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...</p>');
+
+            $.ajax({
+                url: '@Url.Action("GetActivityDetails", "DataEmployee")',
+                type: 'GET',
+                data: {
+                    employeeCode: employeeCode,
+                    type: 'Violation5S',
+                    startDate: startDate,
+                    endDate: endDate,
+                    selectedYear: selectedYear 
+                },
+                success: function (data) {
+                    const htmlContent = createTableHtml(data, 'Violation5S');
+                    $('#violation5SModalContent').html(htmlContent);
+
+                    if (selectedYear) {
+                        $('#violation5SDetailModal').modal('show');
+                    }
+                },
+                error: function () {
+                    $('#violation5SModalContent').html('<div class="alert alert-danger">Lỗi khi tải dữ liệu Lỗi 5S.</div>');
+                }
+            });
+        }
+        // click vô link lỗi 5S
+        $('.violation5S-link').on('click', function (e) {
+            e.preventDefault();
+            const link = $(this);
+            const startDate = link.data('start');
+            const endDate = link.data('end');
+            const employeeCode = '@Model.EmployeeCode';
+
+            current5SData = { employeeCode, startDate, endDate };
+
+            const formattedStartDate = formatDate(startDate);
+            const formattedEndDate = formatDate(endDate);
+            $('#violation5SModalLabel').text(`Danh sách Lỗi 5S (Từ ${formattedStartDate} đến ${formattedEndDate})`);
+
+            if (parseInt(link.text().trim()) === 0) {
+                $('#violation5SModalContent').html('<p class="text-center text-muted">Không có bản ghi Lỗi 5S nào trong giai đoạn này.</p>');
+                $('#violation5SDetailModal').modal('show');
+                return;
+            }
+            const startYear = new Date(startDate).getFullYear();
+            const endYear = new Date(endDate).getFullYear();
+            const currentYear = new Date().getFullYear();
+
+            const selectYear = $('#select5SYear');
+            selectYear.empty();
+        
+            let defaultYear = currentYear >= startYear && currentYear <= endYear ? currentYear : endYear;
+
+            for (let y = endYear; y >= startYear; y--) {
+                const isSelected = (y === defaultYear);
+                selectYear.append(`<option value="${y}" ${isSelected ? 'selected' : ''}>Năm ${y}</option>`);
+            }
+
+            loadViolation5SData(employeeCode, startDate, endDate, defaultYear);
+        });
+        $('#select5SYear').on('change', function() {
+            const selectedYear = $(this).val();
+        
+            if (current5SData.employeeCode && selectedYear) {
+                loadViolation5SData(
+                    current5SData.employeeCode, 
+                    current5SData.startDate, 
+                    current5SData.endDate, 
+                    selectedYear
+                );
+            }
+        });
+
+        $(document).ready(function () {
+            // Xử lý Modal Kết quả Đào tạo
+            $('#trainingResultModal').on('show.bs.modal', function (event) {
+                const button = $(event.relatedTarget);
+                const employeeId = button.data('employeeId');
+                const evaluationPeriod = button.data('evaluationPeriod');
+                const score = button.data('score');
+
+                const modalTitle = $(this).find('#modalEvaluationPeriod');
+                modalTitle.text(evaluationPeriod);
+
+                const tableBody = $(this).find('#trainingResultTableBody');
+                tableBody.html('<tr><td colspan="2">Đang tải...</td></tr>');
+
+                $.ajax({
+                    url: '@Url.Action("GetTrainingResults", "Employee", new { area = "Admin" })',
+                    type: 'GET',
+                    data: {
+                        employeeId: employeeId,
+                        evaluationPeriod: evaluationPeriod
+                    },
+                    success: function (groupedResults) {
+                        tableBody.empty();
+
+                        const hasGeneral = groupedResults.General && groupedResults.General.length > 0;
+                        const hasCnc = groupedResults.CNC && groupedResults.CNC.length > 0;
+
+                        if (hasGeneral) {
+                            tableBody.append(`<tr><td class="bg-light fw-bold">Đào tạo chung (General)</td><td class="bg-light fw-bold">${score}%</td></tr>`);
+                            $.each(groupedResults.General, function (index, result) {
+                                const statusText = result.status === 1 ? 'OK ✅' : 'NG ❌';
+                                const row = `<tr><td>${result.trainingName}</td><td>${statusText}</td></tr>`;
+                                tableBody.append(row);
+                            });
+                        }
+
+                        if (hasCnc) {
+                            tableBody.append(`<tr><td class="bg-light fw-bold">Đào tạo CNC</td><td class="bg-light fw-bold">${score}%</td></tr>`);
+                            $.each(groupedResults.CNC, function (index, result) {
+                                const statusText = result.status === 1 ? 'OK ✅' : 'NG ❌';
+                                const row = `<tr><td>${result.trainingName}</td><td>${statusText}</td></tr>`;
+                                tableBody.append(row);
+                            });
+                        }
+
+                        if (!hasGeneral && !hasCnc) {
+                            tableBody.html('<tr><td colspan="2">Không có kết quả đào tạo cho đợt này.</td></tr>');
+                        }
+                    },
+                    error: function () {
+                        tableBody.html('<tr><td colspan="2">Lỗi khi tải dữ liệu.</td></tr>');
+                    }
+                });
+            });
+
+            // thêm feedback
+            $('#addFeedbackModal').on('show.bs.modal', function(event) {
+                const button = $(event.relatedTarget);
+                const employeeId = button.data('employee-id');
+                const modal = $(this);
+
+                modal.find('#employeeIdInput').val(employeeId);
+
+                $('#feedbackForm')[0].reset();
+                $('#statusMessage').addClass('d-none').text('');
+            });
+
+            $('#feedbackForm').on('submit', function(e) {
+                e.preventDefault();
+
+                const url = '/DataEmployee/SaveFeedback';
+                const statusMessage = $('#statusMessage');
+
+                const formData = {
+                    employeeId: $('#employeeIdInput').val(),
+                    comment: $('#feedbackTextarea').val()
+                };
+                statusMessage.removeClass('d-none alert-success alert-danger').addClass('alert alert-info').text('Đang gửi dữ liệu...');
+                console.log(formData);
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            $('#addFeedbackModal').modal('hide');
+                            location.reload();
+                        } else {
+                            statusMessage.removeClass('alert-info').addClass('alert-danger').text('Lỗi: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        statusMessage.removeClass('alert-info').addClass('alert-danger').text('Có lỗi xảy ra khi kết nối: ' + xhr.statusText);
+                    }
+                });
+            });
+
+            // xem dữ liệu chạy thử thực hành
+            $('#testPracticeDetailModal').on('show.bs.modal', function (event) {
+                const button = $(event.relatedTarget);
+                const testId = button.data('test-id');
+                const modal = $(this);
+
+                const detailsBody = modal.find('#modalDetailsBody');
+                detailsBody.html('<tr><td colspan="6" class="text-center">Đang tải...</td></tr>');
+
+                $.ajax({
+                    url: `/Admin/Employee/GetTestPracticeDetails?id=${testId}`,
+                    type: 'GET',
+                    success: function (data) {
+                        modal.find('#modalTestName').text(data.testName || 'N/A');
+                        modal.find('#modalTestLevel').text(data.testLevel || 'N/A');
+                        modal.find('#modalPartName').text(data.partName || 'N/A');
+                        modal.find('#modalResult').text(data.result || 'N/A');
+
+                        detailsBody.empty();
+
+                        if (data.details && data.details.length > 0) {
+                            data.details.forEach(function (detail) {
+                                const prepTimeActual = detail.prepTimeActual || '0';
+                                const prepTimeStandard = detail.prepTimeStandard || '0';
+                                const offsetCountActual = detail.offsetCountActual || '0';
+                                const offsetCountStandard = detail.offsetCountStandard || '0';
+
+                                const prepTimeClass = (prepTimeActual !== '0' && prepTimeStandard !== '0' && prepTimeActual > prepTimeStandard) ? 'text-danger' : 'text-success';
+                                const offsetCountClass = (offsetCountActual !== '0' && offsetCountStandard !== '0' && offsetCountActual > offsetCountStandard) ? 'text-danger' : 'text-success';
+
+                                const row = `<tr>
+                                    <td>${detail.operationName || 'N/A'}</td>
+                                    <td>${prepTimeStandard}p</td>
+                                    <td class="${prepTimeClass}">${prepTimeActual}p</td>
+                                    <td>${offsetCountStandard}</td>
+                                    <td class="${offsetCountClass}">${offsetCountActual}</td>
+                                    <td>${detail.note}</td>
+                                </tr>`;
+                                detailsBody.append(row);
+                            });
+                        } else {
+                            detailsBody.append('<tr><td colspan="6" class="text-center">Không có chi tiết nào.</td></tr>');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        alert('Không thể tải dữ liệu chi tiết.');
+                        console.error("Lỗi:", error);
+                    }
+                });
+            });
+        });
+    </script>
+}

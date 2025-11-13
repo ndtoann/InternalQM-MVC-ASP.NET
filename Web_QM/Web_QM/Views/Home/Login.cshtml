@@ -1,0 +1,67 @@
+﻿@{
+    ViewData["Title"] = "Đăng nhập";
+}﻿
+
+<div class="flex items-center justify-center">
+    <div class="login-card w-full flex items-center justify-center mt-5">
+        <div class="overlay absolute inset-0"></div>
+        <div class="z-10 form-card p-8 sm:p-10 md:p-14 rounded-3xl w-full max-w-lg animated-form space-y-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-8">Đăng Nhập</h1>
+
+            @{
+                if (TempData["error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @TempData["error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+            }
+
+
+            <form id="loginForm" class="space-y-6" method="post" asp-action="login">
+                <!-- Username Field -->
+                <div>
+                    <label for="username" class="sr-only">Tên đăng nhập</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-600">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <input type="text" id="username" name="username" placeholder="Tên đăng nhập" required autofocus class="input-field w-full pl-12 pr-4 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div>
+                    <label for="password" class="sr-only">Mật khẩu</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-600">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <input type="password" id="password" name="password" placeholder="Mật khẩu" required class="input-field w-full pl-12 pr-4 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                    </div>
+                </div>
+
+                <!-- Remember Me and Forgot Password -->
+                <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center">
+                        <input id="remember-me" name="rememberMe" type="checkbox" class="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded">
+                        <label for="remember-me" class="ml-2 block text-gray-800">
+                            Ghi nhớ tôi
+                        </label>
+                    </div>
+                    <a href="#" class="font-medium text-pink-600 hover:text-pink-500">
+                        Quên mật khẩu?
+                    </a>
+                </div>
+
+                <!-- Submit Button -->
+                <div>
+                    <button type="submit" id="loginButton" class="submit-btn w-full flex items-center justify-center py-3 px-4 rounded-xl text-white font-semibold shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 transition duration-300 ease-in-out">
+                        Đăng Nhập
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

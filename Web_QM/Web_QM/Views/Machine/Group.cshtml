@@ -1,0 +1,178 @@
+﻿@using Web_QM.Models.ViewModels
+@model MachineTreeView
+
+@{
+    ViewData["Title"] = "Danh sách nhóm máy";
+}
+
+<div class="row tree-view-area">
+
+    <div class="col-12 col-md-4 tree-panel">
+        <button id="toggleAllBtn" class="btn btn-sm btn-outline-secondary w-100 mb-3">
+            Mở/Đóng Tất cả
+        </button>
+
+        <ul class="tree-node-list" id="machineTree">
+            @if (Model.Groups.Any())
+            {
+                @foreach (var groupNode in Model.Groups)
+                {
+                    <li class="tree-node-item group-level collapsed" data-level="1">
+                        <div class="tree-node-header">
+                            <span class="icon-toggle">▶</span>
+                            <span class="node-content">
+                                ⚙️ @groupNode.GroupName
+                                <small class="text-muted">(@groupNode.MachineType)</small>
+                            </span>
+                        </div>
+                        @if (groupNode.Materials.Any())
+                        {
+                            <ul class="tree-node-list">
+                                @foreach (var materialNode in groupNode.Materials)
+                                {
+                                    <li class="tree-node-item material-level collapsed" data-level="2">
+                                        <div class="tree-node-header">
+                                            <span class="icon-toggle">▶</span>
+                                            <span class="node-content">
+                                                📦 @materialNode.Material
+                                                <small class="text-muted">(@materialNode.MachineCount máy)</small>
+                                            </span>
+                                        </div>
+                                        @if (materialNode.MachineCodes.Any())
+                                        {
+                                            <ul class="tree-node-list">
+                                                @foreach (var machineCode in materialNode.MachineCodes)
+                                                {
+                                                    <li class="tree-node-item machine-level"
+                                                        data-level="3"
+                                                        data-code="@machineCode.MachineCode">
+                                                        <div class="tree-node-header machine-leaf-header">
+                                                            <span class="node-content pl-5">
+                                                                <i class="fa-solid fa-screwdriver-wrench"></i> @machineCode.MachineCode
+                                                            </span>
+                                                        </div>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </li>
+                }
+            }
+            else
+            {
+                <li class="tree-node-item">Không có dữ liệu nhóm máy nào được tìm thấy.</li>
+            }
+        </ul>
+    </div>
+
+    <div class="col-12 col-md-8 detail-panel">
+        <h3 class="mb-4">Thông tin Chung</h3>
+        <div id="machineDetailContent">
+            <p class="text-muted">Chọn một mã máy để xem thông tin.</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+
+            $('.tree-node-item[data-level="1"] > .tree-node-header, .tree-node-item[data-level="2"] > .tree-node-header').on('click', function (e) {
+                e.stopPropagation();
+                var $parentNode = $(this).parent();
+                $parentNode.toggleClass('collapsed expanded');
+            });
+
+            $('.machine-leaf-header').on('click', function() {
+                $('.machine-leaf-header').removeClass('active');
+                $(this).addClass('active');
+
+                const $listItem = $(this).closest('.tree-node-item');
+                const code = $listItem.data('code');
+
+                loadMachineDetailsAjax(code);
+            });
+
+            function loadMachineDetailsAjax(code) {
+                const $content = $('#machineDetailContent');
+                $content.html('<div class="text-center p-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Đang tải chi tiết...</p></div>');
+
+                $.ajax({
+                    url: `@Url.Action("GetMachine", "Machine")`,
+                    type: 'GET',
+                    data: { machineCode : code },
+                    success: function (data) {
+                        if (data && data.machineCode) {
+                            renderMachineDetails(data);
+                        } else {
+                            $content.html('<div class="alert alert-warning">Không tìm thấy chi tiết cho mã máy này.</div>');
+                        }
+                    },
+                    error: function () {
+                        $content.html('<div class="alert alert-danger">Lỗi kết nối hoặc dữ liệu không hợp lệ khi tải chi tiết.</div>');
+                    }
+                });
+            }
+
+            function renderMachineDetails(item) {
+                const detailUrl = `/machine/detail/${item.id}`;
+                const detailHtml = `
+                    <div class="row">
+                        <div class="col-12 col-lg-5">
+                            <div class="card shadow-sm mb-3">
+                                <div class="card-header bg-dark text-white">
+                                    <h5 class="mb-0">Ảnh Máy (${item.machineCode})</h5>
+                                </div>
+                                <img src="/imgs/machines/${item.picture}" class="card-img-top" alt="Ảnh Máy" style="height: 250px; object-fit: cover;">
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-7">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-primary text-white">
+                                    <h4 class="fs-3 fw-bold mb-0">${item.machineName}</h4>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-bordered table-sm detail-table">
+                                        <tbody>
+                                            <tr><th>Mã máy</th><td>${item.machineCode}</td></tr>
+                                            <tr><th>Bộ phận</th><td>${item.department}</td></tr>
+                                            <tr><th>Công suất</th><td>${item.machineCapacity || ''} kVA</td></tr>
+                                            <tr><th>Phiên bản</th><td>${item.version || ''}</td></tr>
+                                            <tr><th>Xuất xứ</th><td>${item.machineOrigin || ''}</td></tr>
+                                            <tr><th>Nơi ĐK</th><td>${item.place || ''}</td></tr>
+                                            <tr><th>Ghi chú</th><td>${item.note || ''}</td></tr>
+                                        </tbody>
+                                    </table>
+                                    <a href="${detailUrl}" class="btn btn-sm btn-light text-primary fw-bold">
+                                        Xem Chi tiết máy ➡️
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                $('#machineDetailContent').html(detailHtml);
+            }
+
+            $('#toggleAllBtn').on('click', function() {
+                var $button = $(this);
+                var isCurrentlyExpanded = $('#machineTree .expanded').length > 0;
+
+                if (isCurrentlyExpanded) {
+                    $('.tree-node-item[data-level="1"], .tree-node-item[data-level="2"]').removeClass('expanded').addClass('collapsed');
+                    $button.text('Mở Tất cả');
+                } else {
+                    $('.tree-node-item[data-level="1"], .tree-node-item[data-level="2"]').removeClass('collapsed').addClass('expanded');
+                    $button.text('Đóng Tất cả');
+                }
+            });
+
+            $('#toggleAllBtn').text('Mở Tất cả');
+        });
+    </script>
+}

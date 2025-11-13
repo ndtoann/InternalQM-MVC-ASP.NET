@@ -1,0 +1,476 @@
+﻿@using System.Security.Claims;
+@{
+    ViewData["Title"] = "Quang Minh - Dữ liệu nhân viên";
+}﻿
+
+<div class="card p-3 w-100">
+    <div class="d-flex justify-content-center py-3">
+        <form id="yearForm" class="mt-2">
+            <div class="input-group" style="width: 200px;">
+                <label class="input-group-text fw-bold" for="selectYear">Chọn Năm:</label>
+                <select class="form-select" id="selectYear" style="width: auto;">
+                    @for (int i = DateTime.Now.Year; i >= 2020; i--)
+                    {
+                        <option value="@i" selected="@(i == ViewBag.CurrentYear)">@i</option>
+                    }
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4 class="mb-0">🏆 Top Năng Suất Năm <span id="displayYear">@ViewBag.CurrentYear</span></h4>
+                </div>
+                <div class="card-body p-0">
+                    <div id="loadingIndicator" class="text-center py-3" style="display:none;">
+                        <div class="spinner-border text-info" role="status"></div>
+                        <p class="mb-0 text-info">Đang tải dữ liệu...</p>
+                    </div>
+                    <div id="errorMessage" class="alert alert-danger mb-0 rounded-0" role="alert" style="display:none;"></div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="leaderboardTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th scope="col" style="width: 100px;">Hạng</th>
+                                    <th scope="col">Nhân Viên</th>
+                                    <th scope="col">Bộ phận</th>
+                                    <th scope="col" class="text-end">TB Năng Suất</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-lg">
+                <div class="card-header bg-success text-white text-center">
+                    <h4 class="mb-0">💡 Top Kaizen Nhiều Nhất Năm <span id="displayKaizenYear">@ViewBag.CurrentYear</span></h4>
+                </div>
+                <div class="card-body p-0">
+                    <div id="loadingKaizenIndicator" class="text-center py-3" style="display:none;">
+                        <div class="spinner-border text-success" role="status"></div>
+                        <p class="mb-0 text-success">Đang tải dữ liệu...</p>
+                    </div>
+                    <div id="errorKaizenMessage" class="alert alert-danger mb-0 rounded-0" role="alert" style="display:none;"></div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="leaderboardKaizenTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th scope="col" style="width: 100px;">Hạng</th>
+                                    <th scope="col">Nhân Viên</th>
+                                    <th scope="col">Bộ phận</th>
+                                    <th scope="col" class="text-end">Số lượng Kaizen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-lg">
+                <div class="card-header bg-danger text-white text-center">
+                    <h4 class="mb-0">❌ Top Nhân Viên Nhiều Lỗi Nhất Năm <span id="displayErrorYear">@ViewBag.CurrentYear</span></h4>
+                </div>
+                <div class="card-body p-0">
+                    <div id="loadingErrorIndicator" class="text-center py-3" style="display:none;">
+                        <div class="spinner-border text-danger" role="status"></div>
+                        <p class="mb-0 text-danger">Đang tải dữ liệu Lỗi...</p>
+                    </div>
+                    <div id="errorErrorMessage" class="alert alert-danger mb-0 rounded-0" role="alert" style="display:none;"></div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="leaderboardErrorTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th scope="col" style="width: 100px;">Hạng</th>
+                                    <th scope="col">Nhân Viên</th>
+                                    <th scope="col">Bộ phận</th>
+                                    <th scope="col" class="text-end">Lỗi Sản Xuất</th>
+                                    <th scope="col" class="text-end">Lỗi 5S</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="text-center text-4xl font-extrabold text-primary text-center mb-2">Danh sách nhân viên</h4>
+                    <div class="container-fluid">
+                        <form id="filterForm">
+                            <div class="row mb-3">
+                                <div class="col-md-5">
+                                    <input type="text" id="searchInput" name="key" class="form-control" placeholder="Tìm kiếm theo Tên hoặc Mã nhân viên...">
+                                </div>
+
+                                <div class="col-md-4">
+                                    <select id="departmentFilter" name="department" class="form-select">
+                                        <option value="">-- Tất cả Bộ phận --</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-search"></i> Tìm kiếm
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <div class="table-responsive overflow-auto" style="height: 800px;">
+                            <table id="employeeTable" class="table table-striped table-bordered table-hover">
+                                <thead class="table-dark" style="position: sticky; top: 0; z-index: 1;">
+                                    <tr>
+                                        <th style="width: 50px;">STT</th>
+                                        <th>Mã nhân viên</th>
+                                        <th>Tên nhân viên</th>
+                                        <th>Bộ phận</th>
+                                        <th>Chức vụ</th>
+                                        <th>Ngày sinh</th>
+                                        <th>Ngày vào công ty</th>
+                                        <th>Ghi chú</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="employeeTableBody">
+                                    <tr><td colspan="8" class="text-center">Đang tải dữ liệu...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div id="messageContainer" class="text-center mt-4"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+        // bxh năng suất
+        function populateLeaderboard(data) {
+            const $tbody = $('#leaderboardTable tbody');
+            $tbody.empty();
+
+            if (data.length === 0) {
+                $('#errorMessage').text(`Không có dữ liệu Top 10 trong năm này.`).show();
+                return;
+            }
+
+            data.forEach(employee => {
+                const rank = employee.rank;
+
+                let rankClass = 'rank-low';
+                if (rank === 1) {
+                    rankClass = 'rank-1';
+                } else if (rank === 2) {
+                    rankClass = 'rank-2';
+                } else if (rank === 3) {
+                    rankClass = 'rank-3';
+                }
+
+                const row = `
+                    <tr>
+                        <td class="rank-cell ${rankClass}">${rank}</td>
+                        <td>${employee.employeeCode} - ${employee.employeeName}</td>
+                        <td>${employee.department}</td>
+                        <td class="text-end">${employee.averageScore.toFixed(2).toLocaleString('vi-VN')} %</td>
+                    </tr>
+                `;
+                $tbody.append(row);
+            });
+            $('#errorMessage').hide();
+        }
+        async function fetchProductivityData(year) {
+            $('#loadingIndicator').show();
+            $('#errorMessage').hide();
+            $('#leaderboardTable tbody').empty();
+            $('#displayYear').text(year);
+
+            try {
+                const response = await $.ajax({
+                    url: '@Url.Action("GetTopEmployeeProductivity", "DataEmployee")',
+                    type: 'GET',
+                    data: { year: year },
+                    dataType: 'json'
+                });
+                populateLeaderboard(response);
+
+            } catch (error) {
+                let message = "Có lỗi xảy ra khi tải dữ liệu.";
+                if (error.responseJSON && error.responseJSON.message) {
+                    message = error.responseJSON.message;
+                } else if (error.status === 404) {
+                    message = `Không tìm thấy dữ liệu năng suất cho năm ${year}.`;
+                }
+
+                $('#errorMessage').text(message).show();
+                $('#leaderboardTable tbody').empty();
+            } finally {
+                $('#loadingIndicator').hide();
+            }
+        }
+
+        // bxh kaizen
+        function populateKaizenLeaderboard(data) {
+            const $tbody = $('#leaderboardKaizenTable tbody');
+            $tbody.empty();
+
+            if (data.length === 0) {
+                $('#errorKaizenMessage').text(`Không có dữ liệu Kaizen Top 10 trong năm này.`).show();
+                return;
+            }
+
+            data.forEach(employee => {
+                const rank = employee.rank;
+
+                let rankClass = 'rank-low';
+                if (rank === 1) {
+                    rankClass = 'rank-1';
+                } else if (rank === 2) {
+                    rankClass = 'rank-2';
+                } else if (rank === 3) {
+                    rankClass = 'rank-3';
+                }
+
+                const row = `
+                    <tr>
+                        <td class="rank-cell ${rankClass}">${rank}</td>
+                        <td>${employee.employeeCode} - ${employee.employeeName}</td>
+                        <td>${employee.department || 'N/A'}</td>
+                        <td class="text-end fw-bold text-success">${employee.totalScore.toLocaleString('vi-VN')}</td> </tr>
+                `;
+                $tbody.append(row);
+            });
+            $('#errorKaizenMessage').hide();
+        }
+        async function fetchKaizenData(year) {
+            $('#loadingKaizenIndicator').show();
+            $('#errorKaizenMessage').hide();
+            $('#leaderboardKaizenTable tbody').empty();
+            $('#displayKaizenYear').text(year);
+
+            try {
+                const response = await $.ajax({
+                    url: '@Url.Action("GetTopEmployeeKaizen", "DataEmployee")',
+                    type: 'GET',
+                    data: { year: year },
+                    dataType: 'json'
+                });
+                populateKaizenLeaderboard(response);
+
+            } catch (error) {
+                let message = "Có lỗi xảy ra khi tải dữ liệu Kaizen.";
+                if (error.responseJSON && error.responseJSON.message) {
+                    message = error.responseJSON.message;
+                } else if (error.status === 404) {
+                    message = `Không tìm thấy dữ liệu Kaizen cho năm ${year}.`;
+                }
+
+                $('#errorKaizenMessage').text(message).show();
+                $('#leaderboardKaizenTable tbody').empty();
+            } finally {
+                $('#loadingKaizenIndicator').hide();
+            }
+        }
+
+        // bxh lỗi
+        function populateErrorLeaderboard(data) {
+            const $tbody = $('#leaderboardErrorTable tbody');
+            $tbody.empty();
+
+            if (data.length === 0) {
+                $('#errorErrorMessage').text(`Không có dữ liệu Lỗi Top 10 trong năm này.`).show();
+                return;
+            }
+
+            data.forEach(employee => {
+                const rank = employee.rank;
+
+                let rankClass = 'rank-low';
+                if (rank === 1) {
+                    rankClass = 'rank-1';
+                } else if (rank === 2) {
+                    rankClass = 'rank-2';
+                } else if (rank === 3) {
+                    rankClass = 'rank-3';
+                }
+
+                const row = `
+                    <tr>
+                        <td class="rank-cell ${rankClass}">${rank}</td>
+                        <td>${employee.employeeCode} - ${employee.employeeName}</td>
+                        <td>${employee.department || 'N/A'}</td>
+                        <td class="text-end">${employee.productionErrorCount}</td>
+                        <td class="text-end">${employee.violation5SCount}</td>
+                    </tr>
+                `;
+                $tbody.append(row);
+            });
+            $('#errorErrorMessage').hide();
+        }
+        async function fetchErrorData(year) {
+            $('#loadingErrorIndicator').show();
+            $('#errorErrorMessage').hide();
+            $('#leaderboardErrorTable tbody').empty();
+            $('#displayErrorYear').text(year);
+
+            try {
+                const response = await $.ajax({
+                    url: '@Url.Action("GetTopEmployeeErrors", "DataEmployee")',
+                    type: 'GET',
+                    data: { year: year },
+                    dataType: 'json'
+                });
+
+                populateErrorLeaderboard(response);
+
+            } catch (error) {
+                let message = "Có lỗi xảy ra khi tải dữ liệu Lỗi.";
+                if (error.responseJSON && error.responseJSON.message) {
+                    message = error.responseJSON.message;
+                } else if (error.status === 404) {
+                    message = `Không tìm thấy dữ liệu Lỗi cho năm ${year}.`;
+                }
+
+                $('#errorErrorMessage').text(message).show();
+                $('#leaderboardErrorTable tbody').empty();
+            } finally {
+                $('#loadingErrorIndicator').hide();
+            }
+        }
+
+        $(document).ready(function() {
+            const dataUrl = '/DataEmployee/GetEmployees';
+            const $tableBody = $('#employeeTableBody');
+            const $filterForm = $('#filterForm');
+            const $searchInput = $('#searchInput');
+            const $departmentFilter = $('#departmentFilter');
+
+            function formatDate(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                if (isNaN(date)) return dateString;
+        
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
+            }
+
+            function renderTable(employees) {
+                let html = '';
+                employees.forEach((employee, index) => {
+                    html += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${employee.employeeCode || ''}</td>
+                            <td><a href="/dataemployee/detail/${employee.id}">${employee.employeeName || ''}</a></td>
+                            <td>${employee.department || ''}</td>
+                            <td>${employee.position || ''}</td>
+                            <td>${formatDate(employee.dateOfBirth)}</td>
+                            <td>${formatDate(employee.hireDate)}</td>
+                            <td>${employee.note || ''}</td>
+                        </tr>
+                    `;
+                });
+                $tableBody.html(html);
+            }
+    
+            function populateDepartmentFilter(employees) {
+                const departments = [...new Set(employees.map(e => e.department).filter(d => d))];
+                let optionsHtml = '<option value="">-- Tất cả Bộ phận --</option>';
+                departments.sort().forEach(dept => {
+                    optionsHtml += `<option value="${dept}">${dept}</option>`;
+                });
+                $departmentFilter.html(optionsHtml);
+            }
+
+            function loadEmployees(filters = {}) {
+                $tableBody.html('<tr><td colspan="8" class="text-center"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Đang tải dữ liệu...</td></tr>');
+
+                const dataToSend = {
+                    search: filters.search || '',
+                    department: filters.department || ''
+                };
+
+                $.ajax({
+                    url: dataUrl,
+                    type: 'GET',
+                    dataType: 'json',
+                    data: dataToSend,
+                    success: function(response) {
+                        const employees = response.data || [];
+                
+                        if (employees.length > 0) {
+                            renderTable(employees);
+                        } else {
+                            $tableBody.html('<tr><td colspan="8" class="text-center">Không tìm thấy nhân viên nào.</td></tr>');
+                        }
+                
+                        if ($departmentFilter.children().length <= 1) {
+                            populateDepartmentFilter(employees);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Lỗi AJAX: ", error);
+                        $tableBody.html('<tr><td colspan="8" class="text-center text-danger">Đã xảy ra lỗi khi tải dữ liệu.</td></tr>');
+                    }
+                });
+            }
+    
+            function performSearch() {
+                const filters = {
+                    search: $searchInput.val().trim(),
+                    department: $departmentFilter.val()
+                };
+                loadEmployees(filters);
+            }
+
+            $filterForm.on('submit', function(e) {
+                e.preventDefault();
+                performSearch();
+            });
+
+            $departmentFilter.on('change', performSearch);
+
+            loadEmployees();
+
+            $('#selectYear').change(function() {
+                const selectedYear = $(this).val();
+                if (selectedYear) {
+                    fetchProductivityData(parseInt(selectedYear));
+                    fetchKaizenData(parseInt(selectedYear));
+                    fetchErrorData(parseInt(selectedYear));
+                }
+            });
+            const initialYear = $('#selectYear').val();
+            if (initialYear) {
+                fetchProductivityData(parseInt(initialYear));
+                fetchKaizenData(parseInt(initialYear));
+                fetchErrorData(parseInt(initialYear));
+            }
+        });
+    </script>
+}

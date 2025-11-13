@@ -1,0 +1,362 @@
+﻿@{
+    ViewData["Title"] = "Quang Minh - Lịch sử sửa chữa";
+
+    string defaultStartDate = DateTime.Today.AddYears(-5).ToString("yyyy-MM-dd");
+    string defaultEndDate = DateTime.Today.ToString("yyyy-MM-dd");
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="text-center text-4xl font-extrabold text-primary text-center mb-4">Báo lỗi sửa chữa thiết bị máy móc</h4>
+
+                    <form id="filterForm" class="row mb-4 align-items-end">
+                        <div class="col-md-3 mb-3">
+                            <label for="departmentFilter" class="form-label">Bộ phận</label>
+                            <select id="departmentFilter" name="department" class="form-control">
+                                <option value="">-- Chọn Bộ phận --</option>
+                                @if (ViewBag.Departments != null)
+                                {
+                                    foreach (var deptName in ViewBag.Departments)
+                                    {
+                                        <option value="@deptName.DepartmentName">@deptName.DepartmentName</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="keyFilter" class="form-label">Tìm kiếm </label>
+                            <input type="text" id="keyFilter" name="key" class="form-control" placeholder="Nhập từ khóa..." />
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label for="startDateFilter" class="form-label">Từ ngày</label>
+                            <input type="date" id="startDateFilter" name="startDate" class="form-control" value="@defaultStartDate" />
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label for="endDateFilter" class="form-label">Đến ngày</label>
+                            <input type="date" id="endDateFilter" name="endDate" class="form-control" value="@defaultEndDate" />
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <button type="submit" id="filterButton" class="btn btn-primary w-100"><i class="fas fa-search"></i> Tìm kiếm</button>
+                        </div>
+                    </form>
+
+                    <hr />
+
+                    <div class="table-responsive overflow-auto" style="height: 800px;">
+                        <table id="repairTable" class="table table-bordered table-hover">
+                            <thead class="table-dark" style="position: sticky; top: 0; z-index: 1;">
+                                <tr>
+                                    <th style="width: 50px;">STT</th>
+                                    <th>Tên thiết bị</th>
+                                    <th>Mã thiết bị</th>
+                                    <th>Bộ phận</th>
+                                    <th>Số lượng</th>
+                                    <th>Tình trạng lỗi hỏng</th>
+                                    <th>Nguyên nhân</th>
+                                    <th>Phương pháp xử lý</th>
+                                    <th>Ngày tiếp nhận</th>
+                                    <th>BPBT xác nhận</th>
+                                    <th>Ngày hoàn thành</th>
+                                    <th>Chi phí</th>
+                                    <th>Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody id="repairTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="replacementModal" tabindex="-1" role="dialog" aria-labelledby="replacementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="replacementModalLabel">Thiết bị và Vật tư Thay thế</h5>
+                <button type="button" class="close btn-close-modal" data-modal-id="#replacementModal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-info">
+                        <tr>
+                            <th style="width: 5%;">STT</th>
+                            <th>Thiết bị/Vật tư</th>
+                            <th style="width: 30%;">Tài liệu PDF</th>
+                        </tr>
+                    </thead>
+                    <tbody id="replacementListBody">
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-close-modal" data-modal-id="#replacementModal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="pdfEmbedModal" tabindex="-1" role="dialog" aria-labelledby="pdfEmbedModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pdfEmbedModalLabel">Xem Tài liệu: <span id="pdf-file-name-embed"></span></h5>
+                <button type="button" class="close btn-close-modal" data-modal-id="#pdfEmbedModal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-0" style="height: 80vh;">
+                <div id="pdfEmbedContainer" style="height: 100%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function dateFormatter(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        function getFileName(filePath) {
+            if (!filePath) return '';
+            const lastSlash = filePath.lastIndexOf('/');
+            const fileNameWithTimestamp = lastSlash !== -1 ? filePath.substring(lastSlash + 1) : filePath;
+            const lastUnderscore = fileNameWithTimestamp.lastIndexOf('_');
+            return lastUnderscore !== -1 ? fileNameWithTimestamp.substring(lastUnderscore + 1) : fileNameWithTimestamp;
+        }
+
+        function getRowClass(row) {
+            const confirmDateStr = row.confirmCompletionDate;
+            const completionDateStr = row.completionDate;
+
+            const isCompleted = completionDateStr && completionDateStr !== "";
+
+            if (isCompleted) {
+                return 'table-success';
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (confirmDateStr && confirmDateStr !== "") {
+                const confirmDate = new Date(confirmDateStr);
+                confirmDate.setHours(0, 0, 0, 0);
+
+                if (confirmDate < today) {
+                    return 'table-danger';
+                }
+            } else {
+                const dateMonth = row.dateMonth ? new Date(row.dateMonth) : null;
+                if (dateMonth) dateMonth.setHours(0, 0, 0, 0);
+
+                if (dateMonth && dateMonth < today) {
+                    return 'table-warning';
+                }
+            }
+            return '';
+        }
+
+        function renderRepairTable(data) {
+            const $tbody = $('#repairTableBody');
+            $tbody.empty();
+
+            if (data.length === 0) {
+                $tbody.append('<tr><td colspan="13" class="text-center">Không tìm thấy dữ liệu phù hợp</td></tr>');
+                return;
+            }
+
+            data.forEach((row, index) => {
+                const rowClass = getRowClass(row);
+                const html = `
+                    <tr class="${rowClass}" data-id="${row.id}" data-index="${index}">
+                        <td>${index + 1}</td>
+                        <td>${row.equipmentName || ''}</td>
+                        <td>${row.equipmentCode || ''}</td>
+                        <td>${row.department || ''}</td>
+                        <td>${row.qty || ''}</td>
+                        <td>${row.errorCondition || ''}</td>
+                        <td>${row.reason || ''}</td>
+                        <td>${row.processingMethod || ''}</td>
+                        <td>${dateFormatter(row.dateMonth)}</td>
+                        <td>${dateFormatter(row.confirmCompletionDate)}</td>
+                        <td>${dateFormatter(row.completionDate)}</td>
+                        <td>${row.repairCosts || ''}</td>
+                        <td>${row.note || ''}</td>
+                    </tr>
+                `;
+                $tbody.append(html);
+            });
+        }
+
+        function loadRepairHistory(filterParams = {}) {
+            const url = '/machine/GetEquipmentRepair';
+
+            const $tbody = $('#repairTableBody');
+            $tbody.empty().append('<tr><td colspan="13" class="text-center"><div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Đang tải...</span></div> Đang tải dữ liệu...</td></tr>');
+
+            $.ajax({
+                url: url,
+                type: 'GET',
+                dataType: 'json',
+                data: filterParams,
+                success: function(response) {
+                    if (response.success && response.data) {
+                        renderRepairTable(response.data);
+                    } else {
+                        $tbody.empty().append('<tr><td colspan="13" class="text-center">' + (response.message || 'Không tìm thấy dữ liệu') + '</td></tr>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $tbody.empty().append('<tr><td colspan="13" class="text-center text-danger">Đã xảy ra lỗi khi tải dữ liệu: ' + error + '</td></tr>');
+                }
+            });
+        }
+
+        function renderReplacementList(data) {
+            const $tbody = $('#replacementListBody');
+            $tbody.empty();
+
+            if (data.length === 0) {
+                $tbody.append('<tr><td colspan="3" class="text-center">Không có thiết bị hoặc vật tư thay thế.</td></tr>');
+                return;
+            }
+
+            data.forEach((item, index) => {
+                const pdfLinkHtml = item.filePdf
+                    ? `<a href="#" class="pdf-file-link view-pdf-embed" data-pdf-url="/files/equipments/${item.filePdf}" data-pdf-name="${getFileName(item.filePdf)}">${getFileName(item.filePdf)}</a>`
+                    : '<span class="text-muted">Không có PDF</span>';
+
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.equipmentAndlSupplies}</td>
+                        <td>${pdfLinkHtml}</td>
+                    </tr>
+                `;
+                $tbody.append(row);
+            });
+        }
+
+        function loadReplacementData(repairId) {
+            const apiUrl = `/machine/GetReplacementsByRepairId?repairId=${repairId}`;
+            const $tbody = $('#replacementListBody');
+            $tbody.empty().append('<tr><td colspan="3" class="text-center">Đang tải...</td></tr>');
+
+            $.ajax({
+                url: apiUrl,
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success && response.data) {
+                        renderReplacementList(response.data);
+                        $('#replacementModal').modal('show');
+                    } else {
+                        alert(response.message || 'Không tìm thấy thiết bị/vật tư thay thế.');
+                        renderReplacementList([]);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Đã xảy ra lỗi khi tải dữ liệu vật tư.');
+                    renderReplacementList([]);
+                }
+            });
+        }
+
+
+        $(document).ready(function() {
+            loadRepairHistory();
+
+            $('#filterForm').on('submit', function(event) {
+                event.preventDefault();
+
+                const filterParams = {
+                    department: $('#departmentFilter').val(),
+                    key: $('#keyFilter').val(),
+                    startDate: $('#startDateFilter').val(),
+                    endDate: $('#endDateFilter').val()
+                };
+
+                loadRepairHistory(filterParams);
+            });
+
+            $.contextMenu({
+                selector: '#repairTableBody tr',
+                callback: function(key, options) {
+                    const $tr = $(this);
+                    const repairId = $tr.data('id');
+
+                    if (!repairId) {
+                        alert('Lỗi: Không tìm thấy ID sửa chữa.');
+                        return;
+                    }
+
+                    if (key === 'viewReplacement') {
+                        loadReplacementData(repairId);
+                    }
+                },
+                items: {
+                    "viewReplacement": {
+                        name: "Xem thiết bị vật tư thay thế"
+                    }
+                }
+            });
+
+            $(document).on('click', '.view-pdf-embed', function (event) {
+                event.preventDefault();
+
+                const pdfUrl = $(this).data('pdf-url');
+                const pdfName = $(this).data('pdf-name');
+                const embedContainer = document.getElementById('pdfEmbedContainer');
+
+                $('#pdf-file-name-embed').text(pdfName);
+
+                if (embedContainer && pdfUrl) {
+                    $(embedContainer).empty();
+
+                    const embedElement = document.createElement('embed');
+                    embedElement.src = pdfUrl;
+                    embedElement.type = 'application/pdf';
+                    embedElement.width = '100%';
+                    embedElement.height = '100%';
+
+                    embedContainer.appendChild(embedElement);
+                    $('#pdfEmbedModal').modal({
+                        backdrop: false,
+                        focus: false
+                    }).modal('show');
+
+                } else {
+                    alert('Lỗi: Không tìm thấy đường dẫn file PDF.');
+                }
+            });
+
+            $(document).on('click', '.btn-close-modal', function() {
+                const modalId = $(this).data('modal-id');
+                $(modalId).modal('hide');
+            });
+
+            $('#pdfEmbedModal').on('hidden.bs.modal', function () {
+                $('#pdfEmbedContainer').empty();
+                if ($('#replacementModal').hasClass('show')) {
+                    $('body').addClass('modal-open');
+                    if ($('.modal-backdrop').length === 0) {
+                        $('body').append('<div class="modal-backdrop fade show"></div>');
+                    }
+                }
+            });
+        });
+    </script>
+}

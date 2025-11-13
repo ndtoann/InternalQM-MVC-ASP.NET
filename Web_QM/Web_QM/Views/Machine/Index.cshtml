@@ -1,0 +1,46 @@
+﻿@{
+    ViewData["Title"] = "Quang Minh - Quản lý máy";
+}
+
+<div class="container">
+    <h4 class="text-center text-4xl font-extrabold text-primary text-center mb-2">Quản lý thiết bị</h4>
+    <div class="dashboard-grid">
+
+        <div class="info-box machine-list">
+            <div class="icon-container">
+                <i class="fas fa-tools icon"></i>
+            </div>
+            <h2 class="box-title">Danh sách máy móc</h2>
+            <p class="box-content">Tổng số máy : <strong>@ViewBag.CountMachine</strong></p>
+            <a href="/machine/list" class="box-link">Xem chi tiết &rarr;</a>
+        </div>
+
+        <div class="info-box machine-groups">
+            <div class="icon-container">
+                <i class="fas fa-boxes icon"></i>
+            </div>
+            <h2 class="box-title">Nhóm máy</h2>
+            <p class="box-content">Số nhóm máy đã phân loại: <strong>@ViewBag.CountMachineGroup</strong></p>
+            <a href="/machine/group" class="box-link">Xem nhóm máy &rarr;</a>
+        </div>
+
+        <div class="info-box repair-history">
+            <div class="icon-container">
+                <i class="fas fa-history icon"></i>
+            </div>
+            <h2 class="box-title">Báo lỗi sửa chữa</h2>
+            <p class="box-content">Thiết bị báo lỗi chưa sửa chữa: <strong>@ViewBag.CountRepair</strong> báo lỗi</p>
+            <a href="/machine/repair" class="box-link">Xem danh sách &rarr;</a>
+        </div>
+
+        <div class="info-box maintenance-schedule">
+            <div class="icon-container">
+                <i class="fas fa-calendar-check icon"></i>
+            </div>
+            <h2 class="box-title">Lịch bảo dưỡng</h2>
+            <p class="box-content">Sắp tới hạn bảo dưỡng: <strong>@ViewBag.CountMaintenance</strong> máy</p>
+            <a href="/machine/schedulemaintenance" class="box-link">Xem lịch bảo dưỡng &rarr;</a>
+        </div>
+
+    </div>
+</div>

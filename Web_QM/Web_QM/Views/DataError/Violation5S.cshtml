@@ -1,0 +1,343 @@
+﻿@{
+    ViewData["Title"] = "Quang Minh - Thống kê lỗi 5S";
+
+    string defaultStartDate = DateTime.Today.AddYears(-5).ToString("yyyy-MM-dd");
+    string defaultEndDate = DateTime.Today.ToString("yyyy-MM-dd");
+}
+
+<div class="row">
+    <div class="card p-3 w-100">
+        <div class="d-flex justify-content-center">
+            <div class="input-group" style="width: 200px;">
+                <span class="input-group-text fw-bold" for="yearFilter" style="background-color: #e9ecef;">
+                    Chọn Năm:
+                </span>
+                <select id="yearFilter" class="form-select">
+                    </select>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-8 grid-margin stretch-card">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title text-center fw-bold fs-3">Số lượng Vi phạm 5S theo Tháng</h5>
+                        <canvas id="monthlyViolationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 grid-margin stretch-card">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title text-center fw-bold fs-3">Tỷ lệ Vi phạm 5S theo Bộ phận</h5>
+                        <canvas id="departmentViolationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="text-center text-4xl font-extrabold text-primary text-center mb-4">Danh sách Vi phạm 5S của Nhân viên</h4>
+
+                    <form id="filterForm" class="row mb-4 align-items-end">
+                        <div class="col-md-3 mb-3">
+                            <label for="departmentFilter" class="form-label">Bộ phận</label>
+                            <select id="departmentFilter" name="department" class="form-control">
+                                <option value="">-- Chọn Bộ phận --</option>
+                                @if (ViewBag.Departments != null)
+                                {
+                                    foreach (var deptName in ViewBag.Departments)
+                                    {
+                                        <option value="@deptName.DepartmentName">@deptName.DepartmentName</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="keyFilter" class="form-label">Tìm kiếm</label>
+                            <input type="text" id="keyFilter" name="key" class="form-control" placeholder="Nhập từ khóa..." />
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label for="startDateFilter" class="form-label">Từ Ngày</label>
+                            <input type="date" id="startDateFilter" name="startDate" class="form-control" value="@defaultStartDate" />
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label for="endDateFilter" class="form-label">Đến Ngày</label>
+                            <input type="date" id="endDateFilter" name="endDate" class="form-control" value="@defaultEndDate" />
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <button type="submit" id="filterButton" class="btn btn-primary w-100">
+                                <i class="fas fa-search"></i> Tìm kiếm
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr />
+
+                    <div class="table-responsive overflow-auto" style="height: 800px;">
+                        <table id="violationsTable" class="table table-bordered table-hover">
+                            <thead class="table-dark" style="position: sticky; top: 0; z-index: 1;">
+                                <tr>
+                                    <th style="width: 50px;">STT</th>
+                                    <th>Mã NV</th>
+                                    <th>Tên NV</th>
+                                    <th>Bộ phận</th>
+                                    <th>Nội dung lỗi 5S</th>
+                                    <th>Ngày vi phạm</th>
+                                    <th>Số lần</th>
+                                </tr>
+                            </thead>
+                            <tbody id="violationsTableBody">
+                            </tbody>
+                        </table>
+                        <div id="loadingMessage" class="text-center p-3">Đang tải dữ liệu...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let monthlyChart = null;
+        let departmentChart = null;
+
+        function getChartColors(count) {
+            const baseColors = [
+                'rgba(54, 162, 235, 0.8)', 'rgba(255, 99, 132, 0.8)', 'rgba(255, 206, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)', 'rgba(153, 102, 255, 0.8)', 'rgba(255, 159, 64, 0.8)',
+                'rgba(199, 199, 199, 0.8)', 'rgba(83, 102, 255, 0.8)', 'rgba(255, 102, 102, 0.8)',
+                'rgba(102, 255, 102, 0.8)', 'rgba(255, 102, 204, 0.8)', 'rgba(102, 255, 204, 0.8)'
+            ];
+
+            return Array.from({ length: count }, (_, i) => baseColors[i % baseColors.length]);
+        }
+
+        function drawMonthlyViolationChart(data) {
+            const ctx = document.getElementById('monthlyViolationChart').getContext('2d');
+
+            const months = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+                            'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+            const counts = new Array(12).fill(0);
+
+            data.forEach(item => {
+                if (item.month >= 1 && item.month <= 12) {
+                    counts[item.month - 1] = item.totalQty;
+                }
+            });
+
+            if (monthlyChart) {
+                monthlyChart.destroy();
+            }
+
+            monthlyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Tổng số Vi phạm (lần)',
+                        data: counts,
+                        backgroundColor: getChartColors(12),
+                        borderColor: getChartColors(12).map(c => c.replace('0.8', '1')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Tổng số Vi phạm' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Tháng' }
+                        }
+                    },
+                    plugins: {
+                         legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        function drawDepartmentViolationChart(data) {
+            const ctx = document.getElementById('departmentViolationChart').getContext('2d');
+
+            const departments = data.map(item => item.department);
+            const totalQtys = data.map(item => item.totalQty);
+            const colors = getChartColors(departments.length);
+
+            if (departmentChart) {
+                departmentChart.destroy();
+            }
+
+            departmentChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: departments,
+                    datasets: [{
+                        label: 'Số lần Vi phạm',
+                        data: totalQtys,
+                        backgroundColor: colors,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'right' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                                    return `${label}: ${value} lần (${percentage})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadChartData(year) {
+            const API_URL = '/DataError/GetChartData';
+
+            $('#monthlyViolationChart').parent().append('<div class="chart-loading-overlay text-center p-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Đang tải dữ liệu...</p></div>');
+            $('#departmentViolationChart').parent().append('<div class="chart-loading-overlay text-center p-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Đang tải dữ liệu...</p></div>');
+
+            $.ajax({
+                url: API_URL,
+                type: 'GET',
+                dataType: 'json',
+                data: { year: year },
+                success: function(response) {
+                    $('.chart-loading-overlay').remove();
+
+                    if (response.success && response.data) {
+                        drawMonthlyViolationChart(response.data.monthlyData);
+                        drawDepartmentViolationChart(response.data.departmentData);
+                    } else {
+                        $('#monthlyViolationChart').parent().append('<div class="chart-loading-overlay text-center p-5"><p class="text-danger">Không có dữ liệu cho năm ' + year + '</p></div>');
+                        $('#departmentViolationChart').parent().append('<div class="chart-loading-overlay text-center p-5"><p class="text-danger">Không có dữ liệu cho năm ' + year + '</p></div>');
+
+                        if (monthlyChart) monthlyChart.destroy();
+                        if (departmentChart) departmentChart.destroy();
+                    }
+                },
+                error: function() {
+                    $('.chart-loading-overlay').text('Lỗi tải dữ liệu biểu đồ.').removeClass('text-primary').addClass('text-danger');
+                }
+            });
+        }
+
+        function dateFormatter(dateString) {
+            if (!dateString) return '';
+            const parts = dateString.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return dateString;
+        }
+
+        function loadViolations(filterParams = {}) {
+            const API_URL = '/DataError/GetViolations';
+            const $tbody = $('#violationsTableBody');
+            const $loading = $('#loadingMessage');
+
+            $tbody.empty();
+            $loading.text('Đang tải dữ liệu...').show();
+
+            $.ajax({
+                url: API_URL,
+                type: 'GET',
+                dataType: 'json',
+                data: filterParams,
+                success: function(response) {
+                    $loading.hide();
+
+                    if (response.success && response.data) {
+                        const data = response.data;
+                        if (data.length === 0) {
+                            $loading.text('Không tìm thấy lỗi 5S phù hợp.').show();
+                            return;
+                        }
+
+                        let htmlRows = '';
+                        data.forEach((row, index) => {
+                            htmlRows += `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${row.employeeCode || ''}</td>
+                                    <td>${row.employeeName || ''}</td>
+                                    <td>${row.department || ''}</td>
+                                    <td>${row.content5S || ''}</td>
+                                    <td>${dateFormatter(row.dateMonth)}</td>
+                                    <td>${row.qty}</td>
+                                </tr>
+                            `;
+                        });
+                        $tbody.html(htmlRows);
+
+                    } else {
+                        $loading.text('Lỗi tải dữ liệu: ' + (response.message || 'Không rõ lỗi')).show();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $loading.text('Lỗi kết nối server. Vui lòng thử lại.').show();
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            const currentYear = new Date().getFullYear();
+            const $yearFilter = $('#yearFilter');
+            for (let i = 0; i < 5; i++) {
+                const year = currentYear - i;
+                $yearFilter.append(`<option value="${year}">${year}</option>`);
+            }
+            $yearFilter.val(currentYear);
+
+            $yearFilter.on('change', function() {
+                const selectedYear = $(this).val();
+                loadChartData(selectedYear);
+            });
+            loadChartData(currentYear);
+
+            loadViolations();
+
+            $('#filterForm').on('submit', function(event) {
+                event.preventDefault();
+
+                const filterParams = {};
+
+                const key = $('#keyFilter').val();
+                const department = $('#departmentFilter').val();
+                const startDate = $('#startDateFilter').val();
+                const endDate = $('#endDateFilter').val();
+
+                if (key) filterParams.key = key;
+                if (department) filterParams.department = department;
+                if (startDate) filterParams.startDate = startDate;
+                if (endDate) filterParams.endDate = endDate;
+
+                loadViolations(filterParams);
+            });
+            $('#keyFilter').on('keypress', function(e) {
+                if (e.which == 13) {
+                    e.preventDefault();
+                    $('#filterForm').submit();
+                }
+            });
+        });
+    </script>
+}

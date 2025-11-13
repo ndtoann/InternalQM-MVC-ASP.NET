@@ -1,0 +1,106 @@
+﻿@{
+    ViewData["Title"] = "Đổi mật khẩu";
+}
+﻿
+
+<div class="flex items-center justify-center">
+    <div class="login-card w-full flex items-center justify-center mt-5">
+        <div class="overlay absolute inset-0"></div>
+        <div class="z-10 form-card p-8 sm:p-10 md:p-14 rounded-3xl w-full max-w-lg animated-form space-y-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-8">Đổi mật khẩu</h1>
+            <div id="statusAlert" class="alert alert-dismissible d-none" role="alert">
+                <span id="alertMessage"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <form id="rsPassForm" class="space-y-6">
+                <!-- Username Field -->
+                <div>
+                    <label for="passOld" class="sr-only">Mật khẩu cũ</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-600">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <input type="password" id="passOld" name="passOld" placeholder="Mật khẩu cũ" required autofocus class="input-field w-full pl-12 pr-4 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div>
+                    <label for="passNew" class="sr-only">Mật khẩu mới</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-600">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <input type="password" id="passNew" name="passNew" placeholder="Mật khẩu mới" required class="input-field w-full pl-12 pr-4 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="passNewRepeat" class="sr-only">Mật khẩu mới</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-600">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <input type="password" id="passNewRepeat" name="passNewRepeat" placeholder="Nhập lại mật khẩu mới" required class="input-field w-full pl-12 pr-4 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div>
+                    <button type="submit" id="submitButton" class="submit-btn w-full flex items-center justify-center py-3 px-4 rounded-xl text-white font-semibold shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 transition duration-300 ease-in-out">
+                        Xác nhận
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $("#rsPassForm").on("submit", function(e) {
+                e.preventDefault();
+
+                var form = $(this);
+                var url = "/Home/ResetPass";
+                var formData = form.serialize();
+
+                var alertDiv = $("#statusAlert");
+                var alertMessageSpan = $("#alertMessage");
+                var submitButton = $("#submitButton");
+
+                alertDiv.addClass("d-none").removeClass("alert-success alert-danger fade show");
+                alertMessageSpan.text("");
+                submitButton.prop('disabled', true).text('Đang xử lý...');
+
+                $.ajax({
+                    type: "POST",
+                    url: url,
+                    data: formData,
+                    dataType: "json",
+                    success: function(response) {
+                        submitButton.prop('disabled', false).text('Xác nhận');
+
+                        alertDiv.removeClass("d-none");
+
+                        if (response.status === true) {
+                            alertDiv.addClass("alert-success fade show").removeClass("alert-danger");
+                            form[0].reset();
+                        } else {
+                            alertDiv.addClass("alert-danger fade show").removeClass("alert-success");
+                        }
+
+                        alertMessageSpan.text(response.message);
+                    },
+                    error: function() {
+                        submitButton.prop('disabled', false).text('Xác nhận');
+
+                        alertDiv.removeClass("d-none").addClass("alert-danger fade show").removeClass("alert-success");
+                        alertMessageSpan.text("Đã xảy ra lỗi hệ thống. Vui lòng thử lại!");
+                    }
+                });
+            });
+        });
+    </script>
+}

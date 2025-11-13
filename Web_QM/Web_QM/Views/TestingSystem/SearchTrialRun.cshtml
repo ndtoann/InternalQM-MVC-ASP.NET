@@ -1,0 +1,194 @@
+﻿@{
+    ViewData["Title"] = "Kết quả kiểm tra chạy thử";
+}
+
+<style>
+    .search-input {
+        transition: all 0.2s ease-in-out;
+        border-color: #d1d5db;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #2196f3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.2);
+        }
+
+    .search-button {
+        transition: all 0.2s ease-in-out;
+    }
+
+        .search-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+    .table-header th {
+        background-color: #f3f4f6;
+    }
+
+    .table-body tr:nth-child(odd) {
+        background-color: #f9fafb;
+    }
+
+    .table-body tr:hover {
+        background-color: #e5e7eb;
+    }
+
+    .text-danger {
+        color: #dc2626;
+    }
+
+    .text-warning {
+        color: #f59e0b;
+    }
+
+    .text-success {
+        color: #10b981;
+    }
+</style>
+
+
+<div class="container mx-auto mt-10 p-8 rounded-xl">
+    <h1 class="text-4xl font-extrabold text-primary text-center mb-2">
+        Tra cứu kết quả kiểm tra chạy thử
+    </h1>
+    <p class="text-center text-gray-500 mb-8">Nhập mã nhân viên của bạn để xem kết quả.</p>
+
+    <div class="search-form-container bg-white p-6 mb-8 rounded-xl shadow-md">
+        <form asp-action="searchingtrialrun" method="get" class="w-full">
+            <div class="relative flex items-center w-full">
+                <input type="text" id="key" name="key" required value="@ViewBag.Key" placeholder="Nhập mã nhân viên của bạn..." class="flex-grow py-4 px-6 rounded-l-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300">
+                <button type="submit" class="bg-primary text-white font-bold py-4 px-8 rounded-r-full shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    @if (ViewBag.Theories != null || ViewBag.Practices != null)
+    {
+        @if (ViewBag.Theories != null)
+        {
+            <div class="section-card p-6 rounded-3xl">
+                <h5 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+                    <i class="fas fa-book-open mr-2 text-primary"></i>Chạy thử lý thuyết
+                </h5>
+                <div class="overflow-x-auto rounded-xl">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="table-header">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">#</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Đợt</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nhân viên</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Đúng</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Sai</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Liệt</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 table-body">
+                            @{
+                                var count = 1;
+                            }
+                            @foreach (var item in ViewBag.Theories)
+                            {
+                                <tr>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">@(count++)</td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm">@item.ExamName</td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm">@item.EmployeeCode - @item.EmployeeName</td>
+                                    @{
+                                        var totalQuestions = item.Correct + item.InCorrect + item.CriticalFail;
+                                        var correctPercentage = totalQuestions > 0 ? (double)item.Correct / totalQuestions * 100 : 0;
+                                        var correctClass = "";
+                                        if (item.CriticalFail > 0)
+                                        {
+                                            correctClass = "text-danger";
+                                        }
+                                        else
+                                        {
+                                            if (correctPercentage >= 60)
+                                            {
+                                                correctClass = "text-success";
+                                            }
+                                            else if (correctPercentage >= 50)
+                                            {
+                                                correctClass = "text-warning";
+                                            }
+                                            else
+                                            {
+                                                correctClass = "text-danger";
+                                            }
+                                        }
+                                    }
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold @correctClass">@item.Correct</td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold">@item.InCorrect</td>
+                                    <td class="px-4 py-4 whitespace-now-wrap text-sm font-semibold">@item.CriticalFail</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
+        <!-- Phần kết quả thực hành -->
+        @if (ViewBag.Practices != null)
+        {
+            <div class="section-card p-6 rounded-3xl">
+                <h5 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+                    <i class="fas fa-tools mr-2 text-primary"></i>Chạy thử thực hành
+                </h5>
+                <div class="mb-4 text-gray-700">
+                    <h6 class="font-bold">Đợt chạy thử: <span class="font-bold text-info">@ViewBag.Practices.TestName</span></h6>
+                    <h6 class="font-bold">Cấp độ: <span class="font-bold text-info">@ViewBag.Practices.TestLevel</span></h6>
+                    <h6 class="font-bold">Tên chi tiết: <span class="font-bold text-info">@ViewBag.Practices.PartName</span></h6>
+                    <h6 class="font-bold">Kết quả: <span class="font-bold text-info">@ViewBag.Practices.Result</span></h6>
+                </div>
+                <div class="overflow-x-auto rounded-xl">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="table-header">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nguyên Công</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Thời gian chuẩn bị định mức</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Thời gian chuẩn bị thực tế</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Số lần Offset định mức</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Số lần Offset thực tế</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 table-body">
+                            @foreach (var item in ViewBag.PracticeDetail)
+                            {
+                                <tr>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm">@item.OperationName</td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm">
+                                        <span class="font-semibold text-gray-700">@item.PrepTimeStandard</span><br />
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm">
+                                        <span class="@(item.PrepTimeActual > item.PrepTimeStandard ? "text-danger" : "text-success") font-semibold">@item.PrepTimeActual</span>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm">
+                                        <span class="font-semibold text-gray-700">@item.OffsetCountStandard</span><br />
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm">
+                                        <span class="@(item.OffsetCountActual > item.OffsetCountStandard ? "text-danger" : "text-success") font-semibold">@item.OffsetCountActual</span>
+                                    </td>
+                                    <td class="px-4 py-4 text-sm max-w-xs overflow-hidden">@item.Note</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="section-card p-10 text-center rounded-3xl">
+            <h5 class="text-2xl text-gray-500">
+                <i class="fas fa-info-circle mr-2"></i>Không có kết quả nào được tìm thấy.
+            </h5>
+        </div>
+    }
+</div>
+

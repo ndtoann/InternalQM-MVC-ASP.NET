@@ -1,0 +1,322 @@
+﻿@using Web_QM.Models
+@model IEnumerable<MachineMaintenance>;
+@{
+    ViewData["Title"] = "Lịch bảo dưỡng máy";
+
+    string defaultStartDate = DateTime.Today.AddYears(-5).ToString("yyyy-MM-dd");
+    string defaultEndDate = DateTime.Today.ToString("yyyy-MM-dd");
+    string startDateValue = ViewBag.StartDate ?? defaultStartDate;
+    string endDateValue = ViewBag.EndDate ?? defaultEndDate;
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Lịch bảo dưỡng máy</h4>
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    <form action="" method="get">
+                        <div class="row align-items-center">
+                            <div class="col-lg-2">
+                                <div class="form-group mb-0">
+                                    <select class="form-control" name="isComplete" asp-items="@(ViewData["IsCompleteList"] as SelectList)"></select>
+                                </div>
+                            </div>
+                            <div class="col-lg-2">
+                                <div class="form-group mb-0">
+                                    <input class="form-control" type="date" name="startDate" value="@startDateValue" />
+                                </div>
+                            </div>
+                            <div class="col-lg-2">
+                                <div class="form-group mb-0">
+                                    <input class="form-control" type="date" name="endDate" value="@endDateValue" />
+                                </div>
+                            </div>
+                            <div class="col-lg-3 d-flex align-items-center">
+                                <div class="form-group me-2 flex-grow-1 mb-0">
+                                    <input type="text"
+                                           class="form-control"
+                                           name="key"
+                                           placeholder="Tìm mã máy"
+                                           value="@ViewBag.KeySearch" />
+                                </div>
+                                <div class="form-group mb-0">
+                                    <button type="submit" class="btn btn-primary">
+                                        Tìm kiếm
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <a class="btn btn-success" href="~/admin/machinemaintenance/add">Thêm mới</a>
+                    <a class="btn btn-success" href="#" data-bs-toggle="modal" data-bs-target="#importExcelModal">Import</a>
+                    <div class="table-responsive overflow-auto" style="height: 1000px;">
+                        <table class="table table-hover table-bordered">
+                            <thead class="text-white bg-dark" style="position: sticky; top: 0; z-index: 1;">
+                                <tr>
+                                    <th>Xác nhận</th>
+                                    <th>STT</th>
+                                    <th>Mã máy</th>
+                                    <th>Ngày bảo dưỡng</th>
+                                    <th>Nhân viên bảo dưỡng</th>
+                                    <th>Nội dung bảo dưỡng</th>
+                                    <th>Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody class="mm-table-body">
+                                @{
+                                    var count = 1;
+                                }
+                                @foreach (var item in Model)
+                                {
+                                    DateOnly today = DateOnly.FromDateTime(DateTime.Today);
+                                    string rowClass = "";
+                                    if (item.IsComplete != 1 && item.DateMonth < today)
+                                    {
+                                        rowClass = "table-danger";
+                                    }
+                                    else if (item.IsComplete == 1)
+                                    {
+                                        rowClass = "table-success";
+                                    }
+                                    <tr class="context-menu-row @rowClass" data-id="@item.Id" data-machine-code="@item.MachineCode">
+                                        <td>
+                                            @if (item.IsComplete == 0)
+                                            {
+                                                <a class="confirm p-3" data-id="@item.Id">
+                                                    <i class="mdi mdi-check-circle text-success"></i>
+                                                </a>
+                                            }
+                                        </td>
+                                        <td>@(count++)</td>
+                                        <td>@item.MachineCode</td>
+                                        <td>@item.DateMonth</td>
+                                        <td class="text-wrap">@item.MaintenanceStaff</td>
+                                        <td class="text-wrap">@item.MaintenanceContent</td>
+                                        <td class="text-wrap">@item.Note</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="contextMenu" class="dropdown-menu" style="position: absolute; display: none;">
+    <a class="dropdown-item" href="#" id="editLink">Sửa</a>
+    <a class="dropdown-item" href="#" id="deleteLink">Xóa</a>
+</div>
+
+<div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importExcelModalLabel">Import lịch bảo dưỡng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="importForm" method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div id="import-alert" class="alert d-none" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label for="excelFile" class="form-label">Chọn File Excel (.xlsx, .xls)</label>
+                        <input class="form-control" type="file" id="excelFile" name="excelFile" accept=".xlsx, .xls" required>
+                    </div>
+
+                    <p>
+                        Vui lòng đảm bảo dùng đúng file excel mẫu.
+                    </p>
+                    <a href="~/admin/machinemaintenance/DownloadTemplate" class="btn btn-sm btn-info" download>
+                        <i class="mdi mdi-download"></i> Tải file mẫu Import
+                    </a>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary" id="btnImport">
+                        <span id="spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        <span id="btnText">Thực hiện Import</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tableBodies = document.querySelectorAll('.mm-table-body');
+            const contextMenu = document.getElementById('contextMenu');
+            let mmId = null;
+            let machineCode = null;
+
+            tableBodies.forEach(tableBody => {
+                tableBody.addEventListener('contextmenu', function (event) {
+                    const row = event.target.closest('tr');
+                    if (!row) return;
+
+                    event.preventDefault();
+
+                    mmId = row.getAttribute('data-id');
+                    machineCode = row.getAttribute('data-machine-code');
+
+                    contextMenu.style.display = 'block';
+                    contextMenu.style.left = event.pageX + 'px';
+                    contextMenu.style.top = event.pageY + 'px';
+                });
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!contextMenu.contains(e.target)) {
+                    contextMenu.style.display = 'none';
+                }
+            });
+
+            document.getElementById('editLink').addEventListener('click', function (event) {
+                if (mmId) {
+                    window.location.href = `/admin/machinemaintenance/edit?id=${mmId}`;
+                }
+            });
+
+            document.getElementById('deleteLink').addEventListener('click', function (event) {
+                if (mmId && confirm(`Bạn có chắc chắn muốn xóa lịch bảo dưỡng của máy ${machineCode}?`)) {
+                    window.location.href = `/admin/machinemaintenance/delete?id=${mmId}`;
+                }
+            });
+
+            $(document).on('click', 'a.confirm', function (e) {
+                e.preventDefault();
+                const $confirmButton = $(this);
+                const maintenanceId = $(this).data('id');
+                const $currentRow = $(this).closest('tr');
+                if (confirm('Xác nhận đã bảo dưỡng thiết bị?')) {
+                    $.ajax({
+                        url: '/admin/machinemaintenance/confirmcomplete',
+                        type: 'POST',
+                        data: { id: maintenanceId },
+
+                        success: function (response) {
+                            if (response.success) {
+                                $currentRow.removeClass('table-danger').addClass('table-success');
+                                $confirmButton.remove();
+                                alert(response.message);
+
+                            } else {
+                                alert('Lỗi: ' + response.message);
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            alert('Lỗi mạng. Vui lòng thử lại.');
+                            console.error("AJAX Error: ", status, error);
+                        }
+                    });
+                }
+            });
+
+            const importForm = document.getElementById('importForm');
+            const btnImport = document.getElementById('btnImport');
+            const btnText = document.getElementById('btnText');
+            const spinner = document.getElementById('spinner');
+            const importModal = new bootstrap.Modal(document.getElementById('importExcelModal'));
+
+            importForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const file = document.getElementById('excelFile').files[0];
+                if (!file) {
+                    Swal.fire('Thao tác thất bại', 'Vui lòng chọn một file Excel để import.', 'warning');
+                    return;
+                }
+
+                btnImport.disabled = true;
+                btnText.textContent = 'Đang xử lý...';
+                spinner.classList.remove('d-none');
+
+                const formData = new FormData(importForm);
+
+                fetch('/admin/machinemaintenance/import', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else if (response.status === 400 || response.status === 500) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.message);
+                        });
+                    }
+                    throw new Error('Lỗi không xác định: ' + response.statusText);
+                })
+                .then(data => {
+                    importModal.hide();
+                    let iconType = 'success';
+                    let title = 'Import Thành công! 🎉';
+                    let htmlContent = `<strong>${data.message}</strong>`;
+                    if (data.errors && data.errors.length > 0) {
+                        iconType = 'warning';
+                        title = 'Import Hoàn tất, Cảnh báo! ⚠️';
+                        htmlContent += `<br><br>
+                                       <hr>
+                                       <p><strong>Chi tiết các dòng lỗi bị bỏ qua:</strong></p>
+                                       <div style="max-height: 200px; overflow-y: auto; text-align: left; padding: 10px; border: 1px solid #ddd; background: #f9f9f9;">
+                                           ${data.errors.map(err => `<small class="d-block text-danger">${err}</small>`).join('')}
+                                       </div>`;
+                    }
+                    else if (data.duplicateCount > 0 || data.notFoundMachineCount > 0) {
+                        htmlContent += `<br>
+                                       <p><strong>Tổng hợp:</strong></p>
+                                       <ul>
+                                           <li>Thêm mới thành công: ${data.successCount} bản ghi</li>
+                                           <li>Bỏ qua do trùng lặp: ${data.duplicateCount} bản ghi</li>
+                                           <li>Bỏ qua do Mã máy không tồn tại: ${data.notFoundMachineCount} bản ghi</li>
+                                       </ul>`;
+                    }
+                    Swal.fire({
+                        title: title,
+                        html: htmlContent,
+                        icon: iconType,
+                        confirmButtonText: 'Đã hiểu'
+                    }).then(() => {
+                        location.reload();
+                    });
+                })
+                .catch(error => {
+                    importModal.hide();
+                    console.error('Lỗi khi Import:', error);
+
+                    Swal.fire({
+                        title: 'Import Thất bại! ❌',
+                        html: error.message,
+                        icon: 'error',
+                        confirmButtonText: 'Đóng'
+                    }).then(() => {
+                         importModal.show();
+                    });
+                })
+                .finally(() => {
+                    btnImport.disabled = false;
+                    btnText.textContent = 'Thực hiện Import';
+                    spinner.classList.add('d-none');
+                });
+            });
+        });
+    </script>
+}
