@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using ClosedXML.Excel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Web_QM.Models;
@@ -632,6 +633,558 @@ namespace Web_QM.Controllers
                     break;
             }
             return Json(details);
+        }
+
+        [Authorize(Policy = "ClientViewEmpl")]
+        public async Task<IActionResult> ExportToExcel(long id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Id == id);
+            if (employee == null)
+            {
+                return NotFound();
+            }
+            string employeeName = employee.EmployeeCode + "-" + employee.EmployeeName;
+
+            var productivities = await _context.Productivities
+                .AsNoTracking()
+                .Where(p => p.EmployeeCode == employee.EmployeeCode)
+                .OrderByDescending(p => p.MeasurementYear)
+                .ThenByDescending(p => p.MeasurementMonth)
+                .ToListAsync();
+
+            var sawingPerformances = await _context.SawingPerformances
+                .AsNoTracking()
+                .Where(s => s.EmployeeCode == employee.EmployeeCode)
+                .OrderByDescending(p => p.MeasurementYear)
+                .ThenByDescending(p => p.MeasurementMonth)
+                .ToListAsync();
+
+            var kaizens = await _context.Kaizens
+                .AsNoTracking()
+                .Where(k => k.EmployeeCode == employee.EmployeeCode)
+                .OrderByDescending(k => k.DateMonth)
+                .ToListAsync();
+
+            var errorDatas = await _context.ErrorDatas
+                .AsNoTracking()
+                .Where(e => e.EmployeeCode == employee.EmployeeCode)
+                .OrderByDescending(e => e.DateMonth)
+                .ToListAsync();
+
+            var violation5S = await _context.EmployeeViolation5S
+                .AsNoTracking()
+                .Where(v => v.EmployeeCode == employee.EmployeeCode)
+                .Join(
+                    _context.Violation5S,
+                    ev => ev.Violation5SId,
+                    v => v.Id,
+                    (ev, v) => new
+                    {
+                        Content5S = v.Content5S,
+                        DateMonth = ev.DateMonth,
+                        Qty = ev.Qty,
+                    }
+                )
+                .OrderByDescending(v => v.DateMonth)
+                .ToListAsync();
+
+            var trainingresults = await _context.EmployeeTrainingResults
+                .AsNoTracking()
+                .Where(etr => etr.EmployeeId == id)
+                .GroupBy(etr => etr.EvaluationPeriod)
+                .Select(g => g.OrderBy(x => x.Id).FirstOrDefault())
+                .ToListAsync();
+
+            var examTrainingAnswers = await _context.ExamTrainingAnswers
+                .AsNoTracking()
+                .Where(a => a.EmployeeCode == employee.EmployeeCode)
+                .Join(_context.ExamTrainings,
+                    answer => answer.ExamTrainingId,
+                    exam => exam.Id,
+                    (answer, exam) => new { answer, exam })
+                .Select(x => new
+                {
+                    ExamName = x.exam.ExamName,
+                    Total = x.exam.TlTotal + _context.QuestionTrainings.Count(q => q.ExamTrainingId == x.answer.ExamTrainingId),
+                    Answer = x.answer.TnPoint + x.answer.TlPoint,
+                })
+                .ToListAsync();
+
+            var examPeriodicAnswers = await _context.ExamPeriodicAnswers
+                .AsNoTracking()
+                .Where(a => a.EmployeeCode == employee.EmployeeCode)
+                .Join(_context.ExamPeriodics,
+                    answer => answer.ExamId,
+                    exam => exam.Id,
+                    (answer, exam) => new { answer, exam })
+                .Select(x => new
+                {
+                    ExamName = x.exam.ExamName,
+                    Total = x.exam.TlTotal + _context.Questions.Count(q => q.ExamId == x.answer.ExamId),
+                    Answer = x.answer.TnPoint + x.answer.TlPoint,
+                })
+                .ToListAsync();
+
+            var examTrialRunAnswers = await _context.ExamTrialRunAnswers
+                .AsNoTracking()
+                .Where(a => a.EmployeeCode == employee.EmployeeCode)
+                .Join(_context.ExamTrialRuns,
+                    answer => answer.ExamTrialRunId,
+                    exam => exam.Id,
+                    (answer, exam) => new { answer, exam })
+                .Select(x => new
+                {
+                    ExamName = x.exam.ExamName,
+                    Correct = x.answer.MultipleChoiceCorrect + x.answer.EssayCorrect,
+                    Incorrect = x.answer.MultipleChoiceInCorrect + x.answer.EssayInCorrect,
+                    CriticalFail = x.answer.MultipleChoiceFail + x.answer.EssayFail,
+                })
+                .ToListAsync();
+
+            var testPractices = await _context.TestPractices
+                .AsNoTracking()
+                .Where(tp => tp.EmployeeId == id)
+                .Select(tp => new
+                {
+                    tp.TestName,
+                    tp.TestLevel,
+                    tp.PartName,
+                    tp.Result
+                })
+                .ToListAsync();
+
+            using (var workbook = new XLWorkbook())
+            {
+                int row;
+                int stt = 1;
+                int lastRow;
+
+                var ws1 = workbook.Worksheets.Add("Chung");
+                ws1.Cell(1, 1).Value = "Mã nhân viên";
+                ws1.Cell(1, 2).Value = "Tên nhân viên";
+                ws1.Cell(1, 3).Value = "Ngày sinh";
+                ws1.Cell(1, 4).Value = "Giới tính";
+                ws1.Cell(1, 5).Value = "Bộ phận";
+                ws1.Cell(1, 6).Value = "Ngày vào công ty";
+                ws1.Cell(1, 7).Value = "Vị trí";
+                ws1.Cell(1, 8).Value = "Ghi chú";
+
+                ws1.Range("A1:H1").Style.Font.Bold = true;
+                ws1.Range("A1:H1").Style.Fill.BackgroundColor = XLColor.FromHtml("#EAF1F5");
+                ws1.Range("A1:H1").Style.Border.SetOutsideBorder(XLBorderStyleValues.Thick);
+                ws1.Range("A1:H1").Style.Border.SetInsideBorder(XLBorderStyleValues.Thin);
+
+                ws1.Cell(2, 1).Value = employee.EmployeeCode;
+                ws1.Cell(2, 2).Value = employee.EmployeeName;
+                ws1.Cell(2, 3).Value = employee.DateOfBirth.ToString();
+                ws1.Cell(2, 4).Value = employee.Gender;
+                ws1.Cell(2, 5).Value = employee.Department;
+                ws1.Cell(2, 6).Value = employee.HireDate.ToString();
+                ws1.Cell(2, 7).Value = employee.Position;
+                ws1.Cell(2, 8).Value = employee.Note;
+                ws1.Range("A2:H2").Style.Border.SetOutsideBorder(XLBorderStyleValues.Thin);
+                ws1.Columns().AdjustToContents();
+
+                if (productivities.Count > 0)
+                {
+                    var ws_Productivity = workbook.Worksheets.Add("Năng suất");
+                    ws_Productivity.Cell(1, 1).Value = "Tháng/Năm";
+                    ws_Productivity.Cell(1, 2).Value = "Năng suất";
+                    ws_Productivity.Range("A1:B1").Style.Font.Bold = true;
+                    ws_Productivity.Range("A1:B1").Style.Fill.BackgroundColor = XLColor.LightYellow;
+                    ws_Productivity.SheetView.FreezeRows(1);
+                    foreach (var productivity in productivities)
+                    {
+                        row = ws_Productivity.LastRowUsed().RowNumber() + 1;
+                        ws_Productivity.Cell(row, 1).Value = $"{productivity.MeasurementMonth}/{productivity.MeasurementYear}";
+                        ws_Productivity.Cell(row, 2).Value = $"{productivity.ProductivityScore} %";
+
+                        decimal score;
+                        if (decimal.TryParse(productivity.ProductivityScore.ToString(), out score))
+                        {
+                            if (score >= 90)
+                            {
+                                ws_Productivity.Cell(row, 2).Style.Fill.BackgroundColor = XLColor.Green;
+                            }
+                            else if (score < 70)
+                            {
+                                ws_Productivity.Cell(row, 2).Style.Fill.BackgroundColor = XLColor.Red;
+                            }
+                        }
+                    }
+                    lastRow = ws_Productivity.LastRowUsed().RowNumber();
+                    if (lastRow > 1)
+                    {
+                        var table = ws_Productivity.Range(1, 1, lastRow, 2).CreateTable();
+                        table.Theme = XLTableTheme.None;
+                    }
+                    ws_Productivity.Columns().AdjustToContents();
+                }
+
+                if (sawingPerformances.Count > 0)
+                {
+                    var ws_Sawing = workbook.Worksheets.Add("Doanh số cưa");
+                    ws_Sawing.Cell(1, 1).Value = "Tháng/Năm";
+                    ws_Sawing.Cell(1, 2).Value = "Doanh số cưa (USD)";
+                    ws_Sawing.Cell(1, 3).Value = "Thời gian làm việc (phút)";
+                    ws_Sawing.Cell(1, 4).Value = "Doanh số/Thời gian";
+                    ws_Sawing.Range("A1:D1").Style.Font.Bold = true;
+                    ws_Sawing.Range("A1:D1").Style.Fill.BackgroundColor = XLColor.LightYellow;
+                    ws_Sawing.SheetView.FreezeRows(1);
+                    foreach (var sawingPerformance in sawingPerformances)
+                    {
+                        row = ws_Sawing.LastRowUsed().RowNumber() + 1;
+                        ws_Sawing.Cell(row, 1).Value = $"{sawingPerformance.MeasurementMonth}/{sawingPerformance.MeasurementYear}";
+                        ws_Sawing.Cell(row, 2).Value = sawingPerformance.SalesAmountUSD;
+                        ws_Sawing.Cell(row, 3).Value = sawingPerformance.WorkMinute;
+                        ws_Sawing.Cell(row, 4).Value = sawingPerformance.SalesRate;
+                    }
+                    lastRow = ws_Sawing.LastRowUsed().RowNumber();
+                    if (lastRow > 1)
+                    {
+                        var table = ws_Sawing.Range(1, 1, lastRow, 4).CreateTable();
+                        table.Theme = XLTableTheme.None;
+                    }
+                    ws_Sawing.Columns().AdjustToContents();
+                }
+
+                var ws3 = workbook.Worksheets.Add("Kaizen");
+                ws3.Cell(1, 1).Value = "STT";
+                ws3.Cell(1, 2).Value = "Tháng/Năm";
+                ws3.Cell(1, 3).Value = "Mục tiêu cải tiến";
+                ws3.Cell(1, 4).Value = "Tiêu đề cải tiến";
+                ws3.Cell(1, 5).Value = "Tình trạng hiện tại";
+                ws3.Cell(1, 6).Value = "Ý kiến cài tiến";
+                ws3.Cell(1, 7).Value = "Hiệu quả, lợi ích";
+                ws3.Cell(1, 8).Value = "Tổ trưởng đánh giá";
+                ws3.Cell(1, 9).Value = "BQL đánh giá";
+                ws3.Cell(1, 10).Value = "Thời hạn hoàn thành";
+                ws3.Cell(1, 11).Value = "Thời gian bắt đầu sử dụng";
+                ws3.Cell(1, 12).Value = "Tình trạng hiện tại (sau kaizen)";
+                ws3.Cell(1, 13).Value = "Ghi chú";
+                ws3.Range("A1:N1").Style.Font.Bold = true;
+                ws3.Range("A1:N1").Style.Fill.BackgroundColor = XLColor.FromHtml("#D9E1F2");
+                ws3.SheetView.FreezeRows(1);
+                stt = 1;
+                foreach (var kaizen in kaizens)
+                {
+                    row = ws3.LastRowUsed().RowNumber() + 1;
+                    ws3.Cell(row, 1).Value = stt++;
+                    ws3.Cell(row, 2).Value = kaizen.DateMonth.ToString();
+                    ws3.Cell(row, 3).Value = kaizen.ImprovementGoal;
+                    ws3.Cell(row, 4).Value = kaizen.ImprovementTitle;
+                    ws3.Cell(row, 5).Value = kaizen.CurrentSituation;
+                    ws3.Cell(row, 5).Style.Alignment.WrapText = true;
+                    ws3.Cell(row, 6).Value = kaizen.ProposedIdea;
+                    ws3.Cell(row, 6).Style.Alignment.WrapText = true;
+                    ws3.Cell(row, 7).Value = kaizen.EstimatedBenefit;
+                    ws3.Cell(row, 7).Style.Alignment.WrapText = true;
+                    ws3.Cell(row, 8).Value = kaizen.TeamLeaderRating;
+                    ws3.Cell(row, 9).Value = kaizen.ManagementReview;
+                    ws3.Cell(row, 10).Value = kaizen.Deadline;
+                    ws3.Cell(row, 11).Value = kaizen.StartTime;
+                    ws3.Cell(row, 12).Value = kaizen.CurrentStatus;
+                    ws3.Cell(row, 13).Value = kaizen.Note;
+                }
+                lastRow = ws3.LastRowUsed().RowNumber();
+                if (lastRow > 1)
+                {
+                    var table = ws3.Range(1, 1, lastRow, 14).CreateTable();
+                    table.Theme = XLTableTheme.None;
+                }
+                ws3.Columns().AdjustToContents();
+
+                var ws4 = workbook.Worksheets.Add("Lỗi sản xuất");
+                ws4.Cell(1, 1).Value = "STT";
+                ws4.Cell(1, 2).Value = "Ngày/Tháng";
+                ws4.Cell(1, 3).Value = "Order";
+                ws4.Cell(1, 4).Value = "Tên chi tiết";
+                ws4.Cell(1, 5).Value = "Số lượng order";
+                ws4.Cell(1, 6).Value = "Số lượng NG";
+                ws4.Cell(1, 7).Value = "Tỷ lệ NG";
+                ws4.Cell(1, 8).Value = "Phát hiện lỗi";
+                ws4.Cell(1, 9).Value = "Dạng lỗi";
+                ws4.Cell(1, 10).Value = "Nguyên nhân lỗi";
+                ws4.Cell(1, 11).Value = "Nội dung lỗi";
+                ws4.Cell(1, 12).Value = "Nhận định dung sai";
+                ws4.Cell(1, 13).Value = "Nguyên nhân";
+                ws4.Cell(1, 14).Value = "Đối sách";
+                ws4.Cell(1, 15).Value = "NCC";
+                ws4.Cell(1, 16).Value = "Bộ phận";
+                ws4.Cell(1, 17).Value = "Ngày hoàn thành giấy lỗi";
+                ws4.Cell(1, 18).Value = "Biện pháp khắc phục";
+                ws4.Cell(1, 19).Value = "Ghi chú";
+                ws4.Range("A1:S1").Style.Font.Bold = true;
+                ws4.Range("A1:S1").Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF2CC");
+                ws4.SheetView.FreezeRows(1);
+                stt = 1;
+                foreach (var error in errorDatas)
+                {
+                    row = ws4.LastRowUsed().RowNumber() + 1;
+                    ws4.Cell(row, 1).Value = stt++;
+                    ws4.Cell(row, 2).Value = error.DateMonth.ToString();
+                    ws4.Cell(row, 3).Value = error.OrderNo;
+                    ws4.Cell(row, 4).Value = error.PartName;
+                    ws4.Cell(row, 5).Value = error.QtyOrder;
+                    ws4.Cell(row, 6).Value = error.QtyNG;
+                    ws4.Cell(row, 7).Value = error.QtyOrder != 0 ? ((decimal)error.QtyNG / error.QtyOrder * 100).ToString("0.00") + " %" : "0 %";
+
+                    decimal ngRate = error.QtyOrder != 0 ? ((decimal)error.QtyNG / error.QtyOrder) : 0;
+                    if (ngRate > 0.05m)
+                    {
+                        ws4.Cell(row, 7).Style.Fill.BackgroundColor = XLColor.Red;
+                    }
+
+                    ws4.Cell(row, 8).Value = error.ErrorDetected;
+                    ws4.Cell(row, 9).Value = error.ErrorType;
+                    ws4.Cell(row, 10).Value = error.ErrorCause;
+                    ws4.Cell(row, 11).Value = error.ErrorContent;
+                    ws4.Cell(row, 11).Style.Alignment.WrapText = true;
+                    ws4.Cell(row, 12).Value = error.ToleranceAssessment;
+                    ws4.Cell(row, 13).Value = error.ErrorCause;
+                    ws4.Cell(row, 13).Style.Alignment.WrapText = true;
+                    ws4.Cell(row, 14).Value = error.Countermeasure;
+                    ws4.Cell(row, 14).Style.Alignment.WrapText = true;
+                    ws4.Cell(row, 15).Value = error.NCC;
+                    ws4.Cell(row, 16).Value = error.Department;
+                    ws4.Cell(row, 17).Value = error.ErrorCompletionDate.ToString();
+                    ws4.Cell(row, 18).Value = error.RemedialMeasures;
+                    ws4.Cell(row, 19).Value = error.Note;
+                    ws4.Cell(row, 19).Style.Alignment.WrapText = true;
+                }
+                lastRow = ws4.LastRowUsed().RowNumber();
+                if (lastRow > 1)
+                {
+                    var table = ws4.Range(1, 1, lastRow, 19).CreateTable();
+                    table.Theme = XLTableTheme.None;
+                }
+                ws4.Columns().AdjustToContents();
+
+                var ws5 = workbook.Worksheets.Add("Vi phạm 5S");
+                ws5.Cell(1, 1).Value = "STT";
+                ws5.Cell(1, 2).Value = "Nội dung lỗi 5S";
+                ws5.Cell(1, 3).Value = "Tháng/Năm";
+                ws5.Cell(1, 4).Value = "Số lần vi phạm";
+                ws5.Range("A1:D1").Style.Font.Bold = true;
+                ws5.Range("A1:D1").Style.Fill.BackgroundColor = XLColor.LightCoral;
+                ws5.SheetView.FreezeRows(1);
+                stt = 1;
+                foreach (var v5s in violation5S)
+                {
+                    row = ws5.LastRowUsed().RowNumber() + 1;
+                    ws5.Cell(row, 1).Value = stt++;
+                    ws5.Cell(row, 2).Value = v5s.Content5S;
+                    ws5.Cell(row, 3).Style.Alignment.WrapText = true;
+                    ws5.Cell(row, 3).Value = v5s.DateMonth.ToString();
+                    ws5.Cell(row, 4).Value = v5s.Qty;
+                }
+                lastRow = ws5.LastRowUsed().RowNumber();
+                if (lastRow > 1)
+                {
+                    var table = ws5.Range(1, 1, lastRow, 4).CreateTable();
+                    table.Theme = XLTableTheme.None;
+                }
+                ws5.Columns().AdjustToContents();
+
+                var ws6 = workbook.Worksheets.Add("Đào tạo NVM");
+                ws6.Cell(1, 1).Value = "Đánh giá sau đào tạo";
+                ws6.Range("A1:C1").Merge().Style.Font.Bold = true;
+                ws6.Range("A1:C1").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                ws6.Range("A1:C1").Style.Fill.BackgroundColor = XLColor.FromHtml("#B4C6E7");
+                ws6.Range("A1:C1").Style.Border.SetOutsideBorder(XLBorderStyleValues.Thick);
+
+                ws6.Cell(2, 1).Value = "STT";
+                ws6.Cell(2, 2).Value = "Kỳ đào tạo";
+                ws6.Cell(2, 3).Value = "Kết quả";
+                ws6.Range("A2:C2").Style.Font.Bold = true;
+                ws6.Range("A2:C2").Style.Fill.BackgroundColor = XLColor.FromHtml("#D9E1F2");
+                ws6.Range("A2:C2").Style.Font.FontColor = XLColor.Black;
+
+                ws6.Cell(1, 5).Value = "Kiểm tra sau đào tạo";
+                ws6.Range("E1:G1").Merge().Style.Font.Bold = true;
+                ws6.Range("E1:G1").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                ws6.Range("E1:G1").Style.Fill.BackgroundColor = XLColor.FromHtml("#B4C6E7");
+                ws6.Range("E1:G1").Style.Border.SetOutsideBorder(XLBorderStyleValues.Thick);
+
+                ws6.Cell(2, 5).Value = "STT";
+                ws6.Cell(2, 6).Value = "Bài kiểm tra";
+                ws6.Cell(2, 7).Value = "Tổng điểm";
+                ws6.Range("E2:G2").Style.Font.Bold = true;
+                ws6.Range("E2:G2").Style.Fill.BackgroundColor = XLColor.FromHtml("#D9E1F2");
+                ws6.Range("E2:G2").Style.Font.FontColor = XLColor.Black;
+
+                ws6.SheetView.FreezeRows(1);
+                stt = 1;
+                int maxRows = 0;
+                foreach (var tr in trainingresults)
+                {
+                    row = ws6.LastRowUsed().RowNumber() + 1;
+                    ws6.Cell(row, 1).Value = stt++;
+                    ws6.Cell(row, 2).Value = tr.EvaluationPeriod;
+                    ws6.Cell(row, 3).Value = tr.Score + " %";
+
+                    decimal score;
+                    if (decimal.TryParse(tr.Score.ToString(), out score))
+                    {
+                        if (score >= 80)
+                        {
+                            ws6.Cell(row, 3).Style.Fill.BackgroundColor = XLColor.Green;
+                        }
+                        else
+                        {
+                            ws6.Cell(row, 3).Style.Fill.BackgroundColor = XLColor.Red;
+                        }
+                    }
+                    maxRows = Math.Max(maxRows, row);
+                }
+
+                stt = 1;
+                row = 3;
+                foreach (var eta in examTrainingAnswers)
+                {
+                    ws6.Cell(row, 5).Value = stt++;
+                    ws6.Cell(row, 6).Value = eta.ExamName;
+                    ws6.Cell(row, 7).Value = $"{eta.Answer}/{eta.Total}";
+                    row++;
+                    maxRows = Math.Max(maxRows, row - 1);
+                }
+
+                if (maxRows >= 2)
+                {
+                    ws6.Range("A1:C" + maxRows).Style.Border.SetOutsideBorder(XLBorderStyleValues.Thick);
+                    ws6.Range("E1:G" + maxRows).Style.Border.SetOutsideBorder(XLBorderStyleValues.Thick);
+                    ws6.Range("A2:C" + maxRows).Style.Border.SetInsideBorder(XLBorderStyleValues.Thin);
+                    ws6.Range("E2:G" + maxRows).Style.Border.SetInsideBorder(XLBorderStyleValues.Thin);
+                }
+                ws6.Columns().AdjustToContents();
+
+                var ws7 = workbook.Worksheets.Add("Kiểm tra định kỳ");
+                ws7.Cell(1, 1).Value = "STT";
+                ws7.Cell(1, 2).Value = "Bài kiểm tra";
+                ws7.Cell(1, 3).Value = "Tổng điểm";
+                ws7.Range("A1:C1").Style.Font.Bold = true;
+                ws7.Range("A1:C1").Style.Fill.BackgroundColor = XLColor.FromHtml("#C6E0B4");
+                ws7.SheetView.FreezeRows(1);
+                stt = 1;
+                foreach (var epa in examPeriodicAnswers)
+                {
+                    row = ws7.LastRowUsed().RowNumber() + 1;
+                    ws7.Cell(row, 1).Value = stt++;
+                    ws7.Cell(row, 2).Value = epa.ExamName;
+                    ws7.Cell(row, 3).Value = $"{epa.Answer}/{epa.Total}";
+                }
+                lastRow = ws7.LastRowUsed().RowNumber();
+                if (lastRow > 1)
+                {
+                    var table = ws7.Range(1, 1, lastRow, 3).CreateTable();
+                    table.Theme = XLTableTheme.None;
+                }
+                ws7.Columns().AdjustToContents();
+
+                var ws8 = workbook.Worksheets.Add("Kiểm tra chạy thử");
+                ws8.Cell(1, 1).Value = "Chạy thử lý thuyết";
+                ws8.Range("A1:G1").Merge().Style.Font.Bold = true;
+                ws8.Range("A1:G1").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                ws8.Range("A1:G1").Style.Fill.BackgroundColor = XLColor.FromHtml("#F8CBAD");
+                ws8.Range("A1:G1").Style.Border.SetOutsideBorder(XLBorderStyleValues.Thick);
+
+                ws8.Cell(2, 1).Value = "STT";
+                ws8.Cell(2, 2).Value = "Bài kiểm tra";
+                ws8.Cell(2, 3).Value = "Đúng";
+                ws8.Cell(2, 4).Value = "Sai";
+                ws8.Cell(2, 5).Value = "Liệt";
+                ws8.Range("A2:G2").Style.Font.Bold = true;
+                ws8.Range("A2:G2").Style.Fill.BackgroundColor = XLColor.FromHtml("#FFE6CC");
+                ws8.Range("A2:G2").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                ws8.Range("A2:G2").Style.Font.FontColor = XLColor.Black;
+
+                ws8.Cell(1, 9).Value = "Chạy thử thực hành";
+                ws8.Range("I1:M1").Merge().Style.Font.Bold = true;
+                ws8.Range("I1:M1").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                ws8.Range("I1:M1").Style.Fill.BackgroundColor = XLColor.FromHtml("#F8CBAD");
+                ws8.Range("I1:M1").Style.Border.SetOutsideBorder(XLBorderStyleValues.Thick);
+
+                ws8.Cell(2, 9).Value = "STT";
+                ws8.Cell(2, 10).Value = "Kỳ chạy thử";
+                ws8.Cell(2, 11).Value = "Cấp độ";
+                ws8.Cell(2, 12).Value = "Tên chi tiết";
+                ws8.Cell(2, 13).Value = "Kết quả";
+                ws8.Range("I2:M2").Style.Font.Bold = true;
+                ws8.Range("I2:M2").Style.Fill.BackgroundColor = XLColor.FromHtml("#FFE6CC");
+                ws8.Range("I2:M2").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                ws8.Range("I2:M2").Style.Font.FontColor = XLColor.Black;
+
+                ws8.SheetView.FreezeRows(1);
+                int theoryLastRow = 2;
+
+                stt = 1;
+                foreach (var etra in examTrialRunAnswers)
+                {
+                    row = ws8.LastRowUsed().RowNumber() + 1;
+                    ws8.Cell(row, 1).Value = stt++;
+                    ws8.Cell(row, 2).Value = etra.ExamName;
+                    ws8.Cell(row, 3).Value = etra.Correct;
+                    ws8.Cell(row, 4).Value = etra.Incorrect;
+                    ws8.Cell(row, 5).Value = etra.CriticalFail;
+
+                    if (etra.CriticalFail > 0)
+                    {
+                        ws8.Cell(row, 5).Style.Fill.BackgroundColor = XLColor.Red;
+                    }
+                    theoryLastRow = row;
+                }
+
+                stt = 1;
+                row = 3;
+                int practiceLastRow = 2;
+
+                foreach (var tp in testPractices)
+                {
+                    ws8.Cell(row, 9).Value = stt++;
+                    ws8.Cell(row, 10).Value = tp.TestName;
+                    ws8.Cell(row, 11).Value = tp.TestLevel;
+                    ws8.Cell(row, 12).Value = tp.PartName;
+                    ws8.Cell(row, 13).Value = tp.Result;
+
+                    if (tp.Result != null && tp.Result.Contains("OK"))
+                    {
+                        ws8.Cell(row, 13).Style.Fill.BackgroundColor = XLColor.Green;
+                    }
+                    else if (tp.Result != null && tp.Result.Contains("NG"))
+                    {
+                        ws8.Cell(row, 13).Style.Fill.BackgroundColor = XLColor.Red;
+                    }
+                    practiceLastRow = row;
+                    row++;
+                }
+
+                int maxDataRow = Math.Max(theoryLastRow, practiceLastRow);
+
+                if (maxDataRow >= 2)
+                {
+                    ws8.Range("A1:G" + maxDataRow).Style.Border.SetOutsideBorder(XLBorderStyleValues.Thick);
+                    ws8.Range("I1:M" + maxDataRow).Style.Border.SetOutsideBorder(XLBorderStyleValues.Thick);
+                    ws8.Range("A2:G" + maxDataRow).Style.Border.SetInsideBorder(XLBorderStyleValues.Thin);
+                    ws8.Range("I2:M" + maxDataRow).Style.Border.SetInsideBorder(XLBorderStyleValues.Thin);
+                }
+                ws8.Columns().AdjustToContents();
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    var content = stream.ToArray();
+
+                    return File(
+                        content,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        employeeName.Replace(" ", "_") + ".xlsx"
+                    );
+                }
+            }
         }
     }
 }
