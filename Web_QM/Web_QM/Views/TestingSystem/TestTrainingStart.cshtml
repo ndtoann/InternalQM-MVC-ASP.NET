@@ -81,6 +81,37 @@
 	<div class="btn-action-item" id="btn-submit">Nộp bài</div>
 </div>
 
+<div id="calculator-icon" title="Mở Máy Tính">
+	<i class="fas fa-calculator"></i>
+</div>
+
+<div id="calculator-mini">
+	<div id="calculator-display">0</div>
+	<div class="calculator-keys">
+		<button class="key clear-key" data-key="clear">C</button>
+		<button class="key operator" data-key="/">/</button>
+		<button class="key operator" data-key="*">*</button>
+		<button class="key operator" data-key="-">-</button>
+
+		<button class="key" data-key="7">7</button>
+		<button class="key" data-key="8">8</button>
+		<button class="key" data-key="9">9</button>
+		<button class="key operator" data-key="+">+</button>
+
+		<button class="key" data-key="4">4</button>
+		<button class="key" data-key="5">5</button>
+		<button class="key" data-key="6">6</button>
+
+		<button class="key" data-key="1">1</button>
+		<button class="key" data-key="2">2</button>
+		<button class="key" data-key="3">3</button>
+
+		<button class="key" data-key="0">0</button>
+		<button class="key" data-key=".">.</button>
+		<button class="key equal-key" data-key="=">=</button>
+	</div>
+</div>
+
 @section Scripts {
 	<script>
 		var durationMinute = @Model.exam.DurationMinute
@@ -92,7 +123,7 @@
 		var countdown;
 
 		var violationCount = 0;
-		const maxViolations = 2;
+		const maxViolations = 3;
 		var isViolating = false;
 
 		var hasAnswered = false;
@@ -121,7 +152,6 @@
 				icon: 'warning'
 			}).then((result) => {
 				if (result.isConfirmed) {
-					
 				}
 			})
 		}
@@ -136,7 +166,7 @@
 				if (remainingTime === 60){
 					Swal.fire({
 						title: 'Còn 1 phút!',
-						text: 'Kiểm tra lại thông tin tên, mã nhân viên và nhanh chóng nộp bài.',
+						text: 'Kiểm tra lại bài làm và nhanh chóng nộp bài.',
 						icon: 'warning'
 					})
 				}
@@ -197,7 +227,6 @@
 			});
 		});
 
-		// Hàm xử lý khi người dùng rời khỏi trang
 		window.addEventListener('beforeunload', function (e) {
 			if (hasAnswered) {
 				const confirmationMessage = 'Bạn có chắc chắn muốn rời khỏi trang không? Bài làm của bạn có thể sẽ không được lưu.';
@@ -206,7 +235,6 @@
 			}
 		});
 
-		// Hàm lưu dữ liệu
 		function submit() {
 			document.removeEventListener('visibilitychange', handleVisibilityChange);
 			window.removeEventListener('blur', handleBlur);
@@ -361,5 +389,115 @@
 			document.addEventListener('visibilitychange', handleVisibilityChange);
 			window.addEventListener('blur', handleBlur);
 		});
+
+		const calculator = document.getElementById('calculator-mini');
+		 const icon = document.getElementById('calculator-icon');
+		 const display = document.getElementById('calculator-display');
+		 const keys = document.querySelector('.calculator-keys');
+
+		 let displayValue = '0';
+		 let firstOperand = null;
+		 let operator = null;
+		 let waitingForSecondOperand = false;
+
+		 // Cập nhật màn hình
+		 function updateDisplay() {
+			 display.textContent = displayValue;
+		 }
+
+		 // Xử lý đầu vào là số
+		 function inputDigit(digit) {
+			 if (waitingForSecondOperand === true) {
+				 displayValue = digit;
+				 waitingForSecondOperand = false;
+			 } else {
+				 displayValue = displayValue === '0' ? digit : displayValue + digit;
+			 }
+			 updateDisplay();
+		 }
+
+		 function inputDecimal() {
+			 if (waitingForSecondOperand === true) {
+				 displayValue = '0.';
+				 waitingForSecondOperand = false;
+				 updateDisplay();
+				 return;
+			 }
+
+			 if (!displayValue.includes('.')) {
+				 displayValue += '.';
+			 }
+			 updateDisplay();
+		 }
+
+		 function handleOperator(nextOperator) {
+			 const inputValue = parseFloat(displayValue);
+
+			 if (operator && waitingForSecondOperand) {
+				 operator = nextOperator;
+				 return;
+			 }
+
+			 if (firstOperand === null) {
+				 firstOperand = inputValue;
+			 } else if (operator) {
+				 const result = performCalculation[operator](firstOperand, inputValue);
+
+				 displayValue = String(result);
+				 firstOperand = result;
+			 }
+
+			 waitingForSecondOperand = true;
+			 operator = nextOperator;
+			 updateDisplay();
+		 }
+
+		 const performCalculation = {
+			 '/': (firstOperand, secondOperand) => firstOperand / secondOperand,
+			 '*': (firstOperand, secondOperand) => firstOperand * secondOperand,
+			 '+': (firstOperand, secondOperand) => firstOperand + secondOperand,
+			 '-': (firstOperand, secondOperand) => firstOperand - secondOperand,
+			 '=': (firstOperand, secondOperand) => secondOperand
+		 };
+
+		 function resetCalculator() {
+			 displayValue = '0';
+			 firstOperand = null;
+			 operator = null;
+			 waitingForSecondOperand = false;
+			 updateDisplay();
+		 }
+
+		 keys.addEventListener('click', (event) => {
+			 const { target } = event;
+			 const key = target.dataset.key;
+
+			 if (!target.matches('button')) {
+				 return;
+			 }
+
+			 if (key === 'clear') {
+				 resetCalculator();
+				 return;
+			 }
+
+			 if (['/', '*', '+', '-', '='].includes(key)) {
+				 handleOperator(key);
+				 return;
+			 }
+
+			 if (key === '.') {
+				 inputDecimal();
+				 return;
+			 }
+
+			 inputDigit(key);
+		 });
+
+		 icon.addEventListener('click', () => {
+			 calculator.style.display = (calculator.style.display === 'block' ? 'none' : 'block');
+		 });
+
+		 updateDisplay();
 	</script>
 }

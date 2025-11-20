@@ -45,23 +45,23 @@
                 <div class="answer">
                     <div>
                         <span>(A)</span>
-                        <input type="radio" id="@(i+1)optionA" name="@(i+1)quizOption" value="@(i+1).A" class="answer-input">
-                        <label for="@(i+1)optionA" class="answer-label option-a text-wrap">@Html.Raw(item.OptionA)</label>
+                        <input type="radio" id="@(i + 1)optionA" name="@(i + 1)quizOption" value="@(i + 1).A" class="answer-input">
+                        <label for="@(i + 1)optionA" class="answer-label option-a text-wrap">@Html.Raw(item.OptionA)</label>
                     </div>
                     <div>
                         <span>(B)</span>
-                        <input type="radio" id="@(i+1)optionB" name="@(i+1)quizOption" value="@(i+1).B" class="answer-input">
-                        <label for="@(i+1)optionB" class="answer-label option-b text-wrap">@Html.Raw(item.OptionB)</label>
+                        <input type="radio" id="@(i + 1)optionB" name="@(i + 1)quizOption" value="@(i + 1).B" class="answer-input">
+                        <label for="@(i + 1)optionB" class="answer-label option-b text-wrap">@Html.Raw(item.OptionB)</label>
                     </div>
                     <div>
                         <span>(C)</span>
-                        <input type="radio" id="@(i+1)optionC" name="@(i+1)quizOption" value="@(i+1).C" class="answer-input">
-                        <label for="@(i+1)optionC" class="answer-label option-c text-wrap">@Html.Raw(item.OptionC)</label>
+                        <input type="radio" id="@(i + 1)optionC" name="@(i + 1)quizOption" value="@(i + 1).C" class="answer-input">
+                        <label for="@(i + 1)optionC" class="answer-label option-c text-wrap">@Html.Raw(item.OptionC)</label>
                     </div>
                     <div>
                         <span>(D)</span>
-                        <input type="radio" id="@(i+1)optionD" name="@(i+1)quizOption" value="@(i+1).D" class="answer-input">
-                        <label for="@(i+1)optionD" class="answer-label option-d text-wrap">@Html.Raw(item.OptionD)</label>
+                        <input type="radio" id="@(i + 1)optionD" name="@(i + 1)quizOption" value="@(i + 1).D" class="answer-input">
+                        <label for="@(i + 1)optionD" class="answer-label option-d text-wrap">@Html.Raw(item.OptionD)</label>
                     </div>
                 </div>
             </div>
@@ -81,228 +81,256 @@
     <div class="btn-action-item" id="btn-submit">Nộp bài</div>
 </div>
 
+<div id="calculator-icon" title="Mở Máy Tính">
+    <i class="fas fa-calculator"></i>
+</div>
+
+<div id="calculator-mini">
+    <div id="calculator-display">0</div>
+    <div class="calculator-keys">
+        <button class="key clear-key" data-key="clear">C</button>
+        <button class="key operator" data-key="/">/</button>
+        <button class="key operator" data-key="*">*</button>
+        <button class="key operator" data-key="-">-</button>
+
+        <button class="key" data-key="7">7</button>
+        <button class="key" data-key="8">8</button>
+        <button class="key" data-key="9">9</button>
+        <button class="key operator" data-key="+">+</button>
+
+        <button class="key" data-key="4">4</button>
+        <button class="key" data-key="5">5</button>
+        <button class="key" data-key="6">6</button>
+
+        <button class="key" data-key="1">1</button>
+        <button class="key" data-key="2">2</button>
+        <button class="key" data-key="3">3</button>
+
+        <button class="key" data-key="0">0</button>
+        <button class="key" data-key=".">.</button>
+        <button class="key equal-key" data-key="=">=</button>
+    </div>
+</div>
+
 @section Scripts {
     <script>
-        var durationMinute = @Model.exam.DurationMinute
-        var timeLimitInSeconds = durationMinute*60;
+         var durationMinute = @Model.exam.DurationMinute
+         var timeLimitInSeconds = durationMinute*60;
 
          var timerElement = document.getElementById('timer');
 
-        var remainingTime = timeLimitInSeconds;
-        var countdown;
+         var remainingTime = timeLimitInSeconds;
+         var countdown;
 
-        var violationCount = 0;
-        const maxViolations = 2;
-        var isViolating = false;
+         var violationCount = 0;
+         const maxViolations = 3;
+         var isViolating = false;
 
-        var hasAnswered = false;
+         var hasAnswered = false;
 
-        function updateTimer() {
-            var minutes = Math.floor(remainingTime / 60);
-            var seconds = remainingTime % 60;
+         function updateTimer() {
+             var minutes = Math.floor(remainingTime / 60);
+             var seconds = remainingTime % 60;
 
-            var formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-            var formattedSeconds = seconds < 10 ? `0${seconds}` : seconds;
+             var formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+             var formattedSeconds = seconds < 10 ? `0${seconds}` : seconds;
 
-            timerElement.textContent = `${formattedMinutes}:${formattedSeconds}`;
-        }
+             timerElement.textContent = `${formattedMinutes}:${formattedSeconds}`;
+         }
 
-        // Hàm xử lý khi hết giờ
-        function handleTimeUp() {
-            clearInterval(countdown);
-            timerElement.textContent = 'Hết giờ';
-            timerElement.classList.add('expired');
+         // Hàm xử lý khi hết giờ
+         function handleTimeUp() {
+             clearInterval(countdown);
+             timerElement.textContent = 'Hết giờ';
+             timerElement.classList.add('expired');
 
-            console.log("Hết giờ! Tự động nộp bài.");
-            Swal.fire({
+             Swal.fire({
                  title: 'Hết giờ!',
                  text: 'Yêu cầu nộp bài.',
                  icon: 'warning'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                }
-            })
-        }
+             }).then((result) => {
+                 if (result.isConfirmed) {
+                 }
+             })
+         }
 
-        // Hàm bắt đầu bộ đếm
-        function startTimer() {
-            updateTimer();
+         // Hàm bắt đầu bộ đếm
+         function startTimer() {
+             updateTimer();
 
-            countdown = setInterval(() => {
-                remainingTime--;
+             countdown = setInterval(() => {
+                 remainingTime--;
 
-                if (remainingTime === 4){
-                    Swal.fire({
-                       title: 'Còn 1 phút!',
-                       text: 'Kiểm tra lại thông tin tên, mã nhân viên và nhanh chóng nộp bài.',
-                       icon: 'warning'
-                     })
-                }
+                 if (remainingTime === 4){
+                     Swal.fire({
+                        title: 'Còn 1 phút!',
+                        text: 'Kiểm tra lại bài làm và nhanh chóng nộp bài.',
+                        icon: 'warning'
+                      })
+                 }
 
-                if (remainingTime <= 0) {
-                    handleTimeUp();
-                } else {
-                    updateTimer();
-                }
-            }, 1000);
-        }
+                 if (remainingTime <= 0) {
+                     handleTimeUp();
+                 } else {
+                     updateTimer();
+                 }
+             }, 1000);
+         }
 
-       // Hàm xử lý vi phạm gian lận
-		function handleViolation() {
-			if (isViolating) {
-				return;
-			}
+        // Hàm xử lý vi phạm gian lận
+         function handleViolation() {
+             if (isViolating) {
+                 return;
+             }
 
-			isViolating = true;
-			violationCount++;
-			let remainingViolations = maxViolations - violationCount;
+             isViolating = true;
+             violationCount++;
+             let remainingViolations = maxViolations - violationCount;
 
-			if (violationCount >= maxViolations) {
-				Swal.fire({
-					title: 'Cảnh báo nghiêm trọng!',
-					text: 'Bạn đã vi phạm quá số lần cho phép. Bài thi sẽ tự động nộp sau 5 giây!',
-					icon: 'error',
-					allowOutsideClick: false,
-					allowEscapeKey: false,
-					showConfirmButton: false
-				});
-				setTimeout(() => {
-					if(hasAnswered){
-						submit()
-					} else {
-						window.location.href = '@Url.Action("Index", "TestingSystem")';
-					}
-				}, 5000);
-				return;
-			}
-
-			Swal.fire({
-				title: 'Cảnh báo!',
-				text: `Hệ thống phát hiện bạn đã rời khỏi màn hình. Vui lòng quay lại ngay!`,
-				icon: 'warning',
-				showConfirmButton: true,
-				confirmButtonText: 'Đã hiểu',
-				allowOutsideClick: false,
-				allowEscapeKey: false
-			}).then(() => {
-				isViolating = false;
-			});
-		}
-
-
-        document.querySelectorAll('.answer-input').forEach(input => {
-            input.addEventListener('change', () => {
-                hasAnswered = true;
-            });
-        });
-
-        window.addEventListener('beforeunload', function (e) {
-            if (hasAnswered) {
-                const confirmationMessage = 'Bạn có chắc chắn muốn rời khỏi trang không? Bài làm của bạn có thể sẽ không được lưu.';
-                e.returnValue = confirmationMessage;
-                return confirmationMessage;
-            }
-        });
-
-        //hàm lưu dữ liệu
-        function submit(){
-            const employeeName = document.getElementById('employeeName').value;
-            const employeeCode = document.getElementById('employeeCode').value;
-            if (!employeeName || employeeName.trim() === '' || employeeCode.trim() === '') {
-                  Swal.fire({
-                       title: 'Có lỗi xảy ra!',
-                        text: 'Vui lòng nhập đầy đủ tên và mã nhân viên',
-                        icon: 'error'
-                        });
-                        return
-                  }
-                  const specialCharsRegex = /[^\p{L}0-9 ]/u;
-                  if (specialCharsRegex.test(employeeName) || specialCharsRegex.test(employeeCode)) {
-                      Swal.fire({
-                            title: 'Có lỗi xảy ra!',
-                            text: 'Tên và mã nhân viên không hợp lệ',
-                            icon: 'error'
-                            });
-                            return
-                  }
-                  const userAnswers = [];
-                  const allAnswers = document.querySelectorAll('.answer-input');
-                  allAnswers.forEach(input => {
-                      if (input.checked) {
-                          userAnswers.push(input.value);
-                      }
-                  });
-                  if (userAnswers.length === 0) {
-                      Swal.fire({
-                         title: 'Lỗi!',
-                         text: 'Bạn chưa chọn đáp án nào.',
-                         icon: 'error'
-                     });
-                     return
-                  }
-
-                  const listAnswers = userAnswers.join('-');
-                  
-                  const dataToSend = {
-                      ExamTrialRunId: @Model.exam.Id,
-                      EmployeeName: employeeName,
-                      EmployeeCode: employeeCode,
-                      ListAnswer: listAnswers
-                  }
-                  console.log(dataToSend)
-                  fetch('@Url.Action("SaveTrialRunAnswer", "TestingSystem")', {
-                      method: 'POST',
-                      headers: {
-                          'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify(dataToSend)
-                  })
-                  .then(response => {
-                      if (!response.ok) {
-                          throw new Error('Lỗi mạng hoặc server!');
-                      }
-                      return response.json();
-                  })
-                  .then(data => {
-                      console.log('Đang nộp bài:...')
-                      if(data.status){
-                          console.log('Nộp bài thành công!')
-                          Swal.fire({
-                              title: 'Nộp bài thành công!',
-                              text: 'Cảm ơn bạn đã hoàn thành bài thi.',
-                              icon: 'success'
-                          }).then((result) => {
-                              if (result.isConfirmed) {
-                                  hasAnswered = false
-                                  window.location.href = '@Url.Action("Index", "TestingSystem")';
-                              }
-                          })
-                          }
-                          })
-                          .catch((error) => {
-                              console.error('Lỗi:', error);
-                              Swal.fire({
-                                  title: 'Có lỗi xảy ra!',
-                                  text: 'Vui lòng kiểm tra lại kết nối.',
-                                  icon: 'error'
-                              });
-                          });
-        }
-
-        // Sự kiện khi trang web bị ẩn (chuyển tab)
-        function handleVisibilityChange() {
-            if (document.visibilityState === 'hidden') {
-                handleViolation();
-            }
-        }
-
-        // Sự kiện khi cửa sổ trình duyệt bị mất focus
-        function handleBlur() {
-            handleViolation();
-        }
-
-        document.getElementById('btn-exit').addEventListener('click', function() {
+             if (violationCount >= maxViolations) {
                  Swal.fire({
+                     title: 'Cảnh báo nghiêm trọng!',
+                     text: 'Bạn đã vi phạm quá số lần cho phép. Bài thi sẽ tự động nộp sau 5 giây!',
+                     icon: 'error',
+                     allowOutsideClick: false,
+                     allowEscapeKey: false,
+                     showConfirmButton: false
+                 });
+                 setTimeout(() => {
+                     if(hasAnswered){
+                         submit()
+                     } else {
+                         window.location.href = '@Url.Action("Index", "TestingSystem")';
+                     }
+                 }, 5000);
+                 return;
+             }
+
+             Swal.fire({
+             	title: 'Cảnh báo!',
+             	text: `Hệ thống phát hiện bạn đã rời khỏi màn hình. Vui lòng quay lại ngay!`,
+             	icon: 'warning',
+             	showConfirmButton: true,
+             	confirmButtonText: 'Đã hiểu',
+             	allowOutsideClick: false,
+             	allowEscapeKey: false
+             }).then(() => {
+             	isViolating = false;
+             });
+         }
+
+
+         document.querySelectorAll('.answer-input').forEach(input => {
+             input.addEventListener('change', () => {
+                 hasAnswered = true;
+             });
+         });
+
+         window.addEventListener('beforeunload', function (e) {
+             if (hasAnswered) {
+                 const confirmationMessage = 'Bạn có chắc chắn muốn rời khỏi trang không? Bài làm của bạn có thể sẽ không được lưu.';
+                 e.returnValue = confirmationMessage;
+                 return confirmationMessage;
+             }
+         });
+
+         //hàm lưu dữ liệu
+         function submit(){
+             const employeeName = document.getElementById('employeeName').value;
+             const employeeCode = document.getElementById('employeeCode').value;
+             if (!employeeName || employeeName.trim() === '' || employeeCode.trim() === '') {
+                  Swal.fire({
+                         title: 'Có lỗi xảy ra!',
+                          text: 'Vui lòng nhập đầy đủ tên và mã nhân viên',
+                          icon: 'error'
+                          });
+                          return
+                      }
+                      const specialCharsRegex = /[^\p{L}0-9 ]/u;
+                      if (specialCharsRegex.test(employeeName) || specialCharsRegex.test(employeeCode)) {
+                          Swal.fire({
+                                  title: 'Có lỗi xảy ra!',
+                                  text: 'Tên và mã nhân viên không hợp lệ',
+                                  icon: 'error'
+                                  });
+                                  return
+                      }
+                      const userAnswers = [];
+                      const allAnswers = document.querySelectorAll('.answer-input');
+                      allAnswers.forEach(input => {
+                          if (input.checked) {
+                              userAnswers.push(input.value);
+                          }
+                      });
+                      if (userAnswers.length === 0) {
+                          Swal.fire({
+                             title: 'Lỗi!',
+                             text: 'Bạn chưa chọn đáp án nào.',
+                             icon: 'error'
+                         });
+                         return
+                      }
+
+                      const listAnswers = userAnswers.join('-');
+
+                      const dataToSend = {
+                          ExamTrialRunId: @Model.exam.Id,
+                          EmployeeName: employeeName,
+                          EmployeeCode: employeeCode,
+                          ListAnswer: listAnswers
+                      }
+                      console.log(dataToSend)
+                      fetch('@Url.Action("SaveTrialRunAnswer", "TestingSystem")', {
+                          method: 'POST',
+                          headers: {
+                              'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify(dataToSend)
+                      })
+                      .then(response => {
+                          if (!response.ok) {
+                              throw new Error('Lỗi mạng hoặc server!');
+                          }
+                          return response.json();
+                      })
+                      .then(data => {
+                          console.log('Đang nộp bài:...')
+                          if(data.status){
+                              console.log('Nộp bài thành công!')
+                              Swal.fire({
+                                  title: 'Nộp bài thành công!',
+                                  text: 'Cảm ơn bạn đã hoàn thành bài thi.',
+                                  icon: 'success'
+                              }).then((result) => {
+                                  if (result.isConfirmed) {
+                                      hasAnswered = false
+                                      window.location.href = '@Url.Action("Index", "TestingSystem")';
+                                  }
+                              })
+                              }
+                              })
+                              .catch((error) => {
+                                  console.error('Lỗi:', error);
+                                  Swal.fire({
+                                      title: 'Có lỗi xảy ra!',
+                                      text: 'Vui lòng kiểm tra lại kết nối.',
+                                      icon: 'error'
+                                  });
+                              });
+         }
+
+         function handleVisibilityChange() {
+             if (document.visibilityState === 'hidden') {
+                 handleViolation();
+             }
+         }
+
+         function handleBlur() {
+             handleViolation();
+         }
+
+         document.getElementById('btn-exit').addEventListener('click', function() {
+                  Swal.fire({
                      title: 'Bạn có chắc không?',
                      text: "Bạn sẽ thoát khỏi bài làm!",
                      icon: 'warning',
@@ -317,10 +345,10 @@
                          window.location.href = '@Url.Action("Index", "TestingSystem")';
                      }
                  });
-             });
+              });
 
-        document.getElementById('btn-submit').addEventListener('click', function() {
-                 Swal.fire({
+         document.getElementById('btn-submit').addEventListener('click', function() {
+                  Swal.fire({
                      title: 'Xác nhận nộp bài',
                      text: "Đảm bảo bạn đã trả lời toàn bộ câu hỏi!",
                      icon: 'success',
@@ -335,16 +363,125 @@
                          submit()
                      }
                  });
-             });
+              });
 
-        // Bắt đầu bộ đếm và chế độ toàn màn hình khi trang được tải
-        document.addEventListener('DOMContentLoaded', () => {
-            document.documentElement.requestFullscreen().catch(err => {
-                console.warn('Không thể tự động chuyển sang chế độ toàn màn hình: ' + err);
-            });
-            startTimer();
-            document.addEventListener('visibilitychange', handleVisibilityChange);
-            window.addEventListener('blur', handleBlur);
-        });
+         document.addEventListener('DOMContentLoaded', () => {
+             document.documentElement.requestFullscreen().catch(err => {
+                 console.warn('Không thể tự động chuyển sang chế độ toàn màn hình: ' + err);
+             });
+             startTimer();
+             document.addEventListener('visibilitychange', handleVisibilityChange);
+             window.addEventListener('blur', handleBlur);
+         });
+
+         const calculator = document.getElementById('calculator-mini');
+         const icon = document.getElementById('calculator-icon');
+         const display = document.getElementById('calculator-display');
+         const keys = document.querySelector('.calculator-keys');
+
+         let displayValue = '0';
+         let firstOperand = null;
+         let operator = null;
+         let waitingForSecondOperand = false;
+
+         // Cập nhật màn hình
+         function updateDisplay() {
+             display.textContent = displayValue;
+         }
+
+         // Xử lý đầu vào là số
+         function inputDigit(digit) {
+             if (waitingForSecondOperand === true) {
+                 displayValue = digit;
+                 waitingForSecondOperand = false;
+             } else {
+                 displayValue = displayValue === '0' ? digit : displayValue + digit;
+             }
+             updateDisplay();
+         }
+
+         function inputDecimal() {
+             if (waitingForSecondOperand === true) {
+                 displayValue = '0.';
+                 waitingForSecondOperand = false;
+                 updateDisplay();
+                 return;
+             }
+
+             if (!displayValue.includes('.')) {
+                 displayValue += '.';
+             }
+             updateDisplay();
+         }
+
+         function handleOperator(nextOperator) {
+             const inputValue = parseFloat(displayValue);
+
+             if (operator && waitingForSecondOperand) {
+                 operator = nextOperator;
+                 return;
+             }
+
+             if (firstOperand === null) {
+                 firstOperand = inputValue;
+             } else if (operator) {
+                 const result = performCalculation[operator](firstOperand, inputValue);
+
+                 displayValue = String(result);
+                 firstOperand = result;
+             }
+
+             waitingForSecondOperand = true;
+             operator = nextOperator;
+             updateDisplay();
+         }
+
+         const performCalculation = {
+             '/': (firstOperand, secondOperand) => firstOperand / secondOperand,
+             '*': (firstOperand, secondOperand) => firstOperand * secondOperand,
+             '+': (firstOperand, secondOperand) => firstOperand + secondOperand,
+             '-': (firstOperand, secondOperand) => firstOperand - secondOperand,
+             '=': (firstOperand, secondOperand) => secondOperand
+         };
+
+         function resetCalculator() {
+             displayValue = '0';
+             firstOperand = null;
+             operator = null;
+             waitingForSecondOperand = false;
+             updateDisplay();
+         }
+
+         keys.addEventListener('click', (event) => {
+             const { target } = event;
+             const key = target.dataset.key;
+
+             if (!target.matches('button')) {
+                 return;
+             }
+
+             if (key === 'clear') {
+                 resetCalculator();
+                 return;
+             }
+
+             if (['/', '*', '+', '-', '='].includes(key)) {
+                 handleOperator(key);
+                 return;
+             }
+
+             if (key === '.') {
+                 inputDecimal();
+                 return;
+             }
+
+             inputDigit(key);
+         });
+
+         icon.addEventListener('click', () => {
+             calculator.style.display = (calculator.style.display === 'block' ? 'none' : 'block');
+         });
+
+         updateDisplay();
     </script>
 }
