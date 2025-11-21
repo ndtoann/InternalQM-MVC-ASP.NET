@@ -92,13 +92,13 @@
 
             document.getElementById('editLink').addEventListener('click', function (event) {
                 if (departmentId) {
-                    window.location.href = `/admin/department/edit?id=${departmentId}`;
+                    safeRedirect(`/admin/department/edit?id=${departmentId}`);
                 }
             });
 
             document.getElementById('deleteLink').addEventListener('click', function (event) {
                 if (departmentId && confirm(`Bạn có chắc chắn muốn xóa bộ phận ${departmentName}?`)) {
-                    window.location.href = `/admin/department/delete?id=${departmentId}`;
+                    safeRedirect(`/admin/department/delete?id=${departmentId}`);
                 }
             });
         });

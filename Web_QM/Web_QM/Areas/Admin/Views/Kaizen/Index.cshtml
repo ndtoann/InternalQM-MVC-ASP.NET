@@ -311,14 +311,14 @@
             document.getElementById('editLink').addEventListener('click', function (event) {
                 event.preventDefault();
                 if (kaizenId) {
-                    window.location.href = `/admin/kaizen/edit?id=${kaizenId}`;
+                    safeRedirect(`/admin/kaizen/edit?id=${kaizenId}`);
                 }
             });
 
             document.getElementById('deleteLink').addEventListener('click', function (event) {
                 event.preventDefault();
                 if (kaizenId && confirm(`Bạn có chắc chắn muốn xóa kaizen của ${employeeName}?`)) {
-                    window.location.href = `/admin/kaizen/delete?id=${kaizenId}`;
+                    safeRedirect(`/admin/kaizen/delete?id=${kaizenId}`);
                 }
             });
 

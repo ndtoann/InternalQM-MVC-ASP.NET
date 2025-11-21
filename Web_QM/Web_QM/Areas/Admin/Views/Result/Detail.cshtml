@@ -258,7 +258,7 @@
                 event.preventDefault();
                 if (currentRowData) {
                     if (confirm('Xóa kết quả kiểm tra của nhân viên ' + currentRowData.employeename + '?') == true) {
-                        window.location.href = '/admin/result/delete?id=' + currentRowData.id;
+                        safeRedirect(`/admin/result/delete?id=${currentRowData.id}`);
                     }
                 }
             });

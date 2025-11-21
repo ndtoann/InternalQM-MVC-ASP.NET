@@ -301,7 +301,7 @@ namespace Web_QM.Controllers
             if (emplDouble > 0)
             {
                 TempData["ErrorStart"] = "Bạn đã làm bài kiểm tra này rồi!";
-                return RedirectToAction(nameof(Prepare), new { id = id });
+                return RedirectToAction(nameof(TestTrainingPrepare), new { id = id });
             }
 
             ViewBag.EmplCode = emplCode;

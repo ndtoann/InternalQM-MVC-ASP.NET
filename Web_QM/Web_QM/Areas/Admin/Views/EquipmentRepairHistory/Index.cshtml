@@ -489,7 +489,7 @@
                 event.preventDefault();
                 contextMenu.style.display = 'none';
                 if (erhId) {
-                    window.location.href = `/admin/equipmentrepairhistory/edit?id=${erhId}`;
+                    safeRedirect(`/admin/equipmentrepairhistory/edit?id=${erhId}`);
                 }
             });
 
@@ -497,7 +497,7 @@
                 event.preventDefault();
                 contextMenu.style.display = 'none';
                 if (erhId && confirm(`Bạn có chắc chắn muốn xóa lịch sử sửa chữa thiết bị: ${equipmentName}?`)) {
-                    window.location.href = `/admin/equipmentrepairhistory/delete?id=${erhId}`;
+                    safeRedirect(`/admin/equipmentrepairhistory/delete?id=${erhId}`);
                 }
             });
 

@@ -82,7 +82,7 @@ builder.Services.AddAuthorization(options =>
         policy.RequireClaim("Permission", "Account.Edit"));
 
     options.AddPolicy("DeleteAccount", policy =>
-        policy.RequireClaim("Permission", "Account.Delet"));
+        policy.RequireClaim("Permission", "Account.Delete"));
 
     //các quyền nhân viên
     options.AddPolicy("ViewPermission", policy =>

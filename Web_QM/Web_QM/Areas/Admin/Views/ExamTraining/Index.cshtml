@@ -136,14 +136,14 @@
                         duplicateLink.onclick = function(event) {
                             event.preventDefault();
                             if (window.confirm('Xác nhận sao chép ' + examName + '?')) {
-                                window.location.href = this.href;
+                                safeRedirect(this.href);
                             }
                         };
 
                         deleteLink.onclick = function(event) {
                             event.preventDefault();
                             if (window.confirm('Xác nhận xóa ' + examName + '? Toàn bộ câu hỏi, kết quả kiểm tra cũng sẽ bị xóa!')) {
-                                window.location.href = this.href;
+                                safeRedirect(this.href);
                             }
                         };
                     }

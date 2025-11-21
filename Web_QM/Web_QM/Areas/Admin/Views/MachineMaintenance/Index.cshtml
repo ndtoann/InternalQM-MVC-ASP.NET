@@ -191,13 +191,13 @@
 
             document.getElementById('editLink').addEventListener('click', function (event) {
                 if (mmId) {
-                    window.location.href = `/admin/machinemaintenance/edit?id=${mmId}`;
+                    safeRedirect(`/admin/machinemaintenance/edit?id=${mmId}`);
                 }
             });
 
             document.getElementById('deleteLink').addEventListener('click', function (event) {
                 if (mmId && confirm(`Bạn có chắc chắn muốn xóa lịch bảo dưỡng của máy ${machineCode}?`)) {
-                    window.location.href = `/admin/machinemaintenance/delete?id=${mmId}`;
+                    safeRedirect(`/admin/machinemaintenance/delete?id=${mmId}`);
                 }
             });
 

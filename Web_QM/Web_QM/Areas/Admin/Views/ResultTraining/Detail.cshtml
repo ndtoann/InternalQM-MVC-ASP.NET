@@ -226,7 +226,6 @@
 
 @section Scripts {
     <script>
-        // MẢNG CHỨA ĐÁP ÁN ĐÚNG TỪ VIEW BAG
         const correctAnswers = @Html.Raw(Json.Serialize(ViewBag.CorrectAnswers));
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -253,7 +252,6 @@
                 contextMenu.style.display = 'none';
             });
 
-            // Handle "Update" action
             document.getElementById('update-action').addEventListener('click', function (event) {
                 event.preventDefault();
                 if (currentRowData) {
@@ -278,17 +276,15 @@
                 }
             });
 
-            // Handle "Delete" action
             document.getElementById('delete-action').addEventListener('click', function (event) {
                 event.preventDefault();
                 if (currentRowData) {
                     if (confirm('Xóa kết quả kiểm tra của nhân viên ' + currentRowData.employeename + '?') == true) {
-                        window.location.href = '/admin/resulttraining/delete?id=' + currentRowData.id;
+                        safeRedirect(`/admin/resulttraining/delete?id=${currentRowData.id}`);
                     }
                 }
             });
 
-            // Gửi form cập nhật điểm với file PDF bằng AJAX
             document.getElementById('saveChangesBtn').addEventListener('click', async function (event) {
                 event.preventDefault();
 
@@ -313,7 +309,6 @@
                 }
             });
 
-            // Xử lý sự kiện nhấp chuột vào liên kết xem PDF
             document.querySelectorAll('.view-pdf-embed').forEach(link => {
                 link.addEventListener('click', function (event) {
                     event.preventDefault();

@@ -153,13 +153,13 @@
 
             document.getElementById('editLink').addEventListener('click', function (event) {
                 if (id) {
-                    window.location.href = `/admin/sawingperformance/edit?id=${id}`;
+                    safeRedirect(`/admin/sawingperformance/edit?id=${id}`);
                 }
             });
 
             document.getElementById('deleteLink').addEventListener('click', function (event) {
                 if (id && confirm(`Bạn có chắc chắn muốn xóa doanh số nhân viên ${employee}?`)) {
-                    window.location.href = `/admin/sawingperformance/delete?id=${id}`;
+                    safeRedirect(`/admin/sawingperformance/delete?id=${id}`);
                 }
             });
 

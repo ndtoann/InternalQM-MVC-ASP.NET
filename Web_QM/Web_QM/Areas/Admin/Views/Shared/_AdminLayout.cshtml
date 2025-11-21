@@ -294,6 +294,22 @@
     @await RenderSectionAsync("Scripts", false)
 
     <script>
+        function safeRedirect(url) {
+            $.ajax({
+                url: url,
+                type: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+        
+                success: function(response) {
+                    window.location.href = url;
+                },
+                error: function(xhr, status, error) {
+                    if (xhr.status !== 403) {
+                    }
+                }
+            });
+        }
+
         $(function() {
             $(document).ajaxError(function(event, xhr, settings, thrownError) {
                 if (xhr.status === 403) {

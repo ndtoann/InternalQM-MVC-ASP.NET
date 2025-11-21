@@ -424,14 +424,14 @@
             $('#editLink').on('click', function (event) {
                 event.preventDefault();
                 if (machineId) {
-                    window.location.href = `/admin/machine/edit?id=${machineId}`;
+                    safeRedirect(`/admin/machine/edit?id=${machineId}`);
                 }
             });
 
             $('#deleteLink').on('click', function (event) {
                 event.preventDefault();
                 if (machineId && confirm(`Bạn có chắc chắn muốn xóa thông tin máy ${machineName}?`)) {
-                    window.location.href = `/admin/machine/delete?id=${machineId}`;
+                    safeRedirect(`/admin/machine/delete?id=${machineId}`);
                 }
             });
 

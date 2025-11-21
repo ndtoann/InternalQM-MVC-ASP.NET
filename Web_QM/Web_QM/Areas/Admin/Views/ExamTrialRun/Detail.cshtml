@@ -64,7 +64,7 @@
                                     <button class="btn btn-sm btn-outline-secondary sort-btn" data-id="@item.Id" data-direction="down" @(i == countQuestion - 1 ? "disabled" : "")><i class="mdi mdi-arrow-down-bold"></i></button>
                                 </div>
                                 <a href="~/admin/examtrialrun/editquestion?id=@item.Id" class="btn btn-sm btn-info"><i>Sửa</i></a>
-                                <a href="#" onclick="if(confirm('Xác nhận xóa câu hỏi này?') == true){ location.href = '/admin/examtrialrun/deletequestion?id=@item.Id' }" class="btn btn-sm btn-danger"><i>Xóa</i></a>
+                                <a href="#" onclick="if(confirm('Xác nhận xóa câu hỏi này?') == true){ safeRedirect(`/admin/examtrialrun/deletequestion?id=@item.Id`); }" class="btn btn-sm btn-danger"><i>Xóa</i></a>
                                 <div class="d-flex align-items-center ms-2">
                                     <select id="correctOption-@item.Id" asp-for="@item.CorrectOption" class="form-select form-select-sm" style="width: auto;">
                                         <option value="A">A</option>

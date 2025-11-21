@@ -95,13 +95,13 @@
 
             document.getElementById('editLink').addEventListener('click', function (event) {
                 if (roleId) {
-                    window.location.href = `/admin/permission/edit?id=${roleId}`;
+                    safeRedirect(`/admin/permission/edit?id=${roleId}`);
                 }
             });
 
             document.getElementById('deleteLink').addEventListener('click', function (event) {
                 if (roleId && confirm(`Bạn có chắc chắn muốn xóa phân quyền ${roleName}?`)) {
-                    window.location.href = `/admin/permission/delete?id=${roleId}`;
+                    safeRedirect(`/admin/permission/delete?id=${roleId}`);
                 }
             });
         });

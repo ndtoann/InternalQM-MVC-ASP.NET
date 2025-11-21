@@ -131,31 +131,31 @@
 
             document.getElementById('viewLink').addEventListener('click', function (event) {
                 if (employeeId) {
-                    window.location.href = `/admin/employee/detail?id=${employeeId}`;
+                    safeRedirect(`/admin/employee/detail?id=${employeeId}`);
                 }
             });
 
             document.getElementById('updateWorkLink').addEventListener('click', function (event) {
                 if (employeeId) {
-                    window.location.href = `/admin/employee/updateWorkHistory?id=${employeeId}`;
+                    safeRedirect(`/admin/employee/updateWorkHistory?id=${employeeId}`);
                 }
             });
 
             document.getElementById('report5SLink').addEventListener('click', function (event) {
                 if (employeeId) {
-                    window.location.href = `/admin/employee/viewViolation5S?id=${employeeId}`;
+                    safeRedirect(`/admin/employee/viewViolation5S?id=${employeeId}`);
                 }
             });
 
             document.getElementById('editLink').addEventListener('click', function (event) {
                 if (employeeId) {
-                    window.location.href = `/admin/employee/edit?id=${employeeId}`;
+                    safeRedirect(`/admin/employee/edit?id=${employeeId}`);
                 }
             });
 
             document.getElementById('deleteLink').addEventListener('click', function (event) {
                 if (employeeId && confirm(`Xóa toàn bộ thông tin nhân viên ${employeeName}?`)) {
-                    window.location.href = `/admin/employee/delete?id=${employeeId}`;
+                    safeRedirect(`/admin/employee/delete?id=${employeeId}`);
                 }
             });
         });

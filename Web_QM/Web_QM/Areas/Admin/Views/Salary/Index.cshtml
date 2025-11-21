@@ -280,13 +280,13 @@
 
             document.getElementById('editLink').addEventListener('click', function (event) {
                 if (id) {
-                    window.location.href = `/admin/salary/edit?id=${id}`;
+                    safeRedirect(`/admin/salary/edit?id=${id}`);
                 }
             });
 
             document.getElementById('deleteLink').addEventListener('click', function (event) {
                 if (id && confirm(`Bạn có chắc chắn muốn xóa thông tin lương nhân viên ${employee}?`)) {
-                    window.location.href = `/admin/salary/delete?id=${id}`;
+                    safeRedirect(`/admin/salary/delete?id=${id}`);
                 }
             });
 
