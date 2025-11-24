@@ -10,7 +10,7 @@
             <div class="card">
                 <div class="card-body">
                     <h4 class="card-title">Thêm bài kiểm tra</h4>
-                    <form action="add" class="forms-sample" method="post">
+                    <form action="add" class="forms-sample" method="post" enctype="multipart/form-data">
                         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                         <div class="form-group">
                             <label asp-for="ExamName">Tên bài kiểm tra</label>
@@ -38,8 +38,8 @@
                             <span asp-validation-for="IsActive" class="text-danger"></span>
                         </div>
                         <div class="form-group">
-                            <label asp-for="EssayQuestion">Câu hỏi tự luận: </label>
-                            <textarea asp-for="EssayQuestion" id="EssayQuestion" class="form-control"></textarea>
+                            <label asp-for="EssayQuestion">Câu hỏi tự luận(PDF): </label>
+                            <input asp-for="EssayQuestion" type="file" class="form-control" name="essayPdf" accept=".pdf">
                             <span asp-validation-for="EssayQuestion" class="text-danger"></span>
                         </div>
                         <button type="submit" class="btn btn-primary me-2">
@@ -53,12 +53,6 @@
         </div>
     </div>
 </div>
-
-@section ckeditorJS {
-    <script>
-        CKEDITOR.replace("EssayQuestion");
-    </script>
-}
 
 @section Scripts {
     @{

@@ -42,8 +42,8 @@
                             </div>
                         </div>
                     </form>
-                    <a class="btn btn-success" href="~/admin/productivity/add">Thêm mới</a>
-                    <a class="btn btn-success" href="#" data-bs-toggle="modal" data-bs-target="#importExcelModal">Import Excel</a>
+                    <a class="btn btn-success" href="~/admin/productivity/add" asp-policy="AddProductivity">Thêm mới</a>
+                    <a class="btn btn-success" href="#" data-bs-toggle="modal" data-bs-target="#importExcelModal" asp-policy="AddProductivity">Import Excel</a>
                     <div class="table-responsive">
                         <table class="table table-hover table-bordered">
                             <thead>
@@ -149,13 +149,13 @@
 
             document.getElementById('editLink').addEventListener('click', function (event) {
                 if (id) {
-                    safeRedirect(`/admin/productivity/edit?id=${id}`);
+                    window.location.href = `/admin/productivity/edit?id=${id}`;
                 }
             });
 
             document.getElementById('deleteLink').addEventListener('click', function (event) {
                 if (id && confirm(`Bạn có chắc chắn muốn xóa năng suất nhân viên ${employee}?`)) {
-                    safeRedirect(`/admin/productivity/delete?id=${id}`);
+                    window.location.href = `/admin/productivity/delete?id=${id}`;
                 }
             });
 

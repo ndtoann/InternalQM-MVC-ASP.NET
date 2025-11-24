@@ -271,62 +271,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
-
     <script>
         window.addEventListener('load', function () {
             $('.main-body').removeClass('preload-hidden').addClass('preload-visible');
-        });
-
-        $(function() {
-            $(document).ajaxError(function(event, xhr, settings, thrownError) {
-                if (xhr.status === 403) {
-                    let message = "Bạn không có quyền thực hiện hành động này.";
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        if (response.message) {
-                            message = response.message;
-                        }
-                    } catch (e) {}
-                    Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        icon: 'error',
-                        title: message,
-                        showConfirmButton: false,
-                        timer: 4000
-                    });
-                }
-            });
-
-            $('a[href]').on('click', function(e) {
-                const $link = $(this);
-                const url = $link.attr('href');
-                const target = $link.attr('target');
-
-                if (e.ctrlKey || e.metaKey || e.button === 1) { 
-                    return; 
-                }
-
-                if ($link.hasClass('js-skip-auth') || url.startsWith('#') || target === '_blank' || /\.(pdf|doc|docx|xlsx|zip|jpg|png|gif)$/i.test(url)) {
-                    return; 
-                }
-        
-                e.preventDefault(); 
-
-                $.ajax({
-                    url: url,
-                    type: 'GET',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }, 
-            
-                    success: function(response) {
-                        window.location.href = url;
-                    },
-                    error: function(xhr, status, error) {
-                        if (xhr.status !== 403) {
-                        }
-                    }
-                });
-            });
         });
     </script>
 </body>

@@ -1,7 +1,9 @@
 ﻿using DocumentFormat.OpenXml.Office2010.Excel;
+using iText.Kernel.Pdf;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.PortableExecutable;
 using Web_QM.Models;
 using Web_QM.Models.ViewModels;
 
@@ -12,9 +14,12 @@ namespace Web_QM.Controllers
     {
         private readonly QMContext _context;
 
-        public TestingSystemController(QMContext context)
+        private readonly IWebHostEnvironment _env;
+
+        public TestingSystemController(QMContext context, IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
         public async Task<IActionResult> Index()
@@ -214,6 +219,18 @@ namespace Web_QM.Controllers
                 return RedirectToAction(nameof(Prepare), new { id = id });
             }
 
+            string pdfFileName = exam.EssayQuestion;
+            if (string.IsNullOrEmpty(pdfFileName))
+            {
+                pdfFileName = "";
+            }
+            string pdfPath = Path.Combine(_env.WebRootPath, "files", "essay_questions", pdfFileName);
+            int pageCount = 0;
+            if (System.IO.File.Exists(pdfPath))
+            {
+                pageCount = GetPdfPageCount(pdfPath);
+            }
+            ViewBag.PdfPageCount = pageCount;
             ViewBag.EmplCode = emplCode;
             ViewBag.EmplName = empl.EmployeeName;
             ViewBag.EmplDepartment = empl.Department;
@@ -259,6 +276,18 @@ namespace Web_QM.Controllers
                 return RedirectToAction(nameof(CNCPrepare), new { id = id });
             }
 
+            string pdfFileName = exam.EssayQuestion;
+            if (string.IsNullOrEmpty(pdfFileName))
+            {
+                pdfFileName = "";
+            }
+            string pdfPath = Path.Combine(_env.WebRootPath, "files", "essay_questions", pdfFileName);
+            int pageCount = 0;
+            if (System.IO.File.Exists(pdfPath))
+            {
+                pageCount = GetPdfPageCount(pdfPath);
+            }
+            ViewBag.PdfPageCount = pageCount;
             ViewBag.EmplCode = emplCode;
             ViewBag.EmplName = empl.EmployeeName;
             ViewBag.EmplDepartment = empl.Department;
@@ -304,6 +333,18 @@ namespace Web_QM.Controllers
                 return RedirectToAction(nameof(TestTrainingPrepare), new { id = id });
             }
 
+            string pdfFileName = exam.EssayQuestion;
+            if (string.IsNullOrEmpty(pdfFileName))
+            {
+                pdfFileName = "";
+            }
+            string pdfPath = Path.Combine(_env.WebRootPath, "files", "essay_questions", pdfFileName);
+            int pageCount = 0;
+            if (System.IO.File.Exists(pdfPath))
+            {
+                pageCount = GetPdfPageCount(pdfPath);
+            }
+            ViewBag.PdfPageCount = pageCount;
             ViewBag.EmplCode = emplCode;
             ViewBag.EmplName = empl.EmployeeName;
             ViewBag.EmplDepartment = empl.Department;
@@ -614,6 +655,31 @@ namespace Web_QM.Controllers
             }
 
             return score;
+        }
+
+        public int GetPdfPageCount(string filePath)
+        {
+            if (!System.IO.File.Exists(filePath))
+            {
+                return 0;
+            }
+            int pageCount = 0;
+            try
+            {
+                using (var reader = new PdfReader(filePath))
+                {
+                    using (var pdfDocument = new PdfDocument(reader))
+                    {
+                        pageCount = pdfDocument.GetNumberOfPages();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return 0;
+            }
+
+            return pageCount;
         }
     }
 }

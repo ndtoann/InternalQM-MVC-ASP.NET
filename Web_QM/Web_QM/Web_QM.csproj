@@ -10,6 +10,7 @@
     <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="ExcelDataReader" Version="3.7.0" />
     <PackageReference Include="ExcelDataReader.DataSet" Version="3.7.0" />
+    <PackageReference Include="itext7" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.19" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.19">
       <PrivateAssets>all</PrivateAssets>
@@ -30,6 +31,7 @@
     <Folder Include="Areas\Demo\Models\" />
     <Folder Include="wwwroot\files\answers\" />
     <Folder Include="wwwroot\files\equipments\" />
+    <Folder Include="wwwroot\files\essay_questions\" />
     <Folder Include="wwwroot\imgs\avatars\" />
     <Folder Include="wwwroot\imgs\kaizens\" />
     <Folder Include="wwwroot\imgs\machines\" />

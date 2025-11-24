@@ -80,21 +80,31 @@ namespace Web_QM.Areas.Admin.Controllers
 
         [Authorize(Policy = "AddExam")]
         [HttpPost]
-        public async Task<IActionResult> Add(ExamPeriodic exam)
+        public async Task<IActionResult> Add(ExamPeriodic exam, IFormFile essayPdf)
         {
-            if (!ModelState.IsValid)
-            {
-                return View(exam);
-            }
             var existExam = ExamExists(exam.ExamName);
             if (existExam)
             {
                 ModelState.AddModelError("ExamName", "Tên bài kiểm tra đã tồn tại, vui lòng nhập tên khác!");
                 return View(exam);
             }
+            const long MaxFileSize = 20 * 1024 * 1024;
+            if (essayPdf != null && essayPdf.Length > 0)
+            {
+                if (essayPdf.Length > MaxFileSize)
+                {
+                    ModelState.AddModelError("EssayQuestion", "Kích thước file PDF không được vượt quá 20MB!");
+                    return View(exam);
+                }
+                exam.EssayQuestion = await SavePdfFile(essayPdf);
+                if (string.IsNullOrEmpty(exam.EssayQuestion))
+                {
+                    ModelState.AddModelError("EssayQuestion", "Vui lòng chọn file PDF!");
+                    return View(exam);
+                }
+            }
             try
             {
-                exam.EssayQuestion = ProcessBase64Images(exam.EssayQuestion);
                 exam.CreatedDate = DateTime.Now.ToString("HH:mm:ss-dd/MM/yyyy");
                 _context.ExamPeriodics.Add(exam);
                 await _context.SaveChangesAsync();
@@ -126,15 +136,11 @@ namespace Web_QM.Areas.Admin.Controllers
 
         [Authorize(Policy = "EditExam")]
         [HttpPost]
-        public async Task<IActionResult> Edit(long id, ExamPeriodic exam)
+        public async Task<IActionResult> Edit(long id, ExamPeriodic exam, IFormFile essayPdf)
         {
             if (id != exam.Id)
             {
                 return NotFound();
-            }
-            if (!ModelState.IsValid)
-            {
-                return View(exam);
             }
             var oldExam = await _context.ExamPeriodics.AsNoTracking().FirstOrDefaultAsync(q => q.Id == exam.Id);
             if (oldExam == null)
@@ -147,13 +153,28 @@ namespace Web_QM.Areas.Admin.Controllers
                 ModelState.AddModelError("ExamName", "Tên bài kiểm tra đã tồn tại, vui lòng nhập tên khác!");
                 return View(exam);
             }
+            const long MaxFileSize = 20 * 1024 * 1024;
+            if (essayPdf != null && essayPdf.Length > 0)
+            {
+                if (essayPdf.Length > MaxFileSize)
+                {
+                    ModelState.AddModelError("EssayQuestion", "Kích thước file PDF không được vượt quá 20MB!");
+                    return View(exam);
+                }
+                exam.EssayQuestion = await SavePdfFile(essayPdf);
+                if (string.IsNullOrEmpty(exam.EssayQuestion))
+                {
+                    ModelState.AddModelError("EssayQuestion", "Vui lòng chọn file PDF!");
+                    return View(exam);
+                }
+                DeletePdfFile(oldExam.EssayQuestion);
+            }
+            else
+            {
+                exam.EssayQuestion = oldExam.EssayQuestion;
+            }
             try
             {
-                if (!string.IsNullOrEmpty(oldExam.EssayQuestion) && oldExam.EssayQuestion.Contains("<img"))
-                {
-                    DeleteOldImages(oldExam.EssayQuestion, exam.EssayQuestion);
-                }
-                exam.EssayQuestion = ProcessBase64Images(exam.EssayQuestion);
                 exam.UpdatedDate = DateTime.Now.ToString("HH:mm:ss-dd/MM/yyyy");
                 _context.ExamPeriodics.Update(exam);
                 await _context.SaveChangesAsync();
@@ -192,15 +213,10 @@ namespace Web_QM.Areas.Admin.Controllers
             try
             {
                 var imageUrls = new List<string>();
-                var regex = new Regex(@"src=""/imgs/uploads/questions/(?<fileName>.+?)""");
 
                 if (!string.IsNullOrEmpty(examToDelete.EssayQuestion))
                 {
-                    var matches = regex.Matches(examToDelete.EssayQuestion);
-                    foreach (Match match in matches)
-                    {
-                        imageUrls.Add($"/imgs/uploads/questions/{match.Groups["fileName"].Value}");
-                    }
+                    DeletePdfFile(examToDelete.EssayQuestion);
                 }
 
                 foreach (var imageUrl in imageUrls)
@@ -531,12 +547,40 @@ namespace Web_QM.Areas.Admin.Controllers
                                                  .Where(q => q.ExamId == examId)
                                                  .AsNoTracking()
                                                  .ToListAsync();
+            string newEssayQuestionFileName = originalExam.EssayQuestion;
+            if (!string.IsNullOrEmpty(originalExam.EssayQuestion))
+            {
+                string essayQuestionsDirectory = Path.Combine(_env.WebRootPath, "files", "essay_questions");
+                string originalFilePath = Path.Combine(essayQuestionsDirectory, originalExam.EssayQuestion);
+                if (System.IO.File.Exists(originalFilePath))
+                {
+                    string originalFileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalExam.EssayQuestion);
+                    string extension = Path.GetExtension(originalExam.EssayQuestion);
 
+                    newEssayQuestionFileName = $"{Guid.NewGuid().ToString("N")}{extension}";
+
+                    string newFilePath = Path.Combine(essayQuestionsDirectory, newEssayQuestionFileName);
+
+                    try
+                    {
+                        System.IO.File.Copy(originalFilePath, newFilePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        TempData["ErrorMessage"] = "Lỗi khi copy file tự luận!";
+                        return RedirectToAction(nameof(Index));
+                    }
+                }
+                else
+                {
+                    newEssayQuestionFileName = null;
+                }
+            }
             var newExam = new ExamPeriodic
             {
                 ExamName = originalExam.ExamName + " - Copy",
                 DurationMinute = originalExam.DurationMinute,
-                EssayQuestion = DuplicateImages(originalExam.EssayQuestion),
+                EssayQuestion = newEssayQuestionFileName,
                 TlTotal = originalExam.TlTotal,
                 IsActive = originalExam.IsActive,
                 CreatedDate = DateTime.Now.ToString("HH:mm:ss-dd/MM/yyyy")
@@ -855,6 +899,54 @@ namespace Web_QM.Areas.Admin.Controllers
             }
             var hasAnswer = await _context.ExamPeriodicAnswers.AnyAsync(a => a.ExamId == examId);
             return hasAnswer;
+        }
+
+        private async Task<string> SavePdfFile(IFormFile file)
+        {
+            if (file.ContentType != "application/pdf")
+            {
+                return null;
+            }
+
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "files", "essay_questions");
+
+            if (!Directory.Exists(uploadsFolder))
+            {
+                Directory.CreateDirectory(uploadsFolder);
+            }
+
+            var uniqueFileName = Guid.NewGuid().ToString("N");
+            var fileName = $"{uniqueFileName}.pdf";
+
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return fileName;
+        }
+
+        private async Task<bool> DeletePdfFile(string fileName)
+        {
+            try
+            {
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "files", "essay_questions");
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                if (System.IO.File.Exists(filePath))
+                {
+                    System.IO.File.Delete(filePath);
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
         }
     }
 }

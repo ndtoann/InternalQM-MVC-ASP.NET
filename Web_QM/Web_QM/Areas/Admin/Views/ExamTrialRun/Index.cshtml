@@ -51,7 +51,7 @@
                             </div>
                         </div>
                     </form>
-                    <a class="btn btn-success mb-3" href="~/admin/examtrialrun/add">Thêm mới</a>
+                    <a class="btn btn-success mb-3" href="~/admin/examtrialrun/add" asp-policy="AddExam">Thêm mới</a>
                     <div class="table-responsive">
                         <table class="table table-hover table-bordered" id="examTrialRunTable">
                             <thead>
@@ -126,10 +126,8 @@
                         const editLink = document.getElementById('editLink');
                         const deleteLink = document.getElementById('deleteLink');
 
-                        duplicateLink.href = `/admin/examtrialrun/duplicateexam?examId=${id}`;
                         viewLink.href = `/admin/examtrialrun/detail?id=${id}`;
                         editLink.href = `/admin/examtrialrun/edit?id=${id}`;
-                        deleteLink.href = `/admin/examtrialrun/delete?id=${id}`;
 
                         contextMenu.style.top = `${e.pageY}px`;
                         contextMenu.style.left = `${e.pageX}px`;
@@ -138,14 +136,14 @@
                         duplicateLink.onclick = function(event) {
                             event.preventDefault();
                             if (window.confirm('Xác nhận sao chép ' + examName + '?')) {
-                                safeRedirect(this.href);
+                                window.location.href = `/admin/examtrialrun/duplicateexam?examId=${id}`;
                             }
                         };
 
                         deleteLink.onclick = function(event) {
                             event.preventDefault();
                             if (window.confirm('Xác nhận xóa ' + examName + '? Toàn bộ câu hỏi, kết quả kiểm tra cũng sẽ bị xóa!')) {
-                                safeRedirect(this.href);
+                                window.location.href = `/admin/examtrialrun/delete?id=${id}`;
                             }
                         };
                     }

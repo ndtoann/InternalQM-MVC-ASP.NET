@@ -116,13 +116,13 @@
 
             document.getElementById('editLink').addEventListener('click', function (event) {
                 if (trainingId) {
-                    safeRedirect(`/admin/training/edit?id=${trainingId}`);
+                    window.location.href = '/admin/training/edit?id=${trainingId}';
                 }
             });
 
             document.getElementById('deleteLink').addEventListener('click', function (event) {
                 if (trainingId && confirm(`Bạn có chắc chắn muốn xóa hạng mục ${trainingName}?`)) {
-                    safeRedirect(`/admin/training/delete?id=${trainingId}`);
+                    window.location.href = '/admin/training/delete?id=${trainingId}';
                 }
             });
         });

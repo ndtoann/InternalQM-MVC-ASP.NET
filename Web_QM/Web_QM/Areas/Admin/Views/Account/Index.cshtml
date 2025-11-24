@@ -24,7 +24,7 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     }
-                    <a class="btn btn-success mb-3" href="~/admin/account/add">Thêm tài khoản</a>
+                    <a class="btn btn-success mb-3" href="~/admin/account/add" asp-policy="AddAccount">Thêm tài khoản</a>
                     <div class="table-responsive">
                         <table class="table table-hover table-bordered" id="accountTable">
                             <thead>
@@ -90,7 +90,7 @@
 </div>
 
 <div id="contextMenu" class="dropdown-menu" style="position: absolute; display: none;">
-    <a class="dropdown-item" href="#" id="editLink">Sửa</a>
+    <a class="dropdown-item" href="#" id="editLink" >Sửa</a>
     <a class="dropdown-item" href="#" id="changePassLink" data-bs-toggle="modal" data-bs-target="#changepassModal">Đổi mật khẩu</a>
     <a class="dropdown-item" href="#" id="deleteLink">Xóa</a>
 </div>
@@ -162,7 +162,6 @@
                 });
             }
 
-            // Xử lý sự kiện click nút xóa
             document.getElementById('deleteLink').addEventListener('click', function(e) {
                 e.preventDefault();
                 const deleteUrl = e.target.href;

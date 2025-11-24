@@ -24,7 +24,7 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     }
-                    <a class="btn btn-success" href="~/admin/machinegroup/add">Thêm nhóm máy</a>
+                    <a class="btn btn-success" href="~/admin/machinegroup/add" asp-policy="AddMachineGroup">Thêm nhóm máy</a>
                     <div class="row mt-3">
                         <div class="table-responsive">
                             <table class="table table-hover table-bordered">
@@ -151,13 +151,13 @@
 
             document.getElementById('editLink').addEventListener('click', function (event) {
                 if (mgId) {
-                    safeRedirect(`/admin/machinegroup/edit?id=${mgId}`);
+                    window.location.href = `/admin/machinegroup/edit?id=${mgId}`;
                 }
             });
 
             document.getElementById('deleteLink').addEventListener('click', function (event) {
                 if (mgId && confirm(`Bạn có chắc chắn muốn xóa nhóm máy: ${groupName}?`)) {
-                    safeRedirect(`/admin/machinegroup/delete?id=${mgId}`);
+                    window.location.href = `/admin/machinegroup/delete?id=${mgId}`;
                 }
             });
 

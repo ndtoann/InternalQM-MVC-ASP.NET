@@ -69,7 +69,11 @@
     </form>
     <div class="essay-question fw-bold fs-4 border-top p-3">
         <h4>Phần câu hỏi tự luận (trả lời trên giấy, làm xong mới được nộp bài)</h4>
-        @Html.Raw(Model.exam.EssayQuestion)
+
+        <div class="pdf-wrapper">
+            <embed src="/files/essay_questions/@Model.exam.EssayQuestion#toolbar=0&navpanes=0&view=FitH"
+                     type="application/pdf" />
+        </div>
     </div>
 </div>
 
@@ -225,6 +229,52 @@
                  hasAnswered = true;
              });
          });
+
+         var pdfPageCount = @(ViewBag.PdfPageCount != null ? (int)ViewBag.PdfPageCount : 10);
+        const A4_ASPECT_RATIO = 1.414;
+        const MARGIN_PER_PAGE = 10;
+        let lastDevicePixelRatio = window.devicePixelRatio || 1;
+
+        function setPdfHeight() {
+            const pdfWrapper = document.querySelector('.pdf-wrapper');
+            const pdfElement = pdfWrapper.querySelector('object, embed, iframe');
+            const pdfBlocker = document.getElementById('pdf-click-blocker');
+
+            if (!pdfWrapper || !pdfElement || pdfPageCount === 0) return;
+
+            const currentWidth = pdfWrapper.clientWidth;
+
+            const heightPerPage = currentWidth * A4_ASPECT_RATIO;
+
+            const totalContentHeight = (heightPerPage * pdfPageCount) + (MARGIN_PER_PAGE * pdfPageCount);
+
+            pdfWrapper.style.height = `${totalContentHeight}px`;
+            pdfElement.style.height = `${totalContentHeight}px`;
+
+            if (pdfBlocker) {
+                pdfBlocker.style.height = `${totalContentHeight}px`;
+            }
+
+            console.log(`Current Width: ${currentWidth}px. Calculated Height: ${totalContentHeight}px for ${pdfPageCount} pages.`);
+        }
+
+        function checkZoomAndAdjust() {
+            const currentDevicePixelRatio = window.devicePixelRatio || 1;
+
+            if (currentDevicePixelRatio !== lastDevicePixelRatio) {
+                setPdfHeight();
+                lastDevicePixelRatio = currentDevicePixelRatio;
+                console.log(`Zoom level changed to: ${currentDevicePixelRatio}`);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setPdfHeight();
+
+            window.addEventListener('resize', setPdfHeight);
+
+            setInterval(checkZoomAndAdjust, 500);
+        });
 
          window.addEventListener('beforeunload', function (e) {
              if (hasAnswered) {

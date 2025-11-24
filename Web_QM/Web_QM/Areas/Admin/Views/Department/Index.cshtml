@@ -24,7 +24,7 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     }
-                    <a class="btn btn-success" href="~/admin/department/add">Thêm mới</a>
+                    <a class="btn btn-success" href="~/admin/department/add" asp-policy="AddDepartment">Thêm mới</a>
                     <div class="table-responsive">
                         <table class="table table-hover table-bordered">
                             <thead>
@@ -92,13 +92,13 @@
 
             document.getElementById('editLink').addEventListener('click', function (event) {
                 if (departmentId) {
-                    safeRedirect(`/admin/department/edit?id=${departmentId}`);
+                    window.location.href = `/admin/department/edit?id=${departmentId}`;
                 }
             });
 
             document.getElementById('deleteLink').addEventListener('click', function (event) {
                 if (departmentId && confirm(`Bạn có chắc chắn muốn xóa bộ phận ${departmentName}?`)) {
-                    safeRedirect(`/admin/department/delete?id=${departmentId}`);
+                    window.location.href = `/admin/department/delete?id=${departmentId}`;
                 }
             });
         });

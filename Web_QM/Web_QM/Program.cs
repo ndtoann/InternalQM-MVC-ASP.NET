@@ -42,20 +42,6 @@ builder.Services.AddAuthentication("SecurityScheme")
         {
             await Task.CompletedTask;
         };
-        options.Events.OnRedirectToAccessDenied = async context =>
-        {
-            context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            context.Response.Headers.Remove("Location");
-            context.Response.ContentType = "application/json";
-            var responsePayload = new
-            {
-                success = false,
-                status = 403,
-                message = "Bạn không có quyền thực hiện hành động này. Yêu cầu đã bị từ chối!"
-            };
-            await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(responsePayload));
-            await context.Response.CompleteAsync();
-        };
     });
 
 builder.Services.AddAuthorization(options =>

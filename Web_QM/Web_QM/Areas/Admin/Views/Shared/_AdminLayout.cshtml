@@ -160,8 +160,8 @@
                         </a>
                         <div class="collapse" id="account">
                             <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/account">Danh sách</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/permission">Phân quyền</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/account" asp-policy="ViewAccount">Danh sách</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/permission" asp-policy="ViewPermission">Phân quyền</a></li>
                             </ul>
                         </div>
                     </li>
@@ -173,9 +173,9 @@
                         </a>
                         <div class="collapse " id="dataEmpl">
                             <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/employee">Danh sách</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/department">Bộ phận công ty</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/training">Hạng mục đào tạo</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/employee" asp-policy="ViewEmployee">Danh sách</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/department" asp-policy="ViewDepartment">Bộ phận công ty</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/training" asp-policy="DataEmpl">Hạng mục đào tạo</a></li>
                             </ul>
                         </div>
                     </li>
@@ -187,8 +187,8 @@
                         </a>
                         <div class="collapse " id="salary">
                             <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/salary">Lương cơ bản</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/monthlypayroll">Bảng lương</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/salary" asp-policy="ViewSalary">Lương cơ bản</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/monthlypayroll" asp-policy="ViewMonthlyPayroll">Bảng lương</a></li>
                             </ul>
                         </div>
                     </li>
@@ -200,12 +200,12 @@
                         </a>
                         <div class="collapse" id="exam">
                             <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/examtraining">Bài Kiểm tra sau đào tạo</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/resulttraining">Kết quả KT sau đào tạo</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/exam">Bài Kiểm tra định kỳ</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/result">Kết quả KT định kỳ</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/examtrialrun">Bài Kiểm tra chạy thử</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/resulttrialrun">Kết quả KT chạy thử</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/examtraining" asp-policy="ViewExam">Bài Kiểm tra sau đào tạo</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/resulttraining" asp-policy="ViewResultExam">Kết quả KT sau đào tạo</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/exam" asp-policy="ViewExam">Bài Kiểm tra định kỳ</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/result" asp-policy="ViewResultExam">Kết quả KT định kỳ</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/examtrialrun" asp-policy="ViewExam">Bài Kiểm tra chạy thử</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/resulttrialrun" asp-policy="ViewResultExam">Kết quả KT chạy thử</a></li>
                             </ul>
                         </div>
                     </li>
@@ -217,10 +217,10 @@
                         </a>
                         <div class="collapse" id="machine">
                             <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/machine">Thông số máy</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/MachineGroup">Nhóm máy</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/equipmentrepairhistory">Báo lỗi sửa chữa</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/machinemaintenance">Kế hoạch bảo dưỡng</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/machine" asp-policy="ViewMachine">Thông số máy</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/MachineGroup" asp-policy="ViewMachineGroup">Nhóm máy</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/equipmentrepairhistory" asp-policy="ViewMachineRepair">Báo lỗi sửa chữa</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/machinemaintenance" asp-policy="ViewMachineMaintenance">Kế hoạch bảo dưỡng</a></li>
                             </ul>
                         </div>
                     </li>
@@ -232,19 +232,19 @@
                         </a>
                         <div class="collapse" id="ns">
                             <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/productivity">Năng suất</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/sawingperformance">Doanh số cưa</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/productivity" asp-policy="ViewProductivity">Năng suất</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/admin/sawingperformance" asp-policy="ViewProductivity">Doanh số cưa</a></li>
                             </ul>
                         </div>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="~/admin/kaizen">
+                        <a class="nav-link" href="~/admin/kaizen" asp-policy="ViewKaizen">
                             <i class="mdi mdi-lightbulb-on menu-icon"></i>
                             <span class="menu-title">Tổng hợp Kaizen</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="~/admin/violation5S">
+                        <a class="nav-link" href="~/admin/violation5S" asp-policy="ViewViolation5S">
                             <i class="mdi mdi-alert-circle-outline menu-icon"></i>
                             <span class="menu-title">Quy định lỗi 5S</span>
                         </a>
@@ -294,74 +294,6 @@
     @await RenderSectionAsync("Scripts", false)
 
     <script>
-        function safeRedirect(url) {
-            $.ajax({
-                url: url,
-                type: 'GET',
-                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-        
-                success: function(response) {
-                    window.location.href = url;
-                },
-                error: function(xhr, status, error) {
-                    if (xhr.status !== 403) {
-                    }
-                }
-            });
-        }
-
-        $(function() {
-            $(document).ajaxError(function(event, xhr, settings, thrownError) {
-                if (xhr.status === 403) {
-                    let message = "Bạn không có quyền thực hiện hành động này.";
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        if (response.message) {
-                            message = response.message;
-                        }
-                    } catch (e) {}
-                    Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        icon: 'error',
-                        title: message,
-                        showConfirmButton: false,
-                        timer: 4000
-                    });
-                }
-            });
-
-            $('a[href]').on('click', function(e) {
-                const $link = $(this);
-                const url = $link.attr('href');
-                const target = $link.attr('target');
-
-                if (e.ctrlKey || e.metaKey || e.button === 1) { 
-                    return; 
-                }
-
-                if ($link.hasClass('js-skip-auth') || url.startsWith('#') || target === '_blank' || /\.(pdf|doc|docx|xlsx|zip|jpg|png|gif)$/i.test(url)) {
-                    return; 
-                }
-        
-                e.preventDefault(); 
-
-                $.ajax({
-                    url: url,
-                    type: 'GET',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }, 
-            
-                    success: function(response) {
-                        window.location.href = url;
-                    },
-                    error: function(xhr, status, error) {
-                        if (xhr.status !== 403) {
-                        }
-                    }
-                });
-            });
-        });
-
         $(document).ready(function () {
             const currentPath = window.location.pathname.toLowerCase();
             $('.sidebar .nav-item a').each(function () {
@@ -384,7 +316,7 @@
             fetch(apiUrl)
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('Network response was not ok');
+                        throw new Error('Lỗi mạng');
                     }
                     return response.json();
                 })

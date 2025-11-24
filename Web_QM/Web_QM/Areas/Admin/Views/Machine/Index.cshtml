@@ -69,7 +69,7 @@
                             </div>
                         </div>
                     </form>
-                    <a class="btn btn-success" href="~/admin/machine/add">Thêm máy</a>
+                    <a class="btn btn-success" href="~/admin/machine/add" asp-policy="AddMachine">Thêm máy</a>
                     <div class="table-responsive overflow-auto" style="height: 1000px;">
                         <table class="table table-hover table-bordered">
                             <thead class="text-white bg-dark" style="position: sticky; top: 0; z-index: 1;">
@@ -424,14 +424,14 @@
             $('#editLink').on('click', function (event) {
                 event.preventDefault();
                 if (machineId) {
-                    safeRedirect(`/admin/machine/edit?id=${machineId}`);
+                    window.location.href = `/admin/machine/edit?id=${machineId}`;
                 }
             });
 
             $('#deleteLink').on('click', function (event) {
                 event.preventDefault();
                 if (machineId && confirm(`Bạn có chắc chắn muốn xóa thông tin máy ${machineName}?`)) {
-                    safeRedirect(`/admin/machine/delete?id=${machineId}`);
+                    window.location.href = `/admin/machine/delete?id=${machineId}`;
                 }
             });
 

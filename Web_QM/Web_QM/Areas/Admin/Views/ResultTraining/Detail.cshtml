@@ -280,7 +280,7 @@
                 event.preventDefault();
                 if (currentRowData) {
                     if (confirm('Xóa kết quả kiểm tra của nhân viên ' + currentRowData.employeename + '?') == true) {
-                        safeRedirect(`/admin/resulttraining/delete?id=${currentRowData.id}`);
+                        window.location.href = `/admin/resulttraining/delete?id=${currentRowData.id}`;
                     }
                 }
             });

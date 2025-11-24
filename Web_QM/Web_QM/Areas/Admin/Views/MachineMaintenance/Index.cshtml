@@ -62,7 +62,7 @@
                             </div>
                         </div>
                     </form>
-                    <a class="btn btn-success" href="~/admin/machinemaintenance/add">Thêm mới</a>
+                    <a class="btn btn-success" href="~/admin/machinemaintenance/add" asp-policy="AddMachineMaintenance">Thêm mới</a>
                     <a class="btn btn-success" href="#" data-bs-toggle="modal" data-bs-target="#importExcelModal">Import</a>
                     <div class="table-responsive overflow-auto" style="height: 1000px;">
                         <table class="table table-hover table-bordered">
@@ -191,13 +191,13 @@
 
             document.getElementById('editLink').addEventListener('click', function (event) {
                 if (mmId) {
-                    safeRedirect(`/admin/machinemaintenance/edit?id=${mmId}`);
+                    window.location.href = `/admin/machinemaintenance/edit?id=${mmId}`;
                 }
             });
 
             document.getElementById('deleteLink').addEventListener('click', function (event) {
                 if (mmId && confirm(`Bạn có chắc chắn muốn xóa lịch bảo dưỡng của máy ${machineCode}?`)) {
-                    safeRedirect(`/admin/machinemaintenance/delete?id=${mmId}`);
+                    window.location.href = `/admin/machinemaintenance/delete?id=${mmId}`;
                 }
             });
 
