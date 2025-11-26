@@ -33,15 +33,11 @@ builder.Services.AddAuthentication("SecurityScheme")
             SameSite = SameSiteMode.Strict,
             SecurePolicy = CookieSecurePolicy.SameAsRequest
         };
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(180);
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(300);
         options.LoginPath = new PathString("/home/login");
         options.ReturnUrlParameter = "";
         options.SlidingExpiration = true;
         options.AccessDeniedPath = "/home/denied";
-        options.Events.OnValidatePrincipal = async context =>
-        {
-            await Task.CompletedTask;
-        };
     });
 
 builder.Services.AddAuthorization(options =>

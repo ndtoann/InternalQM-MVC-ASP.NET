@@ -1,11 +1,11 @@
-﻿using DocumentFormat.OpenXml.Office2010.Excel;
-using iText.Kernel.Pdf;
+﻿using iText.Kernel.Pdf;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection.PortableExecutable;
+using PDFtoImage;
 using Web_QM.Models;
 using Web_QM.Models.ViewModels;
+
 
 namespace Web_QM.Controllers
 {
@@ -15,6 +15,7 @@ namespace Web_QM.Controllers
         private readonly QMContext _context;
 
         private readonly IWebHostEnvironment _env;
+        private const string PdfBaseFolder = "files/essay_questions";
 
         public TestingSystemController(QMContext context, IWebHostEnvironment env)
         {
@@ -218,19 +219,9 @@ namespace Web_QM.Controllers
                 TempData["ErrorStart"] = "Bạn đã làm bài kiểm tra này rồi!";
                 return RedirectToAction(nameof(Prepare), new { id = id });
             }
+            var imageList = ConvertAllPagesToBase64(exam.EssayQuestion);
+            ViewBag.PdfImages = imageList;
 
-            string pdfFileName = exam.EssayQuestion;
-            if (string.IsNullOrEmpty(pdfFileName))
-            {
-                pdfFileName = "";
-            }
-            string pdfPath = Path.Combine(_env.WebRootPath, "files", "essay_questions", pdfFileName);
-            int pageCount = 0;
-            if (System.IO.File.Exists(pdfPath))
-            {
-                pageCount = GetPdfPageCount(pdfPath);
-            }
-            ViewBag.PdfPageCount = pageCount;
             ViewBag.EmplCode = emplCode;
             ViewBag.EmplName = empl.EmployeeName;
             ViewBag.EmplDepartment = empl.Department;
@@ -275,19 +266,9 @@ namespace Web_QM.Controllers
                 TempData["ErrorStart"] = "Bạn đã làm bài kiểm tra này rồi!";
                 return RedirectToAction(nameof(CNCPrepare), new { id = id });
             }
+            var imageList = ConvertAllPagesToBase64(exam.EssayQuestion);
+            ViewBag.PdfImages = imageList;
 
-            string pdfFileName = exam.EssayQuestion;
-            if (string.IsNullOrEmpty(pdfFileName))
-            {
-                pdfFileName = "";
-            }
-            string pdfPath = Path.Combine(_env.WebRootPath, "files", "essay_questions", pdfFileName);
-            int pageCount = 0;
-            if (System.IO.File.Exists(pdfPath))
-            {
-                pageCount = GetPdfPageCount(pdfPath);
-            }
-            ViewBag.PdfPageCount = pageCount;
             ViewBag.EmplCode = emplCode;
             ViewBag.EmplName = empl.EmployeeName;
             ViewBag.EmplDepartment = empl.Department;
@@ -332,19 +313,9 @@ namespace Web_QM.Controllers
                 TempData["ErrorStart"] = "Bạn đã làm bài kiểm tra này rồi!";
                 return RedirectToAction(nameof(TestTrainingPrepare), new { id = id });
             }
+            var imageList = ConvertAllPagesToBase64(exam.EssayQuestion);
+            ViewBag.PdfImages = imageList;
 
-            string pdfFileName = exam.EssayQuestion;
-            if (string.IsNullOrEmpty(pdfFileName))
-            {
-                pdfFileName = "";
-            }
-            string pdfPath = Path.Combine(_env.WebRootPath, "files", "essay_questions", pdfFileName);
-            int pageCount = 0;
-            if (System.IO.File.Exists(pdfPath))
-            {
-                pageCount = GetPdfPageCount(pdfPath);
-            }
-            ViewBag.PdfPageCount = pageCount;
             ViewBag.EmplCode = emplCode;
             ViewBag.EmplName = empl.EmployeeName;
             ViewBag.EmplDepartment = empl.Department;
@@ -356,6 +327,50 @@ namespace Web_QM.Controllers
                 questions = listQuestion
             };
             return View(viewData);
+        }
+
+        private string ConvertPageToB64(byte[] pdfBytes, int pageIndex)
+        {
+            byte[] imageBytes;
+            var renderOptions = new RenderOptions
+            {
+                Dpi = 400,
+                Width = null,
+                Height = null
+            };
+
+            using (MemoryStream stream = new MemoryStream())
+            {
+                string pdfBase64String = Convert.ToBase64String(pdfBytes);
+                Conversion.SaveJpeg(stream, pdfBase64String, page: pageIndex, options: renderOptions);
+                imageBytes = stream.ToArray();
+            }
+
+            return Convert.ToBase64String(imageBytes);
+        }
+
+        public List<string> ConvertAllPagesToBase64(string pdfFileName, int imageWidth = 500)
+        {
+            string pdfRelativePath = Path.Combine(PdfBaseFolder, pdfFileName);
+            string pdfInputPath = Path.Combine(_env.WebRootPath, pdfRelativePath);
+
+            if (!System.IO.File.Exists(pdfInputPath))
+            {
+                return null;
+            }
+
+            byte[] pdfBytes = System.IO.File.ReadAllBytes(pdfInputPath);
+
+            int pageCount = Conversion.GetPageCount(pdfBytes);
+            List<string> imageList = new List<string>();
+
+            for (int i = 0; i < pageCount; i++)
+            {
+                string base64Image = ConvertPageToB64(pdfBytes, i);
+                imageList.Add(base64Image);
+            }
+
+            return imageList;
         }
 
         [HttpPost]

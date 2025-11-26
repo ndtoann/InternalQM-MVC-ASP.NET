@@ -198,7 +198,6 @@ namespace Web_QM.Areas.Admin.Controllers
             const long maxFileSizeInBytes = maxFileSizeMB * 1024 * 1024;
             if (file.Length > maxFileSizeInBytes)
             {
-                Console.WriteLine($"Lỗi: Dung lượng file quá lớn. Tối đa là {maxFileSizeMB}MB.");
                 return null;
             }
 
@@ -208,7 +207,6 @@ namespace Web_QM.Areas.Admin.Controllers
 
                 if (!allowedExtensions.Contains(fileExtension))
                 {
-                    Console.WriteLine($"Lỗi: Định dạng file không được hỗ trợ. Chỉ cho phép các định dạng: {string.Join(", ", allowedExtensions)}.");
                     return null;
                 }
 
@@ -228,7 +226,6 @@ namespace Web_QM.Areas.Admin.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Lỗi khi tải ảnh lên: {ex.Message}");
                 return null;
             }
         }

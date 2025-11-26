@@ -57,6 +57,7 @@
                                     <th>Nhân viên</th>
                                     <th>Bộ phận</th>
                                     <th>Chức vụ</th>
+                                    <th>Ngày vào công ty</th>
                                     <th>Ghi chú</th>
                                 </tr>
                             </thead>
@@ -81,6 +82,7 @@
                                         <td><a href="~/admin/employee/detail?id=@item.Id">@item.EmployeeCode - @item.EmployeeName</a></td>
                                         <td>@item.Department</td>
                                         <td>@item.Position</td>
+                                        <td>@item.HireDate</td>
                                         <td class="text-wrap">@item.Note</td>
                                     </tr>
                                 }

@@ -60,6 +60,13 @@ namespace Web_QM.Controllers
             _cache.Remove(lockKey);
 
             var acc = await _context.Accounts
+                .Select(x => new
+                {
+                    x.Id,
+                    x.UserName,
+                    x.Password,
+                    x.Salt
+                })
                 .FirstOrDefaultAsync(m => m.UserName == username);
 
             if (acc == null || !username.ValidPassword(acc.Salt, password, acc.Password))
@@ -90,8 +97,17 @@ namespace Web_QM.Controllers
                 from employee in empGroup.DefaultIfEmpty()
                 select new
                 {
-                    Account = account,
-                    Employee = employee
+                    Account = new
+                    {
+                        account.UserName
+                    },
+                    Employee = new
+                    {
+                        employee.EmployeeCode,
+                        employee.EmployeeName,
+                        employee.Department,
+                        employee.Avatar
+                    }
                 }
             ).FirstOrDefaultAsync();
 
@@ -131,7 +147,7 @@ namespace Web_QM.Controllers
                 properties: new AuthenticationProperties
                 {
                     IsPersistent = rememberMe,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(3)
+                    //ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(300)
                 });
 
             _cache.Remove(countKey);
