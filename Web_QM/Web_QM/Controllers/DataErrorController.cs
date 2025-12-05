@@ -8,6 +8,7 @@ using System.Data;
 using System.Globalization;
 using System.Threading.Tasks;
 using Web_QM.Models;
+using Web_QM.Models.ViewModels;
 
 namespace Web_QM.Controllers
 {
@@ -22,278 +23,73 @@ namespace Web_QM.Controllers
             _env = env;
         }
 
-        [Authorize(Policy = "ViewProductionDefect")]
+        [Authorize(Policy = "ClientViewProductionDefect")]
         public async Task<IActionResult> Index()
         {
             return View();
         }
 
-        [Authorize(Policy = "ViewProductionDefect")]
-        public async Task<IActionResult> GetDataErrors()
+        [Authorize(Policy = "ClientViewProductionDefect")]
+        public async Task<IActionResult> GetDataErrors(string key, DateTime? startDate = null, DateTime? endDate = null)
         {
-            var errors = await _context.ErrorDatas.AsNoTracking().OrderByDescending(o => o.DateMonth).ToListAsync();
-            return Json(errors);
+            var res = await _context.ErrorDatas.AsNoTracking()
+                                            .Where(k =>
+                                                (string.IsNullOrEmpty(key) ||
+                                                (k.EmployeeCode.ToLower().Contains(key.ToLower())) ||
+                                                (k.OrderNo.ToLower().Contains(key.ToLower())) ||
+                                                (k.PartName.ToLower().Contains(key.ToLower()))) &&
+                                                (k.DateMonth >= DateOnly.FromDateTime(startDate.Value)) &&
+                                                (k.DateMonth <= DateOnly.FromDateTime(endDate.Value))
+                                            )
+                                            .Select(e => new ErrorDataView
+                                            {
+                                                Id = e.Id,
+                                                OrderNo = e.OrderNo,
+                                                PartName = e.PartName,
+                                                QtyOrder = e.QtyOrder,
+                                                QtyNG = e.QtyNG,
+                                                DateMonth = e.DateMonth,
+                                                ErrorDetected = e.ErrorDetected,
+                                                ErrorType = e.ErrorType,
+                                                NCC = e.NCC,
+                                                EmployeeCode = e.EmployeeCode,
+                                                Department = e.Department,
+                                                ErrorCompletionDate = e.ErrorCompletionDate
+                                            })
+                                            .OrderByDescending(o => o.DateMonth)
+                                            .Take(1000)
+                                            .ToListAsync();
+
+            var dataResult = res.Select(e => new
+            {
+                e.Id,
+                e.OrderNo,
+                e.PartName,
+                e.QtyOrder,
+                e.QtyNG,
+                NGRate = e.QtyOrder > 0 ? (e.QtyNG / (double)e.QtyOrder) * 100 : 0,
+                DateMonth = e.DateMonth.ToString("dd/MM/yyyy"),
+                e.ErrorDetected,
+                e.ErrorType,
+                e.NCC,
+                e.EmployeeCode,
+                e.Department,
+                ErrorCompletionDate = e.ErrorCompletionDate.HasValue ? e.ErrorCompletionDate.Value.ToString("dd/MM/yyyy") : null,
+            });
+
+            return Json(new { data = dataResult, total = dataResult.Count() });
         }
 
-        [Authorize(Policy = "AddProductionDefect")]
-        [HttpPost]
-        public async Task<IActionResult> Add([FromBody] ErrorData errorData)
+        [Authorize(Policy = "ClientViewProductionDefect")]
+        public async Task<IActionResult> Getdetail(long id)
         {
-            if (!ModelState.IsValid)
+            var data = await _context.ErrorDatas.AsNoTracking()
+                                              .FirstOrDefaultAsync(e => e.Id == id);
+            if (data == null)
             {
-                return Json(new { success = false, message = "Vui lòng kiểm tra lại dữ liệu." });
+                return NotFound();
             }
-
-            try
-            {
-                _context.ErrorDatas.Add(errorData);
-                await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "Đã lưu dữ liệu." });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = $"Lỗi server: {ex.Message}" });
-            }
-        }
-
-        [Authorize(Policy = "EditProductionDefect")]
-        [HttpPost]
-        public async Task<IActionResult> Update([FromBody] ErrorData errorData)
-        {
-            if (!ModelState.IsValid)
-            {
-                return Json(new { success = false, message = "Vui lòng kiểm tra lại dữ liệu." });
-            }
-
-            try
-            {
-                _context.ErrorDatas.Update(errorData);
-                await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "Đã cập nhật dữ liệu." });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = $"Lỗi server: {ex.Message}" });
-            }
-        }
-
-        [Authorize(Policy = "DeleteProductionDefect")]
-        public async Task<IActionResult> Delete(long id)
-        {
-            if(id == null)
-            {
-                return Json(new { success = false, message = "Thông tin xóa không tồn tại." });
-            }
-            var errorToDelete = await _context.ErrorDatas.FirstOrDefaultAsync(e => e.Id ==id);
-            if (errorToDelete == null)
-            {
-                return Json(new { success = false, message = "Thông tin xóa không tồn tại." });
-            }
-            try
-            {
-                _context.ErrorDatas.Remove(errorToDelete);
-                await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "Đã xóa dữ liệu." });
-            }
-            catch(Exception ex)
-            {
-                return Json(new { success = false, message = $"Lỗi server: {ex.Message}" });
-            }
-        }
-
-        [Authorize(Policy = "AddProductionDefect")]
-        [HttpPost]
-        public async Task<IActionResult> ImportExcel(IFormFile file)
-        {
-            if (file == null || file.Length == 0)
-            {
-                return BadRequest("Vui lòng chọn một file Excel.");
-            }
-
-            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-
-            var errorDataList = new List<ErrorData>();
-
-            try
-            {
-                using (var stream = file.OpenReadStream())
-                {
-                    using (var reader = ExcelReaderFactory.CreateReader(stream))
-                    {
-                        var dataSet = reader.AsDataSet(new ExcelDataSetConfiguration()
-                        {
-                            ConfigureDataTable = (_) => new ExcelDataTableConfiguration()
-                            {
-                                UseHeaderRow = true
-                            }
-                        });
-
-                        if (dataSet.Tables.Count == 0)
-                        {
-                            return BadRequest("File Excel không có dữ liệu.");
-                        }
-
-                        DataTable table = dataSet.Tables[0];
-                        var requiredFields = new[] { "OrderNo", "PartName", "QtyOrder", "QtyNG", "Ngày Tháng", "Phát hiện lỗi", "Dạng lỗi", "Nội dung", "NCC" };
-
-                        for (int i = 0; i < table.Rows.Count; i++)
-                        {
-                            var row = table.Rows[i];
-                            var missingFields = new List<string>();
-                            foreach (var field in requiredFields)
-                            {
-                                if (row[field] == null || string.IsNullOrWhiteSpace(row[field].ToString()))
-                                {
-                                    missingFields.Add(field);
-                                }
-                            }
-
-                            if (missingFields.Any())
-                            {
-                                return BadRequest(new { Message = $"Lỗi tại dòng {i + 2}: Các trường bắt buộc bị thiếu dữ liệu: {string.Join(", ", missingFields)}." });
-                            }
-
-                            try
-                            {
-                                var errorData = new ErrorData
-                                {
-                                    OrderNo = row["OrderNo"].ToString(),
-                                    PartName = row["PartName"].ToString(),
-                                    QtyOrder = int.Parse(row["QtyOrder"].ToString()),
-                                    QtyNG = int.Parse(row["QtyNG"].ToString()),
-
-                                    DateMonth = DateOnly.FromDateTime(DateTime.Parse(row["Ngày Tháng"].ToString())),
-                                    ErrorDetected = row["Phát hiện lỗi"].ToString(),
-                                    ErrorType = row["Dạng lỗi"].ToString(),
-                                    ErrorCause = row["Nguyên nhân lỗi"]?.ToString(),
-                                    ErrorContent = row["Nội dung"].ToString(),
-                                    ToleranceAssessment = row["Nhận định dung sai"]?.ToString(),
-                                    Reason = row["Nguyên nhân"]?.ToString(),
-                                    Countermeasure = row["Đối sách"]?.ToString(),
-                                    NCC = row["NCC"].ToString(),
-                                    EmployeeCode = row["Mã nhân viên"]?.ToString(),
-                                    Department = row["Bộ phận"]?.ToString(),
-                                    ErrorCompletionDate = GetDateOnly(row["Ngày hoàn thành giấy báo lỗi"]),
-                                    RemedialMeasures = row["Biện pháp khắc phục"]?.ToString(),
-                                    Note = row["Ghi chú"]?.ToString(),
-                                    TimeWriteError = row["Thời gian viết giấy lỗi"]?.ToString(),
-                                    ReviewNnds = row["Rà soát việc thực hiện NNDS"]?.ToString()
-                                };
-                                errorDataList.Add(errorData);
-                            }
-                            catch (Exception ex)
-                            {
-                                return BadRequest(new { Message = $"Lỗi tại dòng {i + 2}: Lỗi chuyển đổi dữ liệu - {ex.Message}" });
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Có lỗi xảy ra khi đọc file: {ex.Message}");
-            }
-            await _context.ErrorDatas.AddRangeAsync(errorDataList);
-            await _context.SaveChangesAsync();
-
-            return Ok("Lưu dữ liệu thành công.");
-        }
-
-        private DateOnly? GetDateOnly(object value)
-        {
-            if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
-            {
-                return new DateOnly(1, 1, 1);
-            }
-
-            if (DateTime.TryParse(value.ToString(), out var dateTime))
-            {
-                return DateOnly.FromDateTime(dateTime);
-            }
-
-            return new DateOnly(1, 1, 1);
-        }
-
-        [Authorize(Policy = "AddProductionDefect")]
-        public async Task<IActionResult> DownloadTemplate()
-        {
-            var filePath = Path.Combine(_env.WebRootPath, "templates", "import_lỗi sx.xlsx");
-            if (!System.IO.File.Exists(filePath))
-            {
-                return NotFound("Không tìm thấy file mẫu.");
-            }
-            var fileBytes = System.IO.File.ReadAllBytes(filePath);
-            string fileName = "import_lỗi sx.xlsx";
-            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
-        }
-
-        [Authorize(Policy = "ViewProductionDefect")]
-        public async Task<IActionResult> ExportToExcel()
-        {
-            var errorDataList = await _context.ErrorDatas.ToListAsync();
-            using var workbook = new XLWorkbook();
-            var worksheet = workbook.Worksheets.Add("data");
-            worksheet.Cell(1, 1).Value = "STT";
-            worksheet.Cell(1, 2).Value = "Order";
-            worksheet.Cell(1, 3).Value = "Part Name";
-            worksheet.Cell(1, 4).Value = "Qty Order";
-            worksheet.Cell(1, 5).Value = "Qty NG";
-            worksheet.Cell(1, 6).Value = "Ngày/Tháng";
-            worksheet.Cell(1, 7).Value = "Phát hiện lỗi";
-            worksheet.Cell(1, 8).Value = "Dạng lỗi";
-            worksheet.Cell(1, 9).Value = "Nguyên nhân lỗi";
-            worksheet.Cell(1, 10).Value = "Nội dung";
-            worksheet.Cell(1, 11).Value = "Nhận định dung sai";
-            worksheet.Cell(1, 12).Value = "Nguyên nhân";
-            worksheet.Cell(1, 13).Value = "Đối sách";
-            worksheet.Cell(1, 14).Value = "NCC";
-            worksheet.Cell(1, 15).Value = "Bộ phận";
-            worksheet.Cell(1, 16).Value = "NV mắc lỗi";
-            worksheet.Cell(1, 17).Value = "Ngày hoàn thành giấy báo lỗi";
-            worksheet.Cell(1, 18).Value = "Biện pháp khắc phục";
-            worksheet.Cell(1, 19).Value = "Ghi chú";
-            worksheet.Cell(1, 20).Value = "Thời gian viết giấy lỗi";
-            worksheet.Cell(1, 21).Value = "Rà soát việc thực hiện NNDS";
-
-            int row = 2;
-            int stt = 1;
-            foreach (var data in errorDataList)
-            {
-                worksheet.Cell(row, 1).Value = stt++;
-                worksheet.Cell(row, 2).Value = data.OrderNo;
-                worksheet.Cell(row, 3).Value = data.PartName;
-                worksheet.Cell(row, 4).Value = data.QtyOrder;
-                worksheet.Cell(row, 5).Value = data.QtyNG;
-                worksheet.Cell(row, 6).Value = data.DateMonth.ToString("dd/MM/yyyy");
-                worksheet.Cell(row, 7).Value = data.ErrorDetected;
-                worksheet.Cell(row, 8).Value = data.ErrorType;
-                worksheet.Cell(row, 9).Value = data.ErrorCause;
-                worksheet.Cell(row, 10).Value = data.ErrorContent;
-                worksheet.Cell(row, 11).Value = data.ToleranceAssessment;
-                worksheet.Cell(row, 12).Value = data.Reason;
-                worksheet.Cell(row, 13).Value = data.Countermeasure;
-                worksheet.Cell(row, 14).Value = data.NCC;
-                worksheet.Cell(row, 15).Value = data.Department;
-                worksheet.Cell(row, 16).Value = data.EmployeeCode;
-                worksheet.Cell(row, 17).Value = data.ErrorCompletionDate.HasValue && data.ErrorCompletionDate.Value != new DateOnly(1, 1, 1) ? data.ErrorCompletionDate.Value.ToString("dd/MM/yyyy") : string.Empty;
-                worksheet.Cell(row, 18).Value = data.RemedialMeasures;
-                worksheet.Cell(row, 19).Value = data.Note;
-                worksheet.Cell(row, 20).Value = data.TimeWriteError;
-                worksheet.Cell(row, 21).Value = data.ReviewNnds;
-
-                row++;
-            }
-
-            worksheet.Columns().AdjustToContents();
-
-            using var stream = new MemoryStream();
-            workbook.SaveAs(stream);
-            var content = stream.ToArray();
-
-            return File(
-                content,
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "Thống kê lỗi.xlsx");
+            return Json(data);
         }
 
         [Authorize(Policy = "ViewProductionDefect")]

@@ -1,0 +1,446 @@
+﻿@using Web_QM.Models.ViewModels;
+@model IEnumerable<ErrorDataView>;
+@{
+    ViewData["Title"] = "Quản lý Lỗi sản xuất";
+
+    string defaultStartDate = DateTime.Today.AddYears(-1).ToString("yyyy-MM-dd");
+    string defaultEndDate = DateTime.Today.ToString("yyyy-MM-dd");
+    string startDateValue = ViewBag.StartDate ?? defaultStartDate;
+    string endDateValue = ViewBag.EndDate ?? defaultEndDate;
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Danh sách lỗi sản xuất</h4>
+
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    <form action="" method="get">
+                        <div class="row align-items-center">
+                            <div class="col-lg-2">
+                                <div class="form-group mb-0">
+                                    <input class="form-control" type="date" name="startDate" value="@startDateValue" />
+                                </div>
+                            </div>
+                            <div class="col-lg-2">
+                                <div class="form-group mb-0">
+                                    <input class="form-control" type="date" name="endDate" value="@endDateValue" />
+                                </div>
+                            </div>
+                            <div class="col-lg-5 d-flex align-items-center">
+                                <div class="form-group me-2 flex-grow-1 mb-0">
+                                    <input type="text"
+                                           class="form-control"
+                                           name="key"
+                                           value="@ViewBag.KeySearch" />
+                                </div>
+                                <div class="form-group mb-0">
+                                    <button type="submit" class="btn btn-primary">
+                                        Tìm kiếm
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <a class="btn btn-success" href="~/admin/errordata/add" asp-policy="AddProductionDefect">Thêm mới</a>
+                    <a class="btn btn-success" href="#" data-bs-toggle="modal" data-bs-target="#importExcelModal" asp-policy="AddProductionDefect">Import Excel</a>
+                    <a class="btn btn-success" href="~/admin/errordata/ExportToExcel" asp-policy="ViewProductionDefect">Export Excel</a>
+                    <div class="table-responsive overflow-auto" style="height: 1000px;">
+                        <table class="table table-hover table-bordered">
+                            <thead class="text-white bg-dark" style="position: sticky; top: 0; z-index: 1;">
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Ngày Tháng</th>
+                                    <th>Order No</th>
+                                    <th>Tên Chi Tiết</th>
+                                    <th>Qty Order</th>
+                                    <th>Qty NG</th>
+                                    <th>Phát hiện lỗi</th>
+                                    <th>Dạng lỗi</th>
+                                    <th>NCC</th>
+                                    <th>Mã NV</th>
+                                    <th>Bộ phận</th>
+                                    <th>Ngày hoàn thành</th>
+                                </tr>
+                            </thead>
+                            <tbody class="error-data-table-body">
+                                @{
+                                    var count = 1;
+                                }
+                                @foreach (var item in Model)
+                                {
+                                    <tr class="context-menu-row" data-id="@item.Id" style="cursor: pointer;">
+                                        <td>@(count++)</td>
+                                        <td>@(item.DateMonth.ToString("dd/MM/yyyy"))</td>
+                                        <td class="text-wrap">@item.OrderNo</td>
+                                        <td class="text-wrap">@item.PartName</td>
+                                        <td>@item.QtyOrder</td>
+                                        <td class="text-danger">@item.QtyNG</td>
+                                        <td class="text-wrap">@item.ErrorDetected</td>
+                                        <td class="text-wrap">@item.ErrorType</td>
+                                        <td>@item.NCC</td>
+                                        <td class="text-wrap">@item.EmployeeCode</td>
+                                        <td>@item.Department</td>
+                                        <td>@(item.ErrorCompletionDate.HasValue? item.ErrorCompletionDate.Value.ToString("dd/MM/yyyy") : "N/A")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="contextMenu" class="dropdown-menu" style="position: absolute; display: none;">
+    <a class="dropdown-item detail-link" href="#">Xem chi tiết</a>
+    <a class="dropdown-item edit-link" href="#">Sửa</a>
+    <a class="dropdown-item delete-link" href="#">Xóa</a>
+</div>
+
+<div class="modal fade" id="errorDetailModal" tabindex="-1" aria-labelledby="errorDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="errorDetailModalLabel">CHI TIẾT GIẤY BÁO LỖI: <span id="detail_OrderNo_Badge" class="badge bg-light text-dark"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0 text-primary">Thông tin chung</h6>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0 fs-6">
+                            <dt class="col-sm-3">Order No / PartName:</dt>
+                            <dd class="col-sm-3"><span id="detail_OrderNo"></span> / <span id="detail_PartName"></span></dd>
+
+                            <dt class="col-sm-3">Ngày Tháng:</dt>
+                            <dd class="col-sm-3" id="detail_DateMonth"></dd>
+
+                            <dt class="col-sm-3">NCC:</dt>
+                            <dd class="col-sm-3" id="detail_NCC"></dd>
+
+                            <dt class="col-sm-3">Qty Order / NG:</dt>
+                            <dd class="col-sm-3"><span id="detail_QtyOrder"></span> / <span id="detail_QtyNG" class="text-danger fw-bold"></span></dd>
+
+                            <dt class="col-sm-3">Mã/Bộ phận:</dt>
+                            <dd class="col-sm-3"><span id="detail_EmployeeCode"></span> (<span id="detail_Department"></span>)</dd>
+
+                            <dt class="col-sm-3">Thời gian viết giấy lỗi:</dt>
+                            <dd class="col-sm-3" id="detail_TimeWriteError"></dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0 text-primary">Phân tích Lỗi</h6>
+                    </div>
+                    <div class="card-body fs-6">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">Phát hiện lỗi:</dt>
+                            <dd class="col-sm-9"><span id="detail_ErrorDetected" class="alert alert-info p-2 d-inline-block w-100 fs-6"></span></dd>
+
+                            <dt class="col-sm-3">Dạng Lỗi:</dt>
+                            <dd class="col-sm-9"><span id="detail_ErrorType" class="alert alert-warning p-2 d-inline-block w-100 fs-6"></span></dd>
+
+                            <dt class="col-sm-3">Nội dung lỗi:</dt>
+                            <dd class="col-sm-9"><span id="detail_ErrorContent" class="border p-2 d-inline-block w-100 fs-6"></span></dd>
+
+                            <dt class="col-sm-3">Nhận định Dung sai:</dt>
+                            <dd class="col-sm-9"><span id="detail_ToleranceAssessment" class="border p-2 d-inline-block w-100 fs-6"></span></dd>
+
+                            <dt class="col-sm-3">Nguyên nhân lỗi:</dt>
+                            <dd class="col-sm-9"><span id="detail_ErrorCause" class="alert alert-danger p-2 d-inline-block w-100 fs-6"></span></dd>
+
+                            <dt class="col-sm-3">Nguyên nhân:</dt>
+                            <dd class="col-sm-9"><span id="detail_Reason" class="alert alert-danger p-2 d-inline-block w-100 fs-6"></span></dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0 text-primary">Khắc phục và Theo dõi</h6>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row fs-6">
+                            <dt class="col-sm-3">Biện pháp Khắc phục:</dt>
+                            <dd class="col-sm-9"><span id="detail_RemedialMeasures" class="border p-2 d-inline-block w-100"></span></dd>
+
+                            <dt class="col-sm-3">Đối sách:</dt>
+                            <dd class="col-sm-9"><span id="detail_Countermeasure" class="alert alert-success p-2 d-inline-block w-100"></span></dd>
+
+                            <dt class="col-sm-3">Ngày Hoàn thành:</dt>
+                            <dd class="col-sm-3"><span id="detail_ErrorCompletionDate"></span></dd>
+
+                            <dt class="col-sm-3">Rà soát NNDS:</dt>
+                            <dd class="col-sm-3"><span id="detail_ReviewNnds" class="badge bg-primary"></span></dd>
+
+                            <dt class="col-sm-3">Ghi chú:</dt>
+                            <dd class="col-sm-9" id="detail_Note"></dd>
+                        </dl>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importExcelModalLabel">Import Dữ liệu Lỗi từ Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="importForm" action="/admin/errordata/import" method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div id="import-alert" class="alert d-none" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label for="excelFile" class="form-label">Chọn File Excel (.xlsx, .xls)</label>
+                        <input class="form-control" type="file" id="excelFile" name="excelFile" accept=".xlsx, .xls" required>
+                    </div>
+
+                    <p>
+                        Vui lòng đảm bảo dùng đúng file excel mẫu và các cột bắt buộc phải có dữ liệu.
+                    </p>
+                    <a href="~/admin/errordata/DownloadTemplate" class="btn btn-sm btn-info" download>
+                        <i class="mdi mdi-download"></i> Tải file mẫu Import
+                    </a>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary" id="btnImport">
+                        <span id="spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        <span id="btnText">Thực hiện Import</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tableBodies = document.querySelectorAll('.error-data-table-body');
+            const contextMenu = document.getElementById('contextMenu');
+            let errorDataId = null;
+            let currentRow = null;
+            let detailModal = new bootstrap.Modal(document.getElementById('errorDetailModal'));
+
+            const formatDate = (dateString) => {
+                if (!dateString) return '';
+                try {
+                    const date = new Date(dateString);
+                    if (isNaN(date.getTime())) return dateString;
+                    return date.toLocaleDateString('vi-VN');
+                } catch (e) {
+                    return dateString;
+                }
+            };
+
+            function fillModalWithData(data) {
+                document.getElementById('detail_OrderNo_Badge').innerText = data.orderNo ?? '';
+
+                document.getElementById('detail_OrderNo').innerText = data.orderNo ?? '';
+                document.getElementById('detail_PartName').innerText = data.partName ?? '';
+                document.getElementById('detail_DateMonth').innerText = formatDate(data.dateMonth) ?? '';
+                document.getElementById('detail_NCC').innerText = data.ncc ?? '';
+                document.getElementById('detail_QtyOrder').innerText = data.qtyOrder ?? '';
+                document.getElementById('detail_QtyNG').innerText = data.qtyNG ?? '';
+                document.getElementById('detail_EmployeeCode').innerText = data.employeeCode ?? '';
+                document.getElementById('detail_Department').innerText = data.department ?? '';
+                document.getElementById('detail_TimeWriteError').innerText = data.timeWriteError ?? '';
+
+                document.getElementById('detail_ErrorDetected').innerText = data.errorDetected ?? '';
+                document.getElementById('detail_ErrorType').innerText = data.errorType ?? '';
+                document.getElementById('detail_ErrorContent').innerText = data.errorContent ?? '';
+                document.getElementById('detail_ToleranceAssessment').innerText = data.toleranceAssessment ?? '';
+                document.getElementById('detail_ErrorCause').innerText = data.errorCause ?? '';
+                document.getElementById('detail_Reason').innerText = data.reason ?? '';
+
+                document.getElementById('detail_RemedialMeasures').innerText = data.remedialMeasures ?? '';
+                document.getElementById('detail_Countermeasure').innerText = data.countermeasure ?? '';
+                document.getElementById('detail_ErrorCompletionDate').innerText = formatDate(data.errorCompletionDate) ?? 'Chưa hoàn thành';
+                document.getElementById('detail_ReviewNnds').innerText = data.reviewNnds ?? '';
+                document.getElementById('detail_Note').innerText = data.note ?? '';
+
+                const reviewNndsBadge = document.getElementById('detail_ReviewNnds');
+                reviewNndsBadge.className = 'badge';
+                if (data.reviewNnds && data.reviewNnds.toLowerCase().includes('ok')) {
+                    reviewNndsBadge.classList.add('bg-success');
+                } else if (data.reviewNnds) {
+                    reviewNndsBadge.classList.add('bg-warning');
+                } else {
+                    reviewNndsBadge.classList.add('bg-secondary');
+                }
+            }
+
+            tableBodies.forEach(tableBody => {
+                tableBody.addEventListener('contextmenu', function (event) {
+                    const row = event.target.closest('tr.context-menu-row');
+                    if (!row) return;
+
+                    event.preventDefault();
+
+                    currentRow = row;
+                    errorDataId = row.getAttribute('data-id');
+
+                    contextMenu.style.display = 'block';
+                    contextMenu.style.left = event.pageX + 'px';
+                    contextMenu.style.top = event.pageY + 'px';
+                });
+
+                tableBody.addEventListener('dblclick', function(event) {
+                    const row = event.target.closest('tr.context-menu-row');
+                    if (!row) return;
+                    errorDataId = row.getAttribute('data-id');
+                    fetchDetailAndShowModal(errorDataId);
+                });
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!contextMenu.contains(e.target)) {
+                    contextMenu.style.display = 'none';
+                }
+            });
+
+            document.querySelector('.detail-link').addEventListener('click', function (event) {
+                event.preventDefault();
+                contextMenu.style.display = 'none';
+                if (errorDataId) {
+                    fetchDetailAndShowModal(errorDataId);
+                } else {
+                    Swal.fire('Lỗi', 'Không tìm thấy ID dữ liệu.', 'error');
+                }
+            });
+
+            function fetchDetailAndShowModal(id) {
+                fetch(`/admin/errordata/getdetail/${id}`)
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        }
+                        throw new Error('Lỗi khi tải chi tiết.');
+                    })
+                    .then(data => {
+                        fillModalWithData(data);
+                        detailModal.show();
+                    })
+                    .catch(error => {
+                        console.error('Lỗi khi lấy chi tiết:', error);
+                        Swal.fire('Lỗi', 'Không thể tải chi tiết dữ liệu lỗi.', 'error');
+                    });
+            }
+
+            document.querySelector('.edit-link').addEventListener('click', function (event) {
+                event.preventDefault();
+                contextMenu.style.display = 'none';
+                if (errorDataId) {
+                    window.location.href = `/admin/errordata/edit?id=${errorDataId}`;
+                }
+            });
+
+            document.querySelector('.delete-link').addEventListener('click', function (event) {
+                event.preventDefault();
+                contextMenu.style.display = 'none';
+                const orderNo = currentRow.querySelector('td:nth-child(3)').innerText;
+                if (errorDataId && confirm(`Bạn có chắc chắn muốn xóa giấy báo lỗi của Order ${orderNo}?`)) {
+                    window.location.href = `/admin/errordata/delete?id=${errorDataId}`;
+                }
+            });
+
+            const importForm = document.getElementById('importForm');
+            const btnImport = document.getElementById('btnImport');
+            const btnText = document.getElementById('btnText');
+            const spinner = document.getElementById('spinner');
+            const importModal = new bootstrap.Modal(document.getElementById('importExcelModal'));
+
+            importForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const file = document.getElementById('excelFile').files[0];
+                if (!file) {
+                    Swal.fire('Thao tác thất bại', 'Vui lòng chọn một file Excel để import.', 'warning');
+                    return;
+                }
+
+                btnImport.disabled = true;
+                btnText.textContent = 'Đang xử lý...';
+                spinner.classList.remove('d-none');
+
+                const formData = new FormData(importForm);
+
+                fetch(importForm.action, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else if (response.status === 400 || response.status === 500) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.message);
+                        });
+                    }
+                    throw new Error('Lỗi không xác định: ' + response.statusText);
+                })
+                .then(data => {
+                    importModal.hide();
+                    Swal.fire({
+                        title: 'Import Thành công! 🎉',
+                        html: data.message,
+                        icon: 'success',
+                        confirmButtonText: 'Đã hiểu'
+                    }).then(() => {
+                        location.reload();
+                    });
+                })
+                .catch(error => {
+                    importModal.hide();
+                    console.error('Lỗi khi Import:', error);
+
+                    Swal.fire({
+                        title: 'Import Thất bại! ❌',
+                        html: error.message,
+                        icon: 'error',
+                        confirmButtonText: 'Đóng'
+                    });
+                })
+                .finally(() => {
+                    btnImport.disabled = false;
+                    btnText.textContent = 'Thực hiện Import';
+                    spinner.classList.add('d-none');
+                });
+            });
+        });
+    </script>
+}
