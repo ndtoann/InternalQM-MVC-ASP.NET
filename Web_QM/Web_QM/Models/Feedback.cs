@@ -15,4 +15,6 @@ public partial class Feedback
     public string Comment { get; set; }
 
     public string? CreatedDate { get; set; }
+
+    public int Status { get; set; } = 0;
 }

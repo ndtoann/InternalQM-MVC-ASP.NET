@@ -44,8 +44,8 @@ namespace Web_QM.Areas.Admin.Controllers
                                                 (k.DateMonth >= DateOnly.FromDateTime(startDate.Value)) &&
                                                 (k.DateMonth <= DateOnly.FromDateTime(endDate.Value)))
                                             )
-                                            .Take(1000)
                                             .OrderByDescending(o => o.DateMonth)
+                                            .Take(1000)
                                             .ToListAsync();
             var statusOptions = new List<SelectListItem>
             {

@@ -96,7 +96,7 @@ namespace Web_QM.Controllers
         }
 
         [Authorize(Policy = "ClientViewMachine")]
-        public async Task<IActionResult> GetMachines(string keyword, string department, string status)
+        public async Task<IActionResult> GetMachines(string keyword, string department, string status = "Đang hoạt động")
         {
             var data = await _context.Machines
                 .Where(m =>

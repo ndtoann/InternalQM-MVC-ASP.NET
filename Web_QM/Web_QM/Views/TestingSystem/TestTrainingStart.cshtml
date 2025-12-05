@@ -126,7 +126,7 @@
 
 @section Scripts {
 	<script>
-		var durationMinute = @Model.exam.DurationMinute
+		var durationMinute = @Model.exam.DurationMinute;
 		var timeLimitInSeconds = durationMinute*60;
 
 		var timerElement = document.getElementById('timer');
@@ -140,24 +140,21 @@
 
 		var hasAnswered = false;
 
-		// Hàm cập nhật hiển thị timer
 		function updateTimer() {
 			var minutes = Math.floor(remainingTime / 60);
 			var seconds = remainingTime % 60;
 
-			var formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-			var formattedSeconds = seconds < 10 ? `0${seconds}` : seconds;
+			var formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+			var formattedSeconds = seconds < 10 ? '0' + seconds : seconds;
 
-			timerElement.textContent = `${formattedMinutes}:${formattedSeconds}`;
+			timerElement.textContent = formattedMinutes + ':' + formattedSeconds;
 		}
 
-		// Hàm xử lý khi hết giờ
 		function handleTimeUp() {
 			clearInterval(countdown);
 			timerElement.textContent = 'Hết giờ';
 			timerElement.classList.add('expired');
 
-			console.log("Hết giờ!");
 			Swal.fire({
 				title: 'Hết giờ!',
 				text: 'Yêu cầu nộp bài.',
@@ -168,7 +165,6 @@
 			})
 		}
 
-		// Hàm bắt đầu bộ đếm
 		function startTimer() {
 			updateTimer();
 
@@ -222,7 +218,7 @@
 
 			Swal.fire({
 				title: 'Cảnh báo!',
-				text: `Hệ thống phát hiện bạn đã rời khỏi màn hình. Vui lòng quay lại ngay!`,
+				text: 'Hệ thống phát hiện bạn đã rời khỏi màn hình. Vui lòng quay lại ngay!',
 				icon: 'warning',
 				showConfirmButton: true,
 				confirmButtonText: 'Đã hiểu',
@@ -394,9 +390,6 @@
 		});
 
 		document.addEventListener('DOMContentLoaded', () => {
-			document.documentElement.requestFullscreen().catch(err => {
-				console.warn('Không thể tự động chuyển sang chế độ toàn màn hình: ' + err);
-			});
 			startTimer();
 			document.addEventListener('visibilitychange', handleVisibilityChange);
 			window.addEventListener('blur', handleBlur);

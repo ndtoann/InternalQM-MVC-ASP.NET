@@ -146,16 +146,16 @@ builder.Services.AddAuthorization(options =>
 
     //thống kê lỗi sx
     options.AddPolicy("ViewProductionDefect", policy =>
-       policy.RequireClaim("Permission", "ProductionDefect.View"));
+       policy.RequireClaim("Permission", "ManageProductionDefect.View"));
 
     options.AddPolicy("AddProductionDefect", policy =>
-       policy.RequireClaim("Permission", "ProductionDefect.Add"));
+       policy.RequireClaim("Permission", "ManageProductionDefect.Add"));
 
     options.AddPolicy("EditProductionDefect", policy =>
-       policy.RequireClaim("Permission", "ProductionDefect.Edit"));
+       policy.RequireClaim("Permission", "ManageProductionDefect.Edit"));
 
     options.AddPolicy("DeleteProductionDefect", policy =>
-       policy.RequireClaim("Permission", "ProductionDefect.Delete"));
+       policy.RequireClaim("Permission", "ManageProductionDefect.Delete"));
 
     //kaizen
     options.AddPolicy("ViewKaizen", policy =>
@@ -294,6 +294,9 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy("ClientViewViolation5S", policy =>
        policy.RequireClaim("Permission", "EmplViolation5S.View"));
+
+    options.AddPolicy("ClientViewProductionDefect", policy =>
+       policy.RequireClaim("Permission", "ProductionDefect.View"));
 });
 
 var app = builder.Build();

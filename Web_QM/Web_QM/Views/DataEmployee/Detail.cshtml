@@ -200,21 +200,10 @@
                                 <th>Người gửi</th>
                                 <th>Phản hồi</th>
                                 <th>Ngày phản hồi</th>
+                                <th>Trạng thái</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @{
-                                var count1 = 1;
-                            }
-                            @foreach (var item in ViewBag.Feedbacks)
-                            {
-                                <tr>
-                                    <td>@(count1++)</td>
-                                    <td>@item.FeedbackerName</td>
-                                    <td>@item.Comment</td>
-                                    <td>@item.CreatedDate</td>
-                                </tr>
-                            }
+                        <tbody id="feedbackTableBody">
                         </tbody>
                     </table>
                 </div>
@@ -636,8 +625,35 @@
                 <div id="statusMessage" class="mt-3 text-center d-none"></div>
             </div>
             <div class="modal-footer justify-content-center border-top-0 p-3">
-                <button type="button" class="btn btn-outline-secondary rounded-pill me-2" data-bs-dismiss="modal">Hủy</button>
-                <button type="submit" form="feedbackForm" class="btn btn-primary rounded-pill">Lưu ghi chú</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" form="feedbackForm" class="btn btn-primary">Lưu ghi chú</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editFeedbackModal" tabindex="-1" aria-labelledby="editFeedbackModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white border-bottom-0 rounded-top-lg">
+                <h5 class="modal-title" id="editFeedbackModalLabel">Sửa Phản Hồi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editFeedbackForm">
+                    <input type="hidden" id="edit-id" name="Id">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="edit-feedbackerName" name="FeedbackerName" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-comment" class="form-label">Nội dung phản hồi</label>
+                        <textarea class="form-control" id="edit-comment" name="Comment" rows="5" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer justify-content-center border-top-0 p-3">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="submitEdit()">Lưu thay đổi</button>
             </div>
         </div>
     </div>
@@ -910,6 +926,15 @@
                     productivityChart = null;
                 }
             });
+
+            loadFeedbacks();
+            const modalEditFB = document.getElementById('editFeedbackModal');
+            if (modalEditFB) {
+                modalEditFB.addEventListener('hidden.bs.modal', function () {
+                    $('body').removeClass('modal-open');
+                    $('.modal-backdrop').remove();
+                });
+            }
         });
 
         const padTo2Digits = (num) => {
@@ -1306,7 +1331,6 @@
                     comment: $('#feedbackTextarea').val()
                 };
                 statusMessage.removeClass('d-none alert-success alert-danger').addClass('alert alert-info').text('Đang gửi dữ liệu...');
-                console.log(formData);
                 $.ajax({
                     type: 'POST',
                     url: url,
@@ -1314,9 +1338,23 @@
                     data: JSON.stringify(formData),
                     success: function(response) {
                         if (response.success) {
-                            alert(response.message);
-                            $('#addFeedbackModal').modal('hide');
-                            location.reload();
+                            $('#addFeedbackModal').removeClass('show');
+                            $('#addFeedbackModal').attr('style', '');
+                            $('#addFeedbackModal').attr('aria-hidden', 'true');
+
+                            $('.modal-backdrop').remove();
+                            $('body').removeClass('modal-open');
+                            $('body').attr('style', '');
+
+                            Swal.fire({
+                                title: 'Thành công',
+                                text: response.message,
+                                icon: 'success'
+                            });
+
+                            $('#addFeedbackModal').data('bs.modal', null);
+
+                            loadFeedbacks();
                         } else {
                             statusMessage.removeClass('alert-info').addClass('alert-danger').text('Lỗi: ' + response.message);
                         }
@@ -1378,5 +1416,185 @@
                 });
             });
         });
+
+        // xử lý phản hồi
+        const CAN_MANAGE_FEEDBACK = @((ViewBag.CanManageFeedback ?? false) ? "true" : "false");
+
+        function loadFeedbacks() {
+            let employeeId = @Model.Id;
+            let dataToSend = employeeId ? { employeeId: employeeId } : {};
+            $.ajax({
+                url: '/DataEmployee/GetFeedbacks',
+                type: 'GET',
+                dataType: 'json',
+                data: dataToSend,
+                success: function (data) {
+                    renderTable(data);
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire('Lỗi', 'Không thể tải dữ liệu phản hồi: ' + error, 'error');
+                }
+            });
+        }
+
+        function renderTable(feedbacks) {
+            let html = '';
+            let count = 1;
+            if (feedbacks.length === 0) {
+                 html = '<tr><td colspan="5" class="text-center">Không có phản hồi nào.</td></tr>';
+            } else {
+                feedbacks.forEach(item => {
+                    let statusBadge = '';
+                    let actions = '';
+
+                    if (item.status === 0) {
+                        if (CAN_MANAGE_FEEDBACK) {
+                            actions = `
+                                <a href="#" class="btn btn-sm btn-outline-success me-2" onclick="approveFeedback(${item.id})">Duyệt</a>
+                                <a href="#" class="btn btn-sm btn-outline-warning me-2" data-bs-toggle="modal" data-bs-target="#editFeedbackModal" onclick="prepareEdit(${item.id})">Sửa</a>
+                                <a href="#" class="btn btn-sm btn-outline-danger" onclick="deleteFeedback(${item.id})">Xóa</a>
+                            `;
+                        }else{
+                            statusBadge = '<span class="badge bg-danger">Chưa duyệt</span>';
+                        }
+                    } else if (item.status === 1) {
+                        statusBadge = '<span class="badge bg-success">Đã duyệt</span>';
+                    }
+
+                    html += `
+                        <tr>
+                            <td>${count++}</td>
+                            <td>${item.feedbackerName}</td>
+                            <td>${item.comment}</td>
+                            <td>${item.createdDate || 'N/A'}</td>
+                            <td>
+                                ${statusBadge}
+                                ${actions}
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            $('#feedbackTableBody').html(html);
+        }
+
+        function approveFeedback(id) {
+            Swal.fire({
+                title: 'Xác nhận duyệt?',
+                text: "Phản hồi này sẽ được gửi lên!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#dc3545',
+                confirmButtonText: 'Đồng ý duyệt',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '/DataEmployee/Approve',
+                        type: 'POST',
+                        data: { id: id },
+                        success: function (response) {
+                            if (response.success) {
+                                Swal.fire('Thành công', response.message, 'success');
+                                loadFeedbacks();
+                            } else {
+                                Swal.fire('Lỗi', response.message, 'error');
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            Swal.fire('Lỗi', 'Có lỗi xảy ra khi duyệt: ' + error, 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+        function deleteFeedback(id) {
+            Swal.fire({
+                title: 'Xác nhận xóa?',
+                text: "Phản hồi này sẽ bị xóa vĩnh viễn và không thể phục hồi!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Đồng ý xóa',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '/DataEmployee/DeleteFeedback',
+                        type: 'POST',
+                        data: { id: id },
+                        success: function (response) {
+                            if (response.success) {
+                                Swal.fire('Thành công', response.message, 'success');
+                                loadFeedbacks();
+                            } else {
+                                Swal.fire('Lỗi', response.message, 'error');
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            Swal.fire('Lỗi', 'Có lỗi xảy ra khi xóa: ' + error, 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+        function prepareEdit(id) {
+            $.ajax({
+                url: '/DataEmployee/GetFeedbackDetails',
+                type: 'GET',
+                data: { id: id },
+                dataType: 'json',
+                success: function (data) {
+                    $('#edit-id').val(data.id);
+                    $('#edit-feedbackerName').val(data.feedbackerName);
+                    $('#edit-comment').val(data.comment);
+                    new bootstrap.Modal(document.getElementById('editFeedbackModal')).show();
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire('Lỗi', 'Không thể lấy chi tiết phản hồi để sửa: ' + error, 'error');
+                }
+            });
+        }
+
+        function submitEdit() {
+            const id = $('#edit-id').val();
+            const feedbackerName = $('#edit-feedbackerName').val();
+            const comment = $('#edit-comment').val();
+
+            if (!feedbackerName || !comment) {
+                Swal.fire('Cảnh báo', 'Vui lòng điền đầy đủ thông tin.', 'warning');
+                return;
+            }
+
+            const dataToSend = {
+                Id: id,
+                FeedbackerName: feedbackerName,
+                Comment: comment
+            };
+
+            $.ajax({
+                url: '/DataEmployee/EditFeedback',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(dataToSend),
+                success: function (response) {
+                    if (response.success) {
+                        Swal.fire('Thành công', response.message, 'success');
+                        $('#editFeedbackModal').modal('hide');
+                        loadFeedbacks();
+                    } else {
+                        Swal.fire('Lỗi', response.message, 'error');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire('Lỗi', 'Có lỗi xảy ra khi cập nhật: ' + error, 'error');
+                }
+            });
+        }
     </script>
 }

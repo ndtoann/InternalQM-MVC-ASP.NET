@@ -37,7 +37,6 @@
     <Folder Include="wwwroot\imgs\kaizens\" />
     <Folder Include="wwwroot\imgs\machines\" />
     <Folder Include="wwwroot\imgs\uploads\questions\" />
-    <Folder Include="wwwroot\templates\" />
   </ItemGroup>
 
 </Project>

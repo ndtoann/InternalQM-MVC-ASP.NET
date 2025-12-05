@@ -341,7 +341,7 @@ namespace Web_QM.Areas.Admin.Controllers
             }
 
             // xử lý phản hồi từ tổ trưởng
-            var feedbacks = await _context.Feedbacks.AsNoTracking().Where(f => f.EmployeeId == id).OrderByDescending(f => f.Id).ToListAsync();
+            var feedbacks = await _context.Feedbacks.AsNoTracking().Where(f => f.EmployeeId == id && f.Status == 1).OrderByDescending(f => f.Id).ToListAsync();
 
             ViewBag.Feedbacks = feedbacks;
 

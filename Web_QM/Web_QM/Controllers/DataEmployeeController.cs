@@ -11,9 +11,12 @@ namespace Web_QM.Controllers
     {
         private readonly QMContext _context;
 
-        public DataEmployeeController( QMContext context)
+        private readonly IAuthorizationService _authorizationService;
+
+        public DataEmployeeController( QMContext context, IAuthorizationService authorizationService)
         {
             _context = context;
+            _authorizationService = authorizationService;
         }
 
         [Authorize(Policy = "ClientViewEmpl")]
@@ -310,10 +313,8 @@ namespace Web_QM.Controllers
                 }
             }
 
-            // xử lý phản hồi từ tổ trưởng
-            var feedbacks = await _context.Feedbacks.AsNoTracking().Where(f => f.EmployeeId == id).OrderByDescending(f => f.Id).Take(50).ToListAsync();
-
-            ViewBag.Feedbacks = feedbacks;
+            var authorizationResult = await _authorizationService.AuthorizeAsync(User, "ClientAddFeedbackEmpl");
+            ViewBag.CanManageFeedback = authorizationResult.Succeeded;
 
             // xử lý dữ liệu đào tạo
             var evaluationPeriodsWithScore = await _context.EmployeeTrainingResults
@@ -471,22 +472,124 @@ namespace Web_QM.Controllers
                 var employeeNameIsLogin = User.FindFirst("EmployeeName")?.Value;
 
                 feedback.FeedbackerName = employeeCodeIsLogin + "-" + employeeNameIsLogin;
-                feedback.CreatedDate = DateTime.Now.ToString("HH:mm:ss-dd/MM/yyyy");
-
-                _context.Feedbacks.Add(feedback);
+                feedback.CreatedDate = DateTime.Now.ToString("dd/MM/yyyy");
+                feedback.Status = 0;
 
                 var empl = await _context.Employees.FirstOrDefaultAsync(e => e.Id == feedback.EmployeeId);
+                if(empl == null)
+                {
+                    return Json(new { success = false, message = "Nhân viên không tồn tại!" });
+                }
+                _context.Feedbacks.Add(feedback);
+                await _context.SaveChangesAsync();
 
+                return Json(new { success = true, message = "Thêm dữ liệu thành công!" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Lỗi server: {ex.Message}" });
+            }
+        }
+
+        [Authorize(Policy = "ClientViewEmpl")]
+        [HttpGet]
+        public async Task<IActionResult> GetFeedbacks(long employeeId)
+        {
+            if (employeeId == 0)
+            {
+                return BadRequest();
+            }
+            var feedbacks = await _context.Feedbacks.Where(f => f.EmployeeId == employeeId).OrderByDescending(f => f.Id).ToListAsync();
+            return Json(feedbacks);
+        }
+
+        [Authorize(Policy = "ClientAddFeedbackEmpl")]
+        [HttpPost]
+        public async Task<IActionResult> Approve(long id)
+        {
+            var feedback = await _context.Feedbacks.FirstOrDefaultAsync(f => f.Id == id);
+            if (feedback == null) return NotFound();
+
+            var empl = await _context.Employees.FirstOrDefaultAsync(e => e.Id == feedback.EmployeeId);
+            if (empl == null)
+            {
+                return Json(new { success = false, message = "Nhân viên không tồn tại!" });
+            }
+            try
+            {
+                feedback.Status = 1;
+                _context.Feedbacks.Update(feedback);
                 Notification nt = new Notification()
                 {
                     Message = "Nhân viên " + empl.EmployeeCode + "-" + empl.EmployeeName + " có phản hồi mới",
                     IsRead = 0,
-                    CreatedDate = DateTime.Now.ToString("HH:mm:ss-dd/MM/yyyy")
+                    CreatedDate = DateTime.Now.ToString("dd/MM/yyyy")
                 };
                 _context.Notifications.Add(nt);
-                await _context.SaveChangesAsync();
 
+                await _context.SaveChangesAsync();
                 return Json(new { success = true, message = "Đã gửi phản hồi!" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Lỗi server: {ex.Message}" });
+            }
+        }
+
+        [Authorize(Policy = "ClientAddFeedbackEmpl")]
+        [HttpGet]
+        public async Task<IActionResult> GetFeedbackDetails(long id)
+        {
+            var feedback = await _context.Feedbacks.FirstOrDefaultAsync(f => f.Id == id);
+            if (feedback == null) return NotFound();
+
+            return Json(feedback);
+        }
+
+        [Authorize(Policy = "ClientAddFeedbackEmpl")]
+        [HttpPost]
+        public async Task<IActionResult> EditFeedback([FromBody]Feedback model)
+        {
+            if (model == null) return BadRequest();
+
+            if (model.Comment == null)
+            {
+                return Json(new { success = false, message = "Nội dung phản hồi không được để trống." });
+            }
+
+            var feedback = await _context.Feedbacks.FirstOrDefaultAsync(f => f.Id == model.Id);
+            if (feedback == null) return NotFound();
+
+            try
+            {
+                var employeeCodeIsLogin = User.FindFirst("EmployeeCode")?.Value;
+                var employeeNameIsLogin = User.FindFirst("EmployeeName")?.Value;
+                feedback.FeedbackerName = employeeCodeIsLogin + "-" + employeeNameIsLogin;
+
+                feedback.Comment = model.Comment;
+
+                _context.Feedbacks.Update(feedback);
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, message = "Cập nhật thành công." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Lỗi server: {ex.Message}" });
+            }
+        }
+
+        [Authorize(Policy = "ClientAddFeedbackEmpl")]
+        [HttpPost]
+        public async Task<IActionResult> DeleteFeedback(long id)
+        {
+            var feedback = await _context.Feedbacks.FirstOrDefaultAsync(f => f.Id == id);
+            if (feedback == null) return NotFound();
+
+            try
+            {
+                _context.Feedbacks.Remove(feedback);
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, message = "Xóa thành công." });
             }
             catch (Exception ex)
             {
