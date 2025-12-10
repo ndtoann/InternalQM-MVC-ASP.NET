@@ -1,0 +1,497 @@
+﻿@using System.Globalization
+@using static System.DateTime
+@model Timesheet
+@{
+    var culture = new CultureInfo("vi-VN");
+    var dayNames = new string[] { "T2", "T3", "T4", "T5", "T6", "T7", "CN" };
+    var monthYear = ViewData["MonthYear"] as string;
+    var currentTimesheet = ViewData["Timesheet"] as Timesheet;
+    ViewData["Title"] = $"Chấm Công Tháng {monthYear}";
+}
+
+<div class="p-4 sm:p-8 min-h-screen">
+    <h1 class="text-3xl font-bold text-gray-800 text-center mb-2">Chấm công tháng @monthYear</h1>
+    <p class="mb-6 text-gray-600">Trạng Thái: <span id="sheetStatusText" class="font-semibold text-orange-600"></span></p>
+
+    <div class="calendar-grid text-sm font-semibold text-gray-600 mb-2">
+        @foreach (var day in dayNames)
+        {
+            <div class="text-center py-2 bg-gray-100 rounded">@day</div>
+        }
+    </div>
+
+    <div id="calendarBody" class="calendar-grid">
+        <div id="loadingCalendar" class="col-span-7 text-center py-10 text-indigo-600">Đang tải lịch...</div>
+    </div>
+</div>
+
+<div id="timekeepingModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg shadow-2xl w-full max-w-md p-6">
+        <div class="flex justify-between items-center pb-3 border-b">
+            <h3 class="text-xl font-semibold text-gray-800" id="modalTitle">Nhập Chấm Công</h3>
+            <button id="closeModal" class="fs-2 text-gray-400 hover:text-gray-600">&times;</button>
+        </div>
+        <form id="timekeepingForm" class="mt-4 space-y-4">
+            <input type="hidden" id="modalWorkDate">
+            <input type="hidden" id="modalTimesheetId" value="@Model.Id">
+            <input type="hidden" id="modalTimekeepingId">
+
+            <div>
+                <label for="Shift" class="block text-sm font-medium text-gray-700">Ca làm việc:</label>
+                <select id="Shift" class="mt-1 p-2 border border-gray-300 rounded-md shadow-sm w-full focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">--Chọn ca--</option>
+                    <option value="Hành chính">Hành chính</option>
+                    <option value="Ca 1">Ca 1</option>
+                    <option value="Ca 2">Ca 2</option>
+                    <option value="Ca 3">Ca 3</option>
+                    <option value="Ca 4">Ca 4</option>
+                    <option value="Ca 5">Ca 5</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Giờ Vào:</label>
+                    <input type="time" id="TimeIn" class="mt-1 input-time border-gray-300 rounded-md shadow-sm w-full">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Giờ Ra:</label>
+                    <input type="time" id="TimeOut" class="mt-1 input-time border-gray-300 rounded-md shadow-sm w-full">
+                </div>
+            </div>
+
+            <div>
+                <label for="Note" class="block text-sm font-medium text-gray-700">Ghi Chú:</label>
+                <input type="text" id="Note" class="mt-1 p-2 border border-gray-300 rounded-md shadow-sm w-full focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+
+            <div id="totalHoursDisplay" class="text-center text-lg font-bold text-indigo-600"></div>
+
+            <div class="flex justify-between pt-4 space-x-2">
+                <button type="button" id="clearButton" class="px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition duration-150">Nghỉ</button>
+                <div class="flex space-x-2">
+                    <button type="button" id="deleteButton" class="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-150 hidden">Xóa chấm công</button>
+                    <button type="submit" id="saveButton" class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-150">Lưu</button>
+                </div>
+            </div>
+        </form>
+        <div id="modalStatus" class="mt-3 text-center text-sm"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const calendarBody = document.getElementById('calendarBody');
+        const timekeepingModal = document.getElementById('timekeepingModal');
+        const closeModal = document.getElementById('closeModal');
+        const timekeepingForm = document.getElementById('timekeepingForm');
+        const modalWorkDate = document.getElementById('modalWorkDate');
+        const modalTimesheetId = document.getElementById('modalTimesheetId').value;
+        const modalTimekeepingId = document.getElementById('modalTimekeepingId');
+        const modalTitle = document.getElementById('modalTitle');
+        const deleteButton = document.getElementById('deleteButton');
+        const saveButton = document.getElementById('saveButton');
+        const loadingCalendar = document.getElementById('loadingCalendar');
+        const noteInput = document.getElementById('Note');
+        const clearButton = document.getElementById('clearButton');
+
+        const shiftInput = document.getElementById('Shift');
+        const timeInInput = document.getElementById('TimeIn');
+        const timeOutInput = document.getElementById('TimeOut');
+        const totalHoursDisplay = document.getElementById('totalHoursDisplay');
+
+        const timesheetStatus = @Model.Status;
+        const isEditable = (timesheetStatus === 1 || timesheetStatus === 4);
+
+        const WORK_DEFAULT_TIME = {
+            TimeIn: '08:00',
+            TimeOut: '17:00'
+        };
+        const SHIFT_BREAK_TIMES = {
+            'Hành chính': { start: '12:00', end: '13:00', overnight: false },
+            'Ca 1': { start: '12:00', end: '13:00', overnight: false },
+            'Ca 2': { start: '18:00', end: '19:00', overnight: false },
+            'Ca 4': { start: '12:00', end: '13:00', overnight: false },
+            'Ca 3': { start: '01:00', end: '02:00', overnight: true },
+            'Ca 5': { start: '01:00', end: '02:00', overnight: true },
+        };
+        const CLEAR_TIME = '00:00';
+        const LEAVE_NOTE = 'Nghỉ phép';
+
+        let currentData = {};
+        const daysInVietnamese = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+
+        const timeToMinutes = (time) => {
+            if (!time) return 0;
+            const [h, m] = time.split(':').map(Number);
+            return h * 60 + m;
+        };
+
+        const calculateDuration = (timeOut, timeIn) => {
+            if (!timeOut || !timeIn) return 0;
+
+            const tOutMin = timeToMinutes(timeOut);
+            const tInMin = timeToMinutes(timeIn);
+
+            let diffMinutes = tOutMin - tInMin;
+
+            if (diffMinutes <= 0 && tOutMin !== tInMin) {
+                diffMinutes += (24 * 60);
+            }
+            return Math.max(0, diffMinutes / 60);
+        };
+
+        const calculateOverlappingBreakTime = (timeInStr, timeOutStr, shift) => {
+            const breakInfo = SHIFT_BREAK_TIMES[shift];
+            if (!breakInfo) return 0; 
+
+            const tInMin = timeToMinutes(timeInStr);
+            let tOutMin = timeToMinutes(timeOutStr);
+            const bStartMin = timeToMinutes(breakInfo.start);
+            const bEndMin = timeToMinutes(breakInfo.end);
+
+            if (tOutMin <= tInMin) {
+                tOutMin += (24 * 60);
+            }
+    
+            let deductedMinutes = 0;
+    
+            if (breakInfo.overnight) {
+                const breakEndNight = bEndMin + (24 * 60);     
+                const breakStartNight = bStartMin + (24 * 60); 
+
+                if (tOutMin >= breakEndNight && tInMin < breakEndNight && (tOutMin - tInMin) >= 60) {
+                    deductedMinutes = 60;
+                }
+
+            } else {
+                const overlapStart = Math.max(tInMin, bStartMin);
+                const overlapEnd = Math.min(tOutMin, bEndMin);
+
+                if (overlapEnd > overlapStart) {
+                    deductedMinutes = overlapEnd - overlapStart;
+                }
+            }
+
+            return Math.min(deductedMinutes, 60) / 60;
+        };
+
+
+        const calculateTotalHours = () => {
+            const selectedShift = shiftInput.value;
+            const timeInValue = timeInInput.value;
+            const timeOutValue = timeOutInput.value;
+    
+            if (!timeInValue || !timeOutValue) {
+                totalHoursDisplay.textContent = 'Tổng giờ: 0.0h';
+                return 0;
+            }
+
+            const duration = calculateDuration(timeOutValue, timeInValue);
+            const breakHoursToDeduct = calculateOverlappingBreakTime(timeInValue, timeOutValue, selectedShift);
+    
+            let totalHours = duration - breakHoursToDeduct;
+    
+            totalHours = Math.max(0, totalHours);
+
+            totalHoursDisplay.textContent = 'Tổng giờ: ' + totalHours.toFixed(2) + 'h';
+    
+            return totalHours; 
+        };
+
+        const getStatusText = (status) => {
+            switch (status) {
+                case 1: return { text: 'Chờ Nhập', class: 'text-orange-600' };
+                case 2: return { text: 'Chờ tổ trưởng duyệt', class: 'text-blue-600' };
+                case 3: return { text: 'Đã Duyệt', class: 'text-green-600' };
+                case 4: return { text: 'Tổ trưởng trả lại', class: 'text-red-600' };
+                default: return { text: 'Không xác định', class: 'text-gray-500' };
+            }
+        };
+
+        const fetchDataAndRender = async () => {
+            loadingCalendar.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/Profile/GetTimekeepingData?timesheetId=' + modalTimesheetId);
+                if (!response.ok) throw new Error('Lỗi mạng hoặc Phiếu chấm công không tồn tại');
+                const result = await response.json();
+
+                const timesheet = result.timesheet;
+                const data = result.timekeepingData;
+
+                const statusInfo = getStatusText(timesheet.status);
+                document.getElementById('sheetStatusText').textContent = statusInfo.text;
+                document.getElementById('sheetStatusText').className = 'font-semibold ' + statusInfo.class;
+
+                currentData = data.reduce((acc, item) => {
+                    acc[item.workDate] = item;
+                    return acc;
+                }, {});
+
+                const dateParts = timesheet.dateMonth.split('-');
+                const year = parseInt(dateParts[0]);
+                const month = parseInt(dateParts[1]);
+
+                renderCalendar(month, year);
+
+            } catch (error) {
+                loadingCalendar.textContent = 'Lỗi khi tải dữ liệu: ' + error.message;
+                loadingCalendar.classList.add('text-red-500');
+            } finally {
+                loadingCalendar.classList.add('hidden');
+            }
+        };
+
+        const getFirstDayOfMonth = (year, month) => new Date(year, month - 1, 1).getDay();
+        const getDaysInMonth = (year, month) => new Date(year, month, 0).getDate();
+
+        const formatTime = (time, forInput = false) => {
+            if (!time) return '';
+            const parts = time.split(':');
+            return parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0');
+        };
+
+        const renderCalendar = (month, year) => {
+            calendarBody.innerHTML = '';
+            const firstDayIndex = getFirstDayOfMonth(year, month);
+            const daysInMonth = getDaysInMonth(year, month);
+            const startDayOfWeek = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
+
+            for (let i = 0; i < startDayOfWeek; i++) {
+                calendarBody.innerHTML += '<div class="empty-day bg-gray-200"></div>';
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month - 1, day);
+                const dateOnlyString = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+                const dayOfWeek = date.getDay();
+
+                const isSunday = dayOfWeek === 0;
+                const hasData = currentData[dateOnlyString];
+
+                let cellClass = 'day-cell';
+                if (isSunday) cellClass += ' sunday';
+                if (hasData && (hasData.totalHours > 0 || hasData.note)) cellClass += ' has-data';
+                if (hasData && hasData.totalHours === 0 && hasData.note) cellClass += ' border-blue-400 bg-blue-50';
+
+                let dataHtml = '';
+                if (hasData) {
+                    dataHtml =
+                        '<p class="text-xl text-green-700 mt-2 font-medium">Làm: ' + (hasData.totalHours !== undefined ? hasData.totalHours.toFixed(2) : '0.00') + 'h</p>' +
+                        '<p class="text-xs text-gray-500 font-medium">Ca: ' + (hasData.shift || '-') + '</p>' +
+                        '<p class="text-xs text-gray-500 font-medium">Vào: ' + formatTime(hasData.timeIn) + ' | Ra: ' + formatTime(hasData.timeOut) + '</p>' +
+                        (hasData.note ? '<p class="text-xs text-blue-600 italic">Ghi chú: ' + hasData.note + '</p>' : '');
+                } else {
+                    dataHtml = '<p class="text-xs text-gray-400 mt-2">Chưa chấm công</p>';
+                }
+
+                calendarBody.innerHTML +=
+                    '<div class="' + cellClass + '" data-date="' + dateOnlyString + '">' +
+                        '<div class="font-bold text-lg">' + day + ' <span class="text-xs font-normal">(' + daysInVietnamese[dayOfWeek] + ')</span></div>' +
+                        dataHtml +
+                    '</div>';
+            }
+
+            attachDayClickHandlers();
+        };
+
+        const attachDayClickHandlers = () => {
+            document.querySelectorAll('.day-cell').forEach(cell => {
+                cell.addEventListener('click', (e) => {
+                    const date = e.currentTarget.getAttribute('data-date');
+                    openModal(date);
+                });
+            });
+        };
+
+        const openModal = (dateString) => {
+            modalWorkDate.value = dateString;
+            modalTitle.textContent = 'Chấm Công Ngày ' + dateString.split('-').reverse().join('/');
+            deleteButton.classList.add('hidden');
+            document.getElementById('modalStatus').textContent = '';
+
+            const data = currentData[dateString];
+
+            modalTimekeepingId.value = data ? data.id || '' : '';
+            shiftInput.value = data ? data.shift || '' : '';
+            timeInInput.value = data && data.timeIn ? formatTime(data.timeIn, true) : WORK_DEFAULT_TIME.TimeIn;
+            timeOutInput.value = data && data.timeOut ? formatTime(data.timeOut, true) : WORK_DEFAULT_TIME.TimeOut;
+            noteInput.value = data ? data.note || '' : '';
+
+            [timeInInput, timeOutInput, shiftInput].forEach(input => {
+                input.removeEventListener('input', calculateTotalHours);
+                input.addEventListener('input', calculateTotalHours);
+            });
+
+            if (!isEditable) {
+                modalTitle.textContent += " (Chỉ Xem)";
+                document.getElementById('totalHoursDisplay').innerHTML = '<span class="text-red-500">Phiếu đã duyệt. Không thể chỉnh sửa.</span>';
+
+                shiftInput.disabled = true;
+                timeInInput.disabled = true;
+                timeOutInput.disabled = true;
+                noteInput.disabled = true;
+                saveButton.classList.add('hidden');
+                deleteButton.classList.add('hidden');
+                clearButton.classList.add('hidden');
+
+            } else {
+                calculateTotalHours();
+
+                shiftInput.disabled = false;
+                timeInInput.disabled = false;
+                timeOutInput.disabled = false;
+                noteInput.disabled = false;
+                saveButton.classList.remove('hidden');
+                clearButton.classList.remove('hidden');
+
+                if (data && data.id) {
+                    deleteButton.classList.remove('hidden');
+                }
+            }
+
+            timekeepingModal.classList.remove('hidden');
+            timekeepingModal.classList.add('flex');
+        };
+
+        const clearFormTimekeeping = () => {
+            if (!isEditable) return;
+
+            timeInInput.value = CLEAR_TIME;
+            timeOutInput.value = CLEAR_TIME;
+            shiftInput.value = '';
+            noteInput.value = LEAVE_NOTE;
+
+            calculateTotalHours();
+            document.getElementById('modalStatus').textContent = 'Đã chuyển thành ngày nghỉ.';
+            document.getElementById('modalStatus').className = 'mt-3 text-center text-sm text-gray-500';
+        };
+
+        const saveTimekeeping = async (e) => {
+            e.preventDefault();
+
+            if (!isEditable) {
+                document.getElementById('modalStatus').textContent = 'Phiếu không thể chỉnh sửa.';
+                document.getElementById('modalStatus').className = 'mt-3 text-center text-sm text-red-600';
+                return;
+            }
+
+            const form = e.target;
+            const date = modalWorkDate.value;
+            const statusDiv = document.getElementById('modalStatus');
+            saveButton.disabled = true;
+
+            const timeInValue = timeInInput.value;
+            const timeOutValue = timeOutInput.value;
+            const totalHours = calculateTotalHours();
+
+            const isTimeValid = timeInValue !== CLEAR_TIME && timeOutValue !== CLEAR_TIME;
+
+            const timekeepingData = {
+                Id: modalTimekeepingId.value ? parseInt(modalTimekeepingId.value) : 0,
+                TimesheetId: parseInt(modalTimesheetId),
+                WorkDate: date,
+                Shift: shiftInput.value,
+                TimeIn: isTimeValid ? timeInValue + ':00' : null,
+                TimeOut: isTimeValid ? timeOutValue + ':00' : null,
+                Note: noteInput.value,
+                TotalHours: isTimeValid ? totalHours : 0
+            };
+
+            const hasTime = isTimeValid;
+            const hasNote = timekeepingData.Note && timekeepingData.Note.trim() !== '';
+
+            if (!hasTime && !hasNote) {
+                statusDiv.textContent = 'Vui lòng nhập Giờ Vào/Ra hoặc Ghi Chú để lưu.';
+                statusDiv.className = 'mt-3 text-center text-sm text-red-600';
+                saveButton.disabled = false;
+                return;
+            }
+
+            try {
+                const response = await fetch('/Profile/SaveTimekeeping', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(timekeepingData)
+                });
+
+                const result = await response.json();
+                if (response.status === 400 && result.message) {
+                    throw new Error(result.message);
+                } else if (result.success) {
+                    currentData[date] = result.record;
+                    statusDiv.textContent = 'Lưu thành công!';
+                    statusDiv.className = 'mt-3 text-center text-sm text-green-600';
+                    totalHoursDisplay.textContent = 'Tổng giờ: ' + result.record.totalHours.toFixed(2) + 'h';
+                    modalTimekeepingId.value = result.record.id;
+                    deleteButton.classList.remove('hidden');
+                    fetchDataAndRender();
+                } else {
+                    throw new Error(result.message || 'Lỗi khi lưu dữ liệu');
+                }
+            } catch (error) {
+                statusDiv.textContent = 'Lỗi: ' + error.message;
+                statusDiv.className = 'mt-3 text-center text-sm text-red-600';
+            } finally {
+                saveButton.disabled = false;
+            }
+        };
+
+        const deleteTimekeeping = async () => {
+            if (!isEditable) {
+                document.getElementById('modalStatus').textContent = 'Phiếu không thể xóa.';
+                document.getElementById('modalStatus').className = 'mt-3 text-center text-sm text-red-600';
+                return;
+            }
+
+            if (!confirm("Bạn có chắc chắn muốn xóa chấm công ngày này?")) return;
+
+            const date = modalWorkDate.value;
+            const statusDiv = document.getElementById('modalStatus');
+            deleteButton.disabled = true;
+            saveButton.disabled = true;
+
+            try {
+                const response = await fetch('/Profile/DeleteTimekeeping', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ TimesheetId: parseInt(modalTimesheetId), WorkDate: date })
+                });
+
+                const result = await response.json();
+                if (response.status === 400 && result.message) {
+                    throw new Error(result.message);
+                } else if (result.success) {
+                    delete currentData[date];
+                    statusDiv.textContent = 'Xóa thành công!';
+                    statusDiv.className = 'mt-3 text-center text-sm text-green-600';
+                    timekeepingForm.reset();
+                    totalHoursDisplay.textContent = '';
+                    modalTimekeepingId.value = '';
+                    deleteButton.classList.add('hidden');
+                    fetchDataAndRender();
+                } else {
+                    throw new Error(result.message || 'Lỗi khi xóa dữ liệu');
+                }
+            } catch (error) {
+                statusDiv.textContent = 'Lỗi: ' + error.message;
+                statusDiv.className = 'mt-3 text-center text-sm text-red-600';
+            } finally {
+                deleteButton.disabled = false;
+                saveButton.disabled = false;
+            }
+        };
+
+        closeModal.addEventListener('click', () => {
+            timekeepingModal.classList.add('hidden');
+            timekeepingModal.classList.remove('flex');
+        });
+
+        timekeepingForm.addEventListener('submit', saveTimekeeping);
+        deleteButton.addEventListener('click', deleteTimekeeping);
+        clearButton.addEventListener('click', clearFormTimekeeping);
+
+        document.addEventListener('DOMContentLoaded', fetchDataAndRender);
+    </script>
+}

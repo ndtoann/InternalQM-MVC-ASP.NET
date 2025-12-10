@@ -93,7 +93,7 @@ namespace Web_QM.Areas.Admin.Controllers
             return View();
         }
 
-        [Authorize(Policy = "ViewDashboard")]
+        [Authorize(Policy = "ViewNotifi")]
         public async Task<IActionResult> GetNotifications()
         {
             var notifications = await _context.Notifications.AsNoTracking().OrderByDescending(n => n.Id).ToListAsync();

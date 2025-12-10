@@ -103,6 +103,7 @@ namespace Web_QM.Controllers
                     },
                     Employee = new
                     {
+                        employee.Id,
                         employee.EmployeeCode,
                         employee.EmployeeName,
                         employee.Department,
@@ -127,6 +128,7 @@ namespace Web_QM.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Email, userBaseDetails.Account.UserName),
+                new Claim("EmployeeId", userBaseDetails.Employee.Id.ToString()),
                 new Claim("EmployeeCode", userBaseDetails.Employee.EmployeeCode),
                 new Claim("EmployeeName", userBaseDetails.Employee.EmployeeName),
                 new Claim("Department", userBaseDetails.Employee.Department),

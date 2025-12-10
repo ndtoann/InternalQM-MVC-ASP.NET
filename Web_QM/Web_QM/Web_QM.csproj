@@ -28,8 +28,8 @@
   <ItemGroup>
     <Folder Include="Areas\Admin\Data\" />
     <Folder Include="Areas\Admin\Models\" />
-    <Folder Include="Areas\Demo\Data\" />
-    <Folder Include="Areas\Demo\Models\" />
+    <Folder Include="Areas\Warehouse\Data\" />
+    <Folder Include="Areas\Warehouse\Models\" />
     <Folder Include="wwwroot\files\answers\" />
     <Folder Include="wwwroot\files\equipments\" />
     <Folder Include="wwwroot\files\essay_questions\" />

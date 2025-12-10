@@ -42,6 +42,7 @@
                             <div class="col-lg-3">
                                 <p class="statistics-title">Số lỗi sản xuất</p>
                                 <h3 class="rate-percentage">@ViewBag.CountError</h3>
+                                <p class="text-success d-flex"><a href="~/admin/errordata">Xem thêm</a></p>
                             </div>
                             <div class="col-lg-3">
                                 <p class="statistics-title">Số lỗi 5S</p>
@@ -54,7 +55,7 @@
                             <div class="col-lg-3">
                                 <p class="statistics-title">Máy móc</p>
                                 <h3 class="rate-percentage">@ViewBag.CountMachine máy</h3>
-                                <p class="text-success d-flex"><a href="~/admin/machine">View more</a></p>
+                                <p class="text-success d-flex"><a href="~/admin/machine">Xem thêm</a></p>
                             </div>
                         </div>
                     </div>
@@ -125,8 +126,12 @@
         var dataPie = @(ViewBag.DataPie == null ? Html.Raw("[]") : Html.Raw(Json.Serialize(ViewBag.DataPie)));
         var dataBar = @(ViewBag.DataBar == null ? Html.Raw("[]") : Html.Raw(Json.Serialize(ViewBag.DataBar)));
         var dataLine = @(ViewBag.DataLine == null ? Html.Raw("[]") : Html.Raw(Json.Serialize(ViewBag.DataLine)));
+    </script>
 
-        $(document).ready(function () {
+    @if (User.HasPermission("Notification.View"))
+    {
+        <script>
+            $(document).ready(function () {
              function loadNotifications() {
                  $.ajax({
                      url: '/Admin/Dashboard/GetNotifications',
@@ -203,4 +208,5 @@
              });
          });
     </script>
+    }
 }

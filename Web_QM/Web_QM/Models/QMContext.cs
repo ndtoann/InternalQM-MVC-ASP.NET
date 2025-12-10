@@ -78,6 +78,9 @@ public partial class QMContext : DbContext
     public virtual DbSet<MonthlyPayroll> MonthlyPayroll { get; set; }
     public virtual DbSet<ComplaintSalary> ComplaintSalary { get; set; }
 
+    public virtual DbSet<Timesheet> Timesheets { get; set; }
+    public virtual DbSet<Timekeeping> Timekeepings { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer("Server=192.168.10.251,1433;Database=QM_DaoTao;User Id=daotao01;Password=12341234;Trusted_Connection=False;MultipleActiveResultSets=true;Encrypt=False;");
 
@@ -417,6 +420,11 @@ public partial class QMContext : DbContext
         {
             entity.Property(e => e.CreatedDate).HasMaxLength(50);
             entity.Property(e => e.UpdatedDate).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<Timekeeping>(entity => {
+            entity.Property(e => e.Shift).HasMaxLength(20);
+            entity.Property(e => e.TotalHours).HasColumnType("decimal(5, 2)");
         });
 
         OnModelCreatingPartial(modelBuilder);

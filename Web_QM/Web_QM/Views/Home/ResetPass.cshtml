@@ -1,7 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Đổi mật khẩu";
 }
-﻿
 
 <div class="flex items-center justify-center">
     <div class="login-card w-full flex items-center justify-center mt-5">
@@ -13,25 +12,23 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
             <form id="rsPassForm" class="space-y-6">
-                <!-- Username Field -->
                 <div>
                     <label for="passOld" class="sr-only">Mật khẩu cũ</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-600">
                             <i class="fas fa-lock"></i>
                         </div>
-                        <input type="password" id="passOld" name="passOld" placeholder="Mật khẩu cũ" required autofocus class="input-field w-full pl-12 pr-4 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                        <input type="password" id="passOld" name="passOld" placeholder="Mật khẩu cũ" required autofocus class="password-input input-field w-full pl-12 pr-4 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
                     </div>
                 </div>
 
-                <!-- Password Field -->
                 <div>
                     <label for="passNew" class="sr-only">Mật khẩu mới</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-600">
                             <i class="fas fa-lock"></i>
                         </div>
-                        <input type="password" id="passNew" name="passNew" placeholder="Mật khẩu mới" required class="input-field w-full pl-12 pr-4 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                        <input type="password" id="passNew" name="passNew" placeholder="Mật khẩu mới" required class="password-input input-field w-full pl-12 pr-4 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
                     </div>
                 </div>
 
@@ -41,11 +38,17 @@
                         <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-600">
                             <i class="fas fa-lock"></i>
                         </div>
-                        <input type="password" id="passNewRepeat" name="passNewRepeat" placeholder="Nhập lại mật khẩu mới" required class="input-field w-full pl-12 pr-4 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                        <input type="password" id="passNewRepeat" name="passNewRepeat" placeholder="Nhập lại mật khẩu mới" required class="password-input input-field w-full pl-12 pr-4 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
                     </div>
                 </div>
 
-                <!-- Submit Button -->
+                <div class="flex items-center">
+                    <input type="checkbox" id="showPasswordToggle" class="h-4 w-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500">
+                    <label for="showPasswordToggle" class="ml-2 block text-sm text-gray-900 select-none">
+                        Hiển thị mật khẩu
+                    </label>
+                </div>
+
                 <div>
                     <button type="submit" id="submitButton" class="submit-btn w-full flex items-center justify-center py-3 px-4 rounded-xl text-white font-semibold shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 transition duration-300 ease-in-out">
                         Xác nhận
@@ -98,6 +101,17 @@
 
                         alertDiv.removeClass("d-none").addClass("alert-danger fade show").removeClass("alert-success");
                         alertMessageSpan.text("Đã xảy ra lỗi hệ thống. Vui lòng thử lại!");
+                    }
+                });
+            });
+
+            $("#showPasswordToggle").on("change", function() {
+                var isChecked = $(this).is(":checked");
+                $(".password-input").each(function() {
+                    if (isChecked) {
+                        $(this).attr("type", "text");
+                    } else {
+                        $(this).attr("type", "password");
                     }
                 });
             });

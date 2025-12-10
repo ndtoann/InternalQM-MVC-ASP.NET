@@ -1,0 +1,315 @@
+﻿@using System.Globalization
+@using static System.DateTime
+@{
+    ViewData["Title"] = "Danh Sách Bảng Chấm Công";
+}
+
+<div class="p-4 sm:p-8 min-h-screen">
+    <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-lg p-6">
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <h1 class="text-3xl font-bold text-gray-800">Bảng Chấm Công</h1>
+            <button id="addSheetButton" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition duration-150 shadow-md">
+                + Thêm Bảng Chấm Công
+            </button>
+        </div>
+        <div class="mb-6 flex items-center space-x-3">
+            <label for="searchDateMonthInput" class="text-sm font-medium text-gray-700 whitespace-nowrap">Tìm kiếm:</label>
+            <input type="month" id="searchDateMonthInput" class="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 flex-grow" value="">
+        </div>
+        <div id="timesheetList" class="space-y-3 overflow-auto" style="max-height: 800px;">
+            <div id="loadingIndicator" class="text-center py-5 text-indigo-600">Đang tải danh sách...</div>
+            <div id="noDataMessage" class="text-center py-5 text-gray-500 hidden">Chưa có bảng chấm công nào.</div>
+        </div>
+    </div>
+</div>
+
+<div id="addSheetModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm p-6">
+        <div class="flex justify-between items-center pb-3 border-b">
+            <h3 class="text-xl font-semibold text-gray-800">Thêm Bảng Chấm Công Mới</h3>
+            <button id="closeModal" class="fs-2 text-gray-400 hover:text-gray-600">&times;</button>
+        </div>
+        <form id="addSheetForm" class="mt-4 space-y-4">
+            <div>
+                <label for="dateMonthInput" class="block text-sm font-medium text-gray-700">Chọn Tháng/Năm:</label>
+                <input type="month" id="dateMonthInput" required class="mt-1 p-2 border border-gray-300 rounded-md shadow-sm w-full focus:ring-indigo-500 focus:border-indigo-500" value="">
+            </div>
+            <p id="modalStatus" class="text-sm text-red-500 hidden"></p>
+            <div class="flex justify-end pt-2">
+                <button type="submit" id="saveSheetButton" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-150">Tạo Phiếu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const timesheetList = document.getElementById('timesheetList');
+        const addSheetModal = document.getElementById('addSheetModal');
+        const addSheetButton = document.getElementById('addSheetButton');
+        const closeModal = document.getElementById('closeModal');
+        const addSheetForm = document.getElementById('addSheetForm');
+        const dateMonthInput = document.getElementById('dateMonthInput');
+        const modalStatus = document.getElementById('modalStatus');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const noDataMessage = document.getElementById('noDataMessage');
+        const saveSheetButton = document.getElementById('saveSheetButton');
+        const searchDateMonthInput = document.getElementById('searchDateMonthInput');
+
+        const getStatusText = (status) => {
+            switch (status) {
+                case 1: return { text: 'Chờ Nhập', class: 'status-1' };
+                case 2: return { text: 'Chờ tổ trưởng duyệt', class: 'status-2' };
+                case 3: return { text: 'Đã Duyệt', class: 'status-3' };
+                case 4: return { text: 'Tổ trưởng trả lại', class: 'status-4' };
+                default: return { text: 'Không xác định', class: 'text-gray-500' };
+            }
+        };
+
+        const showStatusMessage = (message, isSuccess = true) => {
+            const statusBox = document.getElementById('timesheetListStatus') || document.createElement('div');
+            statusBox.id = 'timesheetListStatus';
+            statusBox.className = 'p-3 rounded-md text-sm mb-4 ' + (isSuccess ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700');
+            statusBox.textContent = message;
+            if (!document.getElementById('timesheetListStatus')) {
+                timesheetList.parentNode.insertBefore(statusBox, timesheetList);
+            }
+            setTimeout(() => statusBox.remove(), 5000);
+        };
+
+        const fetchTimesheets = async (dateMonth = null) => {
+            timesheetList.innerHTML = '';
+            loadingIndicator.classList.remove('hidden');
+            noDataMessage.classList.add('hidden');
+
+            let apiUrl = '/Profile/GetTimesheets';
+            if (dateMonth) {
+                apiUrl += `?dateMonth=${dateMonth}`;
+            }
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('Lỗi mạng');
+                const data = await response.json();
+
+                loadingIndicator.classList.add('hidden');
+        
+                if (data.length === 0) {
+                    noDataMessage.classList.remove('hidden');
+                    return;
+                }
+
+                data.forEach(sheet => {
+                    const statusInfo = getStatusText(sheet.status);
+                    const canEditOrDelete = (sheet.status === 1 || sheet.status === 4);
+
+                    let actionButtons = '';
+                    if (canEditOrDelete) {
+                        actionButtons =
+                            '<button data-id="' + sheet.id + '" data-status="' + sheet.status + '" class="btn-approve px-3 py-1 text-white text-sm rounded-md hover:bg-green-600 transition duration-150" onclick="handleApprove(' + sheet.id + ', event)">' +
+                                'Duyệt' +
+                            '</button>' +
+                            '<button data-id="' + sheet.id + '" class="btn-delete px-3 py-1 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition duration-150" onclick="handleDelete(' + sheet.id + ', event)">' +
+                                'Xóa' +
+                            '</button>';
+                    } else if (sheet.status === 3) {
+                        actionButtons =
+                            '<button disabled class="px-3 py-1 text-white text-sm rounded-md bg-green-500 opacity-75 cursor-not-allowed">' +
+                                'Đã Duyệt' +
+                            '</button>';
+                    } else if (sheet.status === 2) {
+                        actionButtons =
+                            '<button disabled class="px-3 py-1 text-white text-sm rounded-md bg-blue-500 opacity-75 cursor-not-allowed">' +
+                                'Chờ tổ trưởng duyệt' +
+                            '</button>';
+                    }
+
+                    const div = document.createElement('div');
+                    div.className = 'flex flex-col sm:flex-row justify-between items-center p-4 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition duration-150 space-y-2 sm:space-y-0';
+                    div.innerHTML =
+                        '<div class="flex-grow">' +
+                            '<a href="/Profile/Timekeeping?timesheetId=' + sheet.id + '" class="text-lg font-semibold text-indigo-600 hover:text-indigo-800 transition duration-150 cursor-pointer">' +
+                                'Bảng Chấm Công Tháng ' + sheet.dateMonth +
+                            '</a>' +
+                            '<span class="text-sm font-medium ml-4 ' + statusInfo.class + '">' + statusInfo.text + '</span>' +
+                        '</div>' +
+                        '<div class="flex space-x-2">' +
+                            actionButtons +
+                        '</div>';
+                    timesheetList.appendChild(div);
+                });
+            } catch (error) {
+                loadingIndicator.textContent = 'Lỗi khi tải dữ liệu: ' + error.message;
+                loadingIndicator.classList.add('text-red-500');
+            }
+        };
+
+        const handleApprove = async (sheetId, event) => {
+            const dateMonthElement = event.target.closest('div.flex-col, div.flex-row').querySelector('a');
+            const dateMonthText = dateMonthElement ? dateMonthElement.textContent.trim() : 'phiếu này';
+
+            const result = await Swal.fire({
+                title: 'Xác Nhận Duyệt Phiếu' + dateMonthText + ' ?',
+                html: 'Đảm bảo bạn đã nhập đẩy đủ thời gian bảng chấm công.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#22c55e',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Đồng ý, Duyệt!',
+                cancelButtonText: 'Hủy'
+            });
+
+            if (result.isConfirmed) {
+                const button = event.target;
+                button.disabled = true;
+                button.textContent = 'Đang Duyệt...';
+
+                try {
+                    const response = await fetch('/Profile/ApproveTimesheet', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ Id: sheetId })
+                    });
+
+                    const apiResult = await response.json();
+                    if (response.ok && apiResult.success) {
+                        Swal.fire(
+                            'Đã Duyệt!',
+                            'Phiếu đã được duyệt thành công.',
+                            'success'
+                        );
+                        fetchTimesheets(searchDateMonthInput.value);
+                    } else {
+                        throw new Error(apiResult.message || 'Lỗi khi duyệt phiếu.');
+                    }
+                } catch (error) {
+                    Swal.fire(
+                        'Lỗi!',
+                        'Duyệt phiếu thất bại: ' + error.message,
+                        'error'
+                    );
+                    button.disabled = false;
+                    button.textContent = 'Duyệt';
+                }
+            }
+        };
+
+        const handleDelete = async (sheetId, event) => {
+            const dateMonthElement = event.target.closest('div.flex-col, div.flex-row').querySelector('a');
+            const dateMonthText = dateMonthElement ? dateMonthElement.textContent.trim() : 'phiếu này';
+
+            const result = await Swal.fire({
+                title: 'Xác Nhận Xóa Phiếu?',
+                html: 'Bạn có chắc chắn muốn xóa ' + dateMonthText + ' không? Toàn bộ dữ liệu chấm công hàng ngày sẽ bị mất.',
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Đồng ý, Xóa!',
+                cancelButtonText: 'Hủy'
+            });
+
+            if (result.isConfirmed) {
+                const button = event.target;
+                button.disabled = true;
+                button.textContent = 'Đang Xóa...';
+
+                try {
+                    const response = await fetch('/Profile/DeleteTimesheet', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ Id: sheetId })
+                    });
+
+                    const apiResult = await response.json();
+                    if (response.ok && apiResult.success) {
+                        Swal.fire(
+                            'Đã Xóa!',
+                            'Phiếu đã được xóa thành công.',
+                            'success'
+                        );
+                        fetchTimesheets(searchDateMonthInput.value);
+                    } else {
+                        throw new Error(apiResult.message || 'Lỗi khi xóa phiếu.');
+                    }
+                } catch (error) {
+                    Swal.fire(
+                        'Lỗi!',
+                        'Xóa phiếu thất bại: ' + error.message,
+                        'error'
+                    );
+                    button.disabled = false;
+                    button.textContent = 'Xóa';
+                }
+            }
+        };
+
+        const addTimesheet = async (e) => {
+            e.preventDefault();
+            modalStatus.classList.add('hidden');
+            saveSheetButton.disabled = true;
+
+            const dateMonth = dateMonthInput.value;
+            if (!dateMonth) {
+                modalStatus.textContent = 'Vui lòng chọn tháng/năm.';
+                modalStatus.classList.remove('hidden');
+                saveSheetButton.disabled = false;
+                return;
+            }
+
+            try {
+                const response = await fetch('/Profile/AddTimesheet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ DateMonth: dateMonth })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    addSheetModal.classList.add('hidden');
+                    addSheetForm.reset();
+                    showStatusMessage('Đã tạo thành công phiếu chấm công tháng ' + dateMonth + '.', true);
+                    fetchTimesheets(searchDateMonthInput.value);
+                } else {
+                    modalStatus.textContent = result.message;
+                    modalStatus.classList.remove('hidden');
+                }
+            } catch (error) {
+                modalStatus.textContent = 'Lỗi hệ thống khi tạo phiếu.';
+                modalStatus.classList.remove('hidden');
+            } finally {
+                saveSheetButton.disabled = false;
+            }
+        };
+
+        addSheetButton.addEventListener('click', () => {
+            addSheetModal.classList.remove('hidden');
+            addSheetModal.classList.add('flex');
+            modalStatus.classList.add('hidden');
+        });
+
+        closeModal.addEventListener('click', () => {
+            addSheetModal.classList.add('hidden');
+            addSheetModal.classList.remove('flex');
+        });
+
+        addSheetForm.addEventListener('submit', addTimesheet);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const defaultMonth = `${year}-${month}`;
+
+            dateMonthInput.value = defaultMonth;
+            searchDateMonthInput.value = defaultMonth;
+
+            fetchTimesheets(defaultMonth);
+        });
+
+        searchDateMonthInput.addEventListener('change', (e) => {
+            const selectedMonth = e.target.value;
+            fetchTimesheets(selectedMonth);
+        });
+    </script>
+}

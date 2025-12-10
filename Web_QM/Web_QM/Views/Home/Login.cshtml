@@ -1,63 +1,130 @@
 ﻿@{
-    ViewData["Title"] = "Đăng nhập";
-}﻿
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập</title>
 
-<div class="flex items-center justify-center">
-    <div class="login-card w-full flex items-center justify-center mt-5">
-        <div class="overlay absolute inset-0"></div>
-        <div class="z-10 form-card p-8 sm:p-10 md:p-14 rounded-3xl w-full max-w-lg animated-form space-y-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-8">Đăng Nhập</h1>
+    <link rel="icon" type="image/x-icon" href="/logo.ico">
 
-            @{
-                if (TempData["error"] != null)
-                {
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        @TempData["error"]
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                }
-            }
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.9.2/jquery.contextMenu.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
+</head>
+
+<body>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init();
+    </script>
+    <div class="main-body preload-hidden">
+        <main role="main" class="main-content">
+            <div class="row">
+                <div class="col-lg-6 logo-container">
+                    <img src="/imgs/logo.png" />
+                </div>
+                <div class="col-lg-6">
+                    <div class="flex items-center justify-center">
+                        <div class="login-card w-full flex items-center justify-center mt-5">
+                            <div class="overlay absolute inset-0"></div>
+                            <div class="z-10 form-card p-8 sm:p-10 md:p-14 rounded-3xl w-full max-w-lg animated-form space-y-8">
+                                <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-8">Đăng Nhập</h1>
+
+                                @{
+                                    if (TempData["error"] != null)
+                                    {
+                                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                            @TempData["error"]
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        </div>
+                                    }
+                                }
 
 
-            <form id="loginForm" class="space-y-6" method="post" asp-action="login">
-                <div>
-                    <label for="username" class="sr-only">Tên đăng nhập</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-600">
-                            <i class="fas fa-user"></i>
+                                <form id="loginForm" class="space-y-6" method="post" asp-action="login">
+                                    <div>
+                                        <label for="username" class="sr-only">Tên đăng nhập</label>
+                                        <div class="relative">
+                                            <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-600">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                            <input type="text" id="username" name="username" placeholder="Tên đăng nhập" required autofocus class="input-field w-full pl-12 pr-4 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label for="password" class="sr-only">Mật khẩu</label>
+                                        <div class="relative">
+                                            <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-600">
+                                                <i class="fas fa-lock"></i>
+                                            </div>
+                                            <input type="password" id="password" name="password" placeholder="Mật khẩu" required class="input-field w-full pl-12 pr-4 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between text-sm">
+                                        <div class="flex items-center">
+                                            <input id="remember-me" name="rememberMe" type="checkbox" class="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded">
+                                            <label for="remember-me" class="ml-2 block text-gray-800">
+                                                Ghi nhớ tôi
+                                            </label>
+                                        </div>
+                                        <a href="#" class="font-medium text-pink-600 hover:text-pink-500">
+                                            Quên mật khẩu?
+                                        </a>
+                                    </div>
+
+                                    <div>
+                                        <button type="submit" id="loginButton" class="submit-btn w-full flex items-center justify-center py-3 px-4 rounded-xl text-white font-semibold shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 transition duration-300 ease-in-out">
+                                            Đăng Nhập
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-                        <input type="text" id="username" name="username" placeholder="Tên đăng nhập" required autofocus class="input-field w-full pl-12 pr-4 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
                     </div>
                 </div>
-
-                <div>
-                    <label for="password" class="sr-only">Mật khẩu</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-600">
-                            <i class="fas fa-lock"></i>
-                        </div>
-                        <input type="password" id="password" name="password" placeholder="Mật khẩu" required class="input-field w-full pl-12 pr-4 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-between text-sm">
-                    <div class="flex items-center">
-                        <input id="remember-me" name="rememberMe" type="checkbox" class="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded">
-                        <label for="remember-me" class="ml-2 block text-gray-800">
-                            Ghi nhớ tôi
-                        </label>
-                    </div>
-                    <a href="#" class="font-medium text-pink-600 hover:text-pink-500">
-                        Quên mật khẩu?
-                    </a>
-                </div>
-
-                <div>
-                    <button type="submit" id="loginButton" class="submit-btn w-full flex items-center justify-center py-3 px-4 rounded-xl text-white font-semibold shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 transition duration-300 ease-in-out">
-                        Đăng Nhập
-                    </button>
-                </div>
-            </form>
-        </div>
+            </div>
+        </main>
     </div>
-</div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.9.2/jquery.contextMenu.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        window.addEventListener('load', function () {
+            $('.main-body').removeClass('preload-hidden').addClass('preload-visible');
+        });
+    </script>
+</body>
+</html>

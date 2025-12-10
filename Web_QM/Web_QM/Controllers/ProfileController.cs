@@ -2,296 +2,33 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using Web_QM.Models;
 using Web_QM.Models.ViewModels;
 
 namespace Web_QM.Controllers
 {
-    public class DataEmployeeController : Controller
+    [Authorize]
+    public class ProfileController : Controller
     {
         private readonly QMContext _context;
 
-        private readonly IAuthorizationService _authorizationService;
-
-        public DataEmployeeController( QMContext context, IAuthorizationService authorizationService)
+        public ProfileController(QMContext context)
         {
             _context = context;
-            _authorizationService = authorizationService;
         }
 
-        [Authorize(Policy = "ClientViewEmpl")]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
-        }
-
-        [Authorize(Policy = "ClientViewEmpl")]
-        public async Task<IActionResult> GetEmployees(string search, string department)
-        {
-            var permissions = User.Claims.Where(c => c.Type == "Permission").Select(c => c.Value).ToList();
-            var canViewAll = permissions.Any(p => p.Equals("EmployeeAll.View", StringComparison.OrdinalIgnoreCase));
-            var userDepartment = User.FindFirst("Department")?.Value;
-            var query = _context.Employees.AsNoTracking();
-
-            if (!canViewAll)
-            {
-                if (string.IsNullOrEmpty(userDepartment))
-                {
-                    return Json(new { data = new List<object>(), message = "Không có quyền truy cập dữ liệu nhân viên!" });
-                }
-                query = query.Where(e => e.Department == userDepartment);
-            }
-
-            if (!string.IsNullOrEmpty(search))
-            {
-                var lowerSearch = search.Trim().ToLower();
-                query = query.Where(e =>
-                    e.EmployeeName.ToLower().Contains(lowerSearch) ||
-                    e.EmployeeCode.ToLower().Contains(lowerSearch)
-                );
-            }
-
-            if (canViewAll && !string.IsNullOrEmpty(department))
-            {
-                query = query.Where(e => e.Department == department);
-            }
-
-            query = query.OrderBy(o => o.EmployeeCode);
-
-            var employees = await query.ToListAsync();
-
-            return Json(new { data = employees });
-        }
-
-        [Authorize(Policy = "ClientViewEmpl")]
-        public async Task<IActionResult> GetTopEmployeeProductivity(int year)
-        {
-            if (year < 2020 || year > 2100)
-            {
-                return BadRequest(new { message = "Năm không hợp lệ." });
-            }
-            var groupedData = await _context.Productivities
-                .AsNoTracking()
-                .Where(p => p.MeasurementYear == year)
-                .Join(
-                    _context.Employees,
-                    p => p.EmployeeCode,
-                    e => e.EmployeeCode,
-                    (p, e) => new { Productivity = p, Employee = e }
-                )
-                .GroupBy(x => new {
-                    x.Employee.EmployeeCode,
-                    x.Employee.EmployeeName,
-                    x.Employee.Department
-                })
-                .Select(g => new
-                {
-                    g.Key.EmployeeCode,
-                    g.Key.EmployeeName,
-                    g.Key.Department,
-                    TotalScore = g.Sum(x => x.Productivity.ProductivityScore),
-                    Count = g.Count()
-                })
-                .OrderByDescending(x => x.TotalScore)
-                .Take(10)
-                .ToListAsync();
-
-            if (!groupedData.Any())
-            {
-                return NotFound(new { message = $"Không tìm thấy dữ liệu năng suất cho năm {year}." });
-            }
-            var resultList = groupedData
-                .Select((data, index) => new
-                {
-                    Rank = index + 1,
-                    EmployeeCode = data.EmployeeCode,
-                    EmployeeName = data.EmployeeName,
-                    Department = data.Department,
-                    AverageScore = data.Count > 0 ? data.TotalScore / data.Count : 0,
-                })
-                .ToList();
-
-            return Ok(resultList);
-        }
-
-        [Authorize(Policy = "ClientViewEmpl")]
-        public async Task<IActionResult> GetTopEmployeeKaizen(int year)
-        {
-            if (year < 2020 || year > 2100)
-            {
-                return BadRequest(new { message = "Năm không hợp lệ." });
-            }
-            var allKaizenData = await _context.Kaizens
-                .AsNoTracking()
-                .Where(k => k.DateMonth.Year == year)
-                .Join(
-                    _context.Employees.AsNoTracking(),
-                    k => k.EmployeeCode,
-                    e => e.EmployeeCode,
-                    (k, e) => new
-                    {
-                        k.EmployeeCode,
-                        e.EmployeeName,
-                        e.Department,
-                        KaizenDate = k.DateMonth,
-                        k.ManagementReview
-                    }
-                )
-                .ToListAsync();
-
-            if (!allKaizenData.Any())
-            {
-                return NotFound(new { message = $"Không tìm thấy dữ liệu Kaizen cho năm {year}." });
-            }
-
-            int GetReviewPriority(string review)
-            {
-                return review?.ToUpper() switch
-                {
-                    "A" => 4,
-                    "B" => 3,
-                    "C" => 2,
-                    "D" => 1,
-                    _ => 0,
-                };
-            }
-            var groupedData = allKaizenData
-                .GroupBy(x => new { x.EmployeeCode, x.EmployeeName, x.Department })
-                .Select(g => new
-                {
-                    g.Key.EmployeeCode,
-                    g.Key.EmployeeName,
-                    g.Key.Department,
-                    KaizenCount = g.Count(),
-                    TotalPriorityScore = g.Sum(x => GetReviewPriority(x.ManagementReview)),
-                    EarliestKaizenDate = g.Min(x => x.KaizenDate)
-                })
-                .OrderByDescending(x => x.KaizenCount)
-                .ThenByDescending(x => x.TotalPriorityScore)
-                .ThenBy(x => x.EarliestKaizenDate)
-                .Take(10)
-                .ToList();
-            var resultList = groupedData
-                .Select((data, index) => new
-                {
-                    Rank = index + 1,
-                    EmployeeCode = data.EmployeeCode,
-                    EmployeeName = data.EmployeeName,
-                    Department = data.Department,
-                    TotalScore = data.KaizenCount,
-                })
-                .ToList();
-
-            return Ok(resultList);
-        }
-
-        [Authorize(Policy = "ClientViewEmpl")]
-        public async Task<IActionResult> GetTopEmployeeErrors(int year)
-        {
-            if (year < 2020 || year > 2100)
-            {
-                return BadRequest(new { message = "Năm không hợp lệ." });
-            }
-
-            var errorDataCounts = await _context.ErrorDatas
-                .AsNoTracking()
-                .Where(e => e.DateMonth.Year == year)
-                .GroupBy(e => e.EmployeeCode)
-                .Select(g => new
-                {
-                    EmployeeCode = g.Key,
-                    ProductionErrorCount = g.Count()
-                })
-                .ToListAsync();
-
-            var violation5SCounts = await _context.EmployeeViolation5S
-                .AsNoTracking()
-                .Where(v => v.DateMonth.Year == year)
-                .GroupBy(v => v.EmployeeCode)
-                .Select(g => new
-                {
-                    EmployeeCode = g.Key,
-                    Violation5SCount = g.Count()
-                })
-                .ToListAsync();
-
-            var allEmployeeCodes = errorDataCounts
-                .Select(x => x.EmployeeCode)
-                .Union(violation5SCounts.Select(x => x.EmployeeCode))
-                .ToList();
-
-            var combinedErrorData = allEmployeeCodes.Select(code =>
-            {
-                var prodError = errorDataCounts.FirstOrDefault(x => x.EmployeeCode == code);
-                var violation5S = violation5SCounts.FirstOrDefault(x => x.EmployeeCode == code);
-
-                int prodCount = prodError?.ProductionErrorCount ?? 0;
-                int v5sCount = violation5S?.Violation5SCount ?? 0;
-                int totalCount = prodCount + v5sCount;
-
-                return new
-                {
-                    EmployeeCode = code,
-                    ProductionErrorCount = prodCount,
-                    Violation5SCount = v5sCount,
-                    TotalErrorCount = totalCount
-                };
-            })
-            .OrderByDescending(x => x.TotalErrorCount)
-            .ToList();
-
-            if (!combinedErrorData.Any())
-            {
-                return NotFound(new { message = $"Không tìm thấy dữ liệu lỗi cho năm {year}." });
-            }
-
-            var allEmployees = await _context.Employees.AsNoTracking().ToListAsync();
-
-            var topEmployeeErrorDetails = allEmployees
-            .Join(
-                combinedErrorData,
-                e => e.EmployeeCode,
-                c => c.EmployeeCode,
-                (e, c) => new
-                {
-                    EmployeeCode = e.EmployeeCode,
-                    EmployeeName = e.EmployeeName,
-                    Department = e.Department,
-                    ProductionErrorCount = c.ProductionErrorCount,
-                    Violation5SCount = c.Violation5SCount,
-                    TotalErrorCount = c.TotalErrorCount
-                }
-            )
-            .OrderByDescending(x => x.TotalErrorCount)
-            .Take(10)
-            .ToList();
-            var resultList = topEmployeeErrorDetails
-                .Select((data, index) => new
-                {
-                    Rank = index + 1,
-                    data.EmployeeCode,
-                    data.EmployeeName,
-                    data.Department,
-                    data.ProductionErrorCount,
-                    data.Violation5SCount,
-                    data.TotalErrorCount
-                })
-                .ToList();
-
-            return Ok(resultList);
-        }
-
-        [Authorize(Policy = "ClientViewEmpl")]
-        public async Task<IActionResult> Detail(long id)
-        {
-            if (id == null)
+            var employeeCodeIsLogin = User.FindFirst("EmployeeCode")?.Value;
+            if (employeeCodeIsLogin == null)
             {
                 return NotFound();
             }
 
             var employee = await _context.Employees
                     .AsNoTracking()
-                    .Where(e => e.Id == id)
+                    .Where(e => e.EmployeeCode == employeeCodeIsLogin)
                     .FirstOrDefaultAsync();
 
             if (employee == null)
@@ -299,24 +36,10 @@ namespace Web_QM.Controllers
                 return NotFound();
             }
 
-            var permissions = User.Claims.Where(c => c.Type == "Permission").Select(c => c.Value).ToList();
-            var canViewAll = permissions.Any(p => p.Equals("EmployeeAll.View", StringComparison.OrdinalIgnoreCase));
-            if (!canViewAll)
-            {
-                var userDepartment = User.FindFirst("Department")?.Value;
-                if (userDepartment == null || employee.Department != userDepartment)
-                {
-                    return NotFound();
-                }
-            }
-
-            var authAddFeedback = await _authorizationService.AuthorizeAsync(User, "ClientAddFeedbackEmpl");
-            ViewBag.CanManageFeedback = authAddFeedback.Succeeded;
-
             // xử lý dữ liệu đào tạo
             var evaluationPeriodsWithScore = await _context.EmployeeTrainingResults
                                                  .AsNoTracking()
-                                                 .Where(tr => tr.EmployeeId == id)
+                                                 .Where(tr => tr.EmployeeId == employee.Id)
                                                  .GroupBy(tr => tr.EvaluationPeriod)
                                                  .Select(g => new
                                                  {
@@ -403,7 +126,7 @@ namespace Web_QM.Controllers
             ViewBag.TrialRunAnswer = resTrialRun;
 
             //xử lý dữ liệu chạy thử thực hành
-            var testPractices = await _context.TestPractices.AsNoTracking().Where(t => t.EmployeeId == id).OrderByDescending(o => o.Id).Take(100).ToListAsync();
+            var testPractices = await _context.TestPractices.AsNoTracking().Where(t => t.EmployeeId == employee.Id).OrderByDescending(o => o.Id).Take(100).ToListAsync();
             ViewBag.TestPractices = testPractices;
 
             //xử lý quá trình làm việc
@@ -432,7 +155,8 @@ namespace Web_QM.Controllers
 
             var allViolation5S = await _context.EmployeeViolation5S
                 .Where(v => v.EmployeeCode == employee.EmployeeCode)
-                .Select(v => new {
+                .Select(v => new
+                {
                     v.DateMonth,
                     v.Qty
                 })
@@ -454,40 +178,6 @@ namespace Web_QM.Controllers
             return View(employee);
         }
 
-        [Authorize(Policy = "ClientAddFeedbackEmpl")]
-        [HttpPost]
-        public async Task<IActionResult> SaveFeedback([FromBody]Feedback feedback)
-        {
-            if (feedback.Comment == null)
-            {
-                return Json(new { success = false, message = "Nội dung phản hồi không được để trống." });
-            }
-            try
-            {
-                var employeeCodeIsLogin = User.FindFirst("EmployeeCode")?.Value;
-                var employeeNameIsLogin = User.FindFirst("EmployeeName")?.Value;
-
-                feedback.FeedbackerName = employeeCodeIsLogin + "-" + employeeNameIsLogin;
-                feedback.CreatedDate = DateTime.Now.ToString("dd/MM/yyyy");
-                feedback.Status = 0;
-
-                var empl = await _context.Employees.FirstOrDefaultAsync(e => e.Id == feedback.EmployeeId);
-                if(empl == null)
-                {
-                    return Json(new { success = false, message = "Nhân viên không tồn tại!" });
-                }
-                _context.Feedbacks.Add(feedback);
-                await _context.SaveChangesAsync();
-
-                return Json(new { success = true, message = "Thêm dữ liệu thành công!" });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = $"Lỗi server: {ex.Message}" });
-            }
-        }
-
-        [Authorize(Policy = "ClientViewEmpl")]
         public async Task<IActionResult> GetFeedbacks(long employeeId)
         {
             if (employeeId == 0)
@@ -495,124 +185,15 @@ namespace Web_QM.Controllers
                 return BadRequest();
             }
             var empl = await _context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);
-            if(empl == null)
+            if (empl == null)
             {
                 return BadRequest();
             }
-            IQueryable<Feedback> query = _context.Feedbacks.Where(f => f.EmployeeId == employeeId);
-            var authAddFeedback = await _authorizationService.AuthorizeAsync(User, "ClientAddFeedbackEmpl");
-            var canAddFeedback = authAddFeedback.Succeeded;
-
-            var emplCodeIsLogin = User.FindFirst("EmployeeCode")?.Value;
-            var emplNameIsLogin = User.FindFirst("EmployeeName")?.Value;
-            var feedbacker = emplCodeIsLogin + "-" + emplNameIsLogin;   
-            if (canAddFeedback)
-            {
-                query = query.Where(f => f.FeedbackerName == feedbacker || f.Status == 1);
-            }
-            else
-            {
-                query = query.Where(f => f.Status == 1);
-            }
+            IQueryable<Feedback> query = _context.Feedbacks.Where(f => f.EmployeeId == employeeId && f.Status == 1);
             var feedbacks = await query.OrderByDescending(f => f.Id).ToListAsync();
             return Json(feedbacks);
         }
 
-        [Authorize(Policy = "ClientAddFeedbackEmpl")]
-        [HttpPost]
-        public async Task<IActionResult> Approve(long id)
-        {
-            var feedback = await _context.Feedbacks.FirstOrDefaultAsync(f => f.Id == id);
-            if (feedback == null) return NotFound();
-
-            var empl = await _context.Employees.FirstOrDefaultAsync(e => e.Id == feedback.EmployeeId);
-            if (empl == null)
-            {
-                return Json(new { success = false, message = "Nhân viên không tồn tại!" });
-            }
-            try
-            {
-                feedback.Status = 1;
-                _context.Feedbacks.Update(feedback);
-                Notification nt = new Notification()
-                {
-                    Message = "Nhân viên " + empl.EmployeeCode + "-" + empl.EmployeeName + " có phản hồi mới",
-                    IsRead = 0,
-                    CreatedDate = DateTime.Now.ToString("dd/MM/yyyy")
-                };
-                _context.Notifications.Add(nt);
-
-                await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "Đã gửi phản hồi!" });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = $"Lỗi server: {ex.Message}" });
-            }
-        }
-
-        [Authorize(Policy = "ClientAddFeedbackEmpl")]
-        [HttpGet]
-        public async Task<IActionResult> GetFeedbackDetails(long id)
-        {
-            var feedback = await _context.Feedbacks.FirstOrDefaultAsync(f => f.Id == id);
-            if (feedback == null) return NotFound();
-
-            return Json(feedback);
-        }
-
-        [Authorize(Policy = "ClientAddFeedbackEmpl")]
-        [HttpPost]
-        public async Task<IActionResult> EditFeedback([FromBody]Feedback model)
-        {
-            if (model == null) return BadRequest();
-
-            if (model.Comment == null)
-            {
-                return Json(new { success = false, message = "Nội dung phản hồi không được để trống." });
-            }
-
-            var feedback = await _context.Feedbacks.FirstOrDefaultAsync(f => f.Id == model.Id);
-            if (feedback == null) return NotFound();
-
-            try
-            {
-                var employeeCodeIsLogin = User.FindFirst("EmployeeCode")?.Value;
-                var employeeNameIsLogin = User.FindFirst("EmployeeName")?.Value;
-                feedback.FeedbackerName = employeeCodeIsLogin + "-" + employeeNameIsLogin;
-
-                feedback.Comment = model.Comment;
-
-                _context.Feedbacks.Update(feedback);
-                await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "Cập nhật thành công." });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = $"Lỗi server: {ex.Message}" });
-            }
-        }
-
-        [Authorize(Policy = "ClientAddFeedbackEmpl")]
-        [HttpPost]
-        public async Task<IActionResult> DeleteFeedback(long id)
-        {
-            var feedback = await _context.Feedbacks.FirstOrDefaultAsync(f => f.Id == id);
-            if (feedback == null) return NotFound();
-
-            try
-            {
-                _context.Feedbacks.Remove(feedback);
-                await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "Xóa thành công." });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = $"Lỗi server: {ex.Message}" });
-            }
-        }
-
-        [Authorize(Policy = "ClientViewEmpl")]
         public async Task<IActionResult> GetTrainingResults(int employeeId, string evaluationPeriod)
         {
             var results = await _context.EmployeeTrainingResults.Where(tr => tr.EmployeeId == employeeId && tr.EvaluationPeriod == evaluationPeriod)
@@ -631,14 +212,12 @@ namespace Web_QM.Controllers
             return Json(groupedResults);
         }
 
-        [Authorize(Policy = "ClientViewEmpl")]
         public async Task<IActionResult> GetTrainings(string type)
         {
             var trainings = await _context.Trainings.Where(t => t.Type == type).ToListAsync();
             return Json(trainings);
         }
 
-        [Authorize(Policy = "ClientViewEmpl")]
         public IActionResult GetProductivityData(string employeeCode, int selectedYear)
         {
             var monthlyProductivity = _context.Productivities
@@ -662,7 +241,6 @@ namespace Web_QM.Controllers
             return Json(result);
         }
 
-        [Authorize(Policy = "ClientViewEmpl")]
         public IActionResult GetChartSawing(string employeeCode, int selectedYear)
         {
             var monthlyProductivity = _context.SawingPerformances
@@ -686,7 +264,6 @@ namespace Web_QM.Controllers
             return Json(result);
         }
 
-        [Authorize(Policy = "ClientViewEmpl")]
         public async Task<IActionResult> GetActivityDetails(string employeeCode, string type, string startDate, string endDate,
                         int? selectedYear)
         {
@@ -753,7 +330,6 @@ namespace Web_QM.Controllers
             return Json(details);
         }
 
-        [Authorize(Policy = "ClientViewEmpl")]
         public async Task<IActionResult> ExportToExcel(long id)
         {
             if (id == null)
@@ -1303,6 +879,329 @@ namespace Web_QM.Controllers
                     );
                 }
             }
+        }
+
+
+        public async Task<IActionResult> Timesheet()
+        {
+            return View();
+        }
+
+        public async Task<IActionResult> Timekeeping(long timesheetId)
+        {
+            var timesheet = await _context.Timesheets
+                .FirstOrDefaultAsync(t => t.Id == timesheetId && t.EmployeeId == GetCurrentEmployeeId());
+
+            if (timesheet == null) return NotFound();
+
+            if (timesheet.DateMonth.Length != 7 || !DateTime.TryParseExact(timesheet.DateMonth + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime firstDayOfMonth))
+            {
+                return BadRequest("Định dạng DateMonth không hợp lệ.");
+            }
+
+            ViewData["Timesheet"] = timesheet;
+            ViewData["MonthYear"] = firstDayOfMonth.ToString("MM/yyyy");
+
+            return View(timesheet);
+        }
+
+        public async Task<IActionResult> GetTimesheets(string dateMonth)
+        {
+            IQueryable<Timesheet> query = _context.Timesheets
+                .Where(t => t.EmployeeId == GetCurrentEmployeeId());
+
+            if (!string.IsNullOrEmpty(dateMonth))
+            {
+                query = query.Where(t => t.DateMonth == dateMonth);
+            }
+
+            var data = await query
+                .OrderByDescending(t => t.DateMonth)
+                .Select(t => new { t.Id, t.DateMonth, t.Status })
+                .ToListAsync();
+
+            return Json(data);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddTimesheet([FromBody] Timesheet model)
+        {
+            if (model == null || model.DateMonth.Length != 7 || !DateTime.TryParseExact(model.DateMonth + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
+            {
+                return BadRequest(new { success = false, message = "Định dạng tháng không hợp lệ." });
+            }
+
+            var existing = await _context.Timesheets
+                .FirstOrDefaultAsync(t => t.EmployeeId == GetCurrentEmployeeId() && t.DateMonth == model.DateMonth);
+
+            if (existing != null)
+            {
+                return BadRequest(new { success = false, message = $"Bảng chấm công tháng {model.DateMonth} đã tồn tại." });
+            }
+
+            model.EmployeeId = GetCurrentEmployeeId();
+            model.Status = 1;
+
+            _context.Timesheets.Add(model);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, record = model });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ApproveTimesheet([FromBody] Timesheet model)
+        {
+            var sheet = await _context.Timesheets.FindAsync(model.Id);
+
+            if (sheet == null)
+            {
+                return NotFound(new { success = false, message = "Phiếu chấm công không tồn tại." });
+            }
+
+            if (sheet.Status == 2)
+            {
+                return BadRequest(new { success = false, message = "Phiếu này đã được duyệt rồi." });
+            }
+
+            sheet.Status = 2;
+
+            _context.Timesheets.Update(sheet);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, newStatus = 2 });
+        }
+
+        public async Task<IActionResult> DeleteTimesheet([FromBody] Timesheet model)
+        {
+            var sheet = await _context.Timesheets.FindAsync(model.Id);
+
+            if (sheet == null)
+            {
+                return NotFound(new { success = false, message = "Phiếu chấm công không tồn tại." });
+            }
+            if (sheet.Status == 2 || sheet.Status == 3)
+            {
+                return BadRequest(new { success = false, message = "Phiếu này đã được duyệt rồi." });
+            }
+
+            var recordsToDelete = await _context.Timekeepings
+                .Where(t => t.TimesheetId == sheet.Id)
+                .ToListAsync();
+
+            _context.Timekeepings.RemoveRange(recordsToDelete);
+
+            _context.Timesheets.Remove(sheet);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+
+        public async Task<IActionResult> GetTimekeepingData(long timesheetId)
+        {
+            var timesheet = await _context.Timesheets
+                .FirstOrDefaultAsync(t => t.Id == timesheetId && t.EmployeeId == GetCurrentEmployeeId());
+
+            if (timesheet == null) return NotFound();
+
+            var data = await _context.Timekeepings
+                .Where(t => t.TimesheetId == timesheetId)
+                .Select(t => new
+                {
+                    t.Id,
+                    WorkDate = t.WorkDate.ToString("yyyy-MM-dd"),
+                    t.TimeIn,
+                    t.TimeOut,
+                    t.Shift,
+                    t.TotalHours,
+                    t.Note
+                })
+                .ToListAsync();
+
+            return Json(new { Timesheet = timesheet, TimekeepingData = data });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveTimekeeping([FromBody] Timekeeping model)
+        {
+            if (model == null) return BadRequest();
+
+            var timesheet = await _context.Timesheets
+                .FirstOrDefaultAsync(t => t.Id == model.TimesheetId && t.EmployeeId == GetCurrentEmployeeId());
+
+            if (timesheet == null) return Unauthorized();
+
+            if (timesheet.Status == 2 || timesheet.Status == 3)
+            {
+                return BadRequest(new { success = false, message = "Phiếu đã gửi duyệt hoặc đã duyệt, không thể chỉnh sửa." });
+            }
+
+            bool isTimeValid = model.TimeIn.HasValue && model.TimeOut.HasValue;
+            bool hasTimeInput = isTimeValid && (model.TimeIn.Value != TimeSpan.Zero || model.TimeOut.Value != TimeSpan.Zero);
+            bool hasNoteInput = !string.IsNullOrWhiteSpace(model.Note);
+
+            if (hasTimeInput)
+            {
+                if (model.TimeIn == model.TimeOut && (model.TimeIn.Value != TimeSpan.Zero || model.TimeOut.Value != TimeSpan.Zero))
+                {
+                    return BadRequest(new { success = false, message = "Giờ vào và Giờ ra không được trùng nhau." });
+                }
+                if (model.TimeIn >= model.TimeOut && model.Shift != "Ca 3" && model.Shift != "Ca 5")
+                {
+                    return BadRequest(new { success = false, message = "Giờ vào phải nhỏ hơn." });
+                }
+            }
+            else if (model.TimeIn.HasValue && model.TimeIn.Value != TimeSpan.Zero)
+            {
+                return BadRequest(new { success = false, message = "Vui lòng nhập Giờ ra." });
+            }
+            else if (model.TimeOut.HasValue && model.TimeOut.Value != TimeSpan.Zero)
+            {
+                return BadRequest(new { success = false, message = "Vui lòng nhập Giờ vào." });
+            }
+
+
+            if (!hasTimeInput && !hasNoteInput)
+            {
+                return BadRequest(new { success = false, message = "Vui lòng nhập giờ Vào/Ra hoặc ghi chú." });
+            }
+
+            model.TotalHours = CalculateTotalHours(model);
+
+            var existingRecord = await _context.Timekeepings
+                .FirstOrDefaultAsync(t => t.TimesheetId == model.TimesheetId && t.WorkDate == model.WorkDate);
+
+            if (existingRecord == null)
+            {
+                model.Id = 0;
+                _context.Timekeepings.Add(model);
+            }
+            else
+            {
+                existingRecord.TimeIn = model.TimeIn;
+                existingRecord.TimeOut = model.TimeOut;
+                existingRecord.Shift = model.Shift;
+                existingRecord.TotalHours = model.TotalHours;
+                existingRecord.Note = model.Note;
+
+                _context.Timekeepings.Update(existingRecord);
+                model.Id = existingRecord.Id;
+            }
+
+            await _context.SaveChangesAsync();
+
+            var returnRecord = new
+            {
+                model.Id,
+                WorkDate = model.WorkDate.ToString("yyyy-MM-dd"),
+                model.TimeIn,
+                model.TimeOut,
+                model.Shift,
+                model.TotalHours,
+                model.Note
+            };
+
+            return Json(new { success = true, record = returnRecord });
+        }
+
+        public async Task<IActionResult> DeleteTimekeeping([FromBody] Timekeeping model)
+        {
+            var sheet = await _context.Timesheets
+                .FirstOrDefaultAsync(t => t.Id == model.TimesheetId && t.EmployeeId == GetCurrentEmployeeId());
+
+            if (sheet == null) return Unauthorized();
+
+            if (sheet.Status == 2 || sheet.Status == 3)
+            {
+                return BadRequest(new { success = false, message = "Phiếu đã gửi duyệt hoặc đã duyệt, không thể xóa." });
+            }
+
+            var recordToDelete = await _context.Timekeepings
+                .FirstOrDefaultAsync(t => t.TimesheetId == model.TimesheetId && t.WorkDate == model.WorkDate);
+
+            if (recordToDelete == null)
+            {
+                return NotFound(new { message = "Không tìm thấy dữ liệu để xóa." });
+            }
+
+            _context.Timekeepings.Remove(recordToDelete);
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
+        }
+
+        private decimal CalculateTotalHours(Timekeeping model)
+        {
+            if (!model.TimeIn.HasValue || !model.TimeOut.HasValue || model.Shift == null)
+            {
+                return 0.0m;
+            }
+
+            TimeSpan timeIn = model.TimeIn.Value;
+            TimeSpan timeOut = model.TimeOut.Value;
+            string shift = model.Shift;
+
+            var breakTimes = new Dictionary<string, (TimeSpan start, TimeSpan end, bool overnight)>
+            {
+                { "Hành chính", (new TimeSpan(12, 0, 0), new TimeSpan(13, 0, 0), false) },
+                { "Ca 1", (new TimeSpan(12, 0, 0), new TimeSpan(13, 0, 0), false) },
+                { "Ca 2", (new TimeSpan(18, 0, 0), new TimeSpan(19, 0, 0), false) },
+                { "Ca 4", (new TimeSpan(12, 0, 0), new TimeSpan(13, 0, 0), false) },
+                { "Ca 3", (new TimeSpan(1, 0, 0), new TimeSpan(2, 0, 0), true) },
+                { "Ca 5", (new TimeSpan(1, 0, 0), new TimeSpan(2, 0, 0), true) }
+            };
+
+            double totalDurationInHours;
+
+            if (timeOut > timeIn)
+            {
+                totalDurationInHours = (timeOut - timeIn).TotalHours;
+            }
+            else if (timeOut < timeIn)
+            {
+                totalDurationInHours = (timeOut - timeIn).TotalHours + 24;
+            }
+            else
+            {
+                return 0.0m;
+            }
+
+            decimal totalHours = (decimal)totalDurationInHours;
+
+            if (shift != null && breakTimes.ContainsKey(shift))
+            {
+                var (breakStart, breakEnd, isOvernight) = breakTimes[shift];
+                decimal deductedHours = 0.0m;
+
+                if (isOvernight)
+                {
+                    TimeSpan breakEndNight = breakEnd.Add(TimeSpan.FromHours(24));
+                    TimeSpan timeOutNight = timeOut.Add(TimeSpan.FromHours(24));
+
+                    if (timeOutNight >= breakEndNight && totalHours > 1.0m)
+                    {
+                        deductedHours = 1.0m;
+                    }
+                }
+                else
+                {
+                    TimeSpan overlapStart = timeIn > breakStart ? timeIn : breakStart;
+                    TimeSpan overlapEnd = timeOut < breakEnd ? timeOut : breakEnd;
+
+                    if (overlapEnd > overlapStart)
+                    {
+                        double overlapHours = (overlapEnd - overlapStart).TotalHours;
+                        deductedHours = (decimal)Math.Min(overlapHours, 1.0);
+                    }
+                }
+
+                totalHours -= deductedHours;
+            }
+
+            return Math.Max(0.0m, totalHours);
+        }
+
+        private long GetCurrentEmployeeId()
+        {
+            return long.Parse(User.Claims.FirstOrDefault(c => c.Type == "EmployeeId")?.Value ?? "0");
         }
     }
 }

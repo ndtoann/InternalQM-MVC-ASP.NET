@@ -21,7 +21,7 @@
                         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                         <input type="hidden" asp-for="Id" />
                         <div class="form-group">
-                            <label asp-for="MachineCode">Nhân viên</label>
+                            <label asp-for="MachineCode">Mã máy</label>
                             <select asp-for="MachineCode" asp-items="@(ViewData["Machines"] as List<SelectListItem>)" class="js-example-basic-multiple w-100">
                             </select>
                             <span asp-validation-for="MachineCode" class="text-danger"></span>

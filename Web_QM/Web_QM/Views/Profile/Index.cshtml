@@ -2,7 +2,8 @@
 @model Employee;
 @{
     ViewData["Title"] = $"Thông tin nhân viên - {Model.EmployeeCode}";
-}﻿
+}
+﻿
 
 <div class="content-wrapper">
     <div class="detail-empl row">
@@ -77,7 +78,7 @@
             </div>
         </div>
         <div class="data col-lg-9 overflow-auto" style="height: 800px;">
-            <a class="btn btn-success" href="~/dataEmployee/ExportToExcel?id=@Model.Id">Xuất excel thông tin NV</a>
+            <a class="btn btn-success" href="~/Profile/ExportToExcel?id=@Model.Id">Xuất excel thông tin NV</a>
             @* quá trình làm việc *@
             <div class="data-error border-bottom border-4 p-3">
                 <h4 class="fw-bolder fs-5">1. Quá trình làm việc</h4>
@@ -119,7 +120,7 @@
                                     </td>
                                     <td>@item.Department</td>
                                     <td>
-                                        @if(Model.Department == "Hàn-Cưa")
+                                        @if (Model.Department == "Hàn-Cưa")
                                         {
                                             <a href="#"
                                                class="list-group-item list-group-item-action"
@@ -184,13 +185,6 @@
             <div class="feedback border-bottom border-4 p-3">
                 <h4 class="fw-bolder fs-5">
                     2. Phản hồi về nhân viên
-                    <a href="#"
-                       data-bs-toggle="modal"
-                       data-bs-target="#addFeedbackModal"
-                       data-employee-id="@Model.Id"
-                       class="btn btn-outline-info" asp-policy="ClientAddFeedbackEmpl">
-                        Thêm ghi chú
-                   </a>
                 </h4>
                 <div class="table-responsive overflow-auto" style="height: 300px;">
                     <table class="table table-bordered table-hover">
@@ -370,7 +364,6 @@
                             <tr>
                                 <th>STT</th>
                                 <th>Đợt đánh giá</th>
-                                @* <th>Cấp độ</th> *@
                                 <th>Đúng</th>
                                 <th>Sai</th>
                                 <th>Liệt</th>
@@ -386,7 +379,6 @@
                                 <tr>
                                     <td>@(count5++)</td>
                                     <td>@item.ExamName</td>
-                                    @* <td>@item.TestLevel</td> *@
                                     @{
                                         var totalQuestions = item.Correct + item.Incorrect + item.CriticalFail;
 
@@ -606,59 +598,6 @@
     </div>
 </div>
 
-@* modal thêm feedback *@
-<div class="modal fade" id="addFeedbackModal" tabindex="-1" aria-labelledby="addFeedbackModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content rounded-lg shadow-lg">
-            <div class="modal-header bg-primary text-white border-bottom-0 rounded-top-lg">
-                <h5 class="modal-title" id="addFeedbackModalLabel">Thêm ghi chú phản hồi</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <form id="feedbackForm">
-                    <input type="hidden" id="employeeIdInput" name="EmployeeId">
-                    <div class="mb-3">
-                        <label for="feedbackTextarea" class="form-label fw-semibold">Nội dung phản hồi:</label>
-                        <textarea class="form-control rounded-lg shadow-sm" id="feedbackTextarea" name="Comment" rows="5" placeholder="Nhập phản hồi tại đây..." required></textarea>
-                    </div>
-                </form>
-                <div id="statusMessage" class="mt-3 text-center d-none"></div>
-            </div>
-            <div class="modal-footer justify-content-center border-top-0 p-3">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="submit" form="feedbackForm" class="btn btn-primary">Lưu ghi chú</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="editFeedbackModal" tabindex="-1" aria-labelledby="editFeedbackModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white border-bottom-0 rounded-top-lg">
-                <h5 class="modal-title" id="editFeedbackModalLabel">Sửa Phản Hồi</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editFeedbackForm">
-                    <input type="hidden" id="edit-id" name="Id">
-                    <div class="mb-3">
-                        <input type="text" class="form-control" id="edit-feedbackerName" name="FeedbackerName" disabled>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit-comment" class="form-label">Nội dung phản hồi</label>
-                        <textarea class="form-control" id="edit-comment" name="Comment" rows="5" required></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer justify-content-center border-top-0 p-3">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-primary" onclick="submitEdit()">Lưu thay đổi</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 @* modal xem dữ liệu chạy thử thực hành *@
 <div class="modal fade" id="testPracticeDetailModal" tabindex="-1" aria-labelledby="testPracticeDetailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
@@ -706,7 +645,7 @@
             if (!dateString) return '';
             const date = new Date(dateString);
             const day = date.getDate().toString().padStart(2, '0');
-            const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
             const year = date.getFullYear();
             return `${day}/${month}/${year}`;
         }
@@ -753,7 +692,7 @@
             $('#chartSawing-loading-status').removeClass('d-none');
 
             $.ajax({
-                url: "/DataEmployee/GetChartSawing",
+                url: "/Profile/GetChartSawing",
                 type: 'GET',
                 data: {
                     employeeCode: employeeCode,
@@ -817,7 +756,7 @@
             $('#chart-loading-status').removeClass('d-none');
 
             $.ajax({
-                url: "/DataEmployee/GetProductivityData",
+                url: "/Profile/GetProductivityData",
                 type: 'GET',
                 data: {
                     employeeCode: employeeCode,
@@ -1023,7 +962,7 @@
             $('#kaizenModalContent').html('<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...</p>');
 
             $.ajax({
-                url: '@Url.Action("GetActivityDetails", "DataEmployee")',
+                url: '@Url.Action("GetActivityDetails", "Profile")',
                 type: 'GET',
                 data: {
                     employeeCode: employeeCode,
@@ -1103,7 +1042,7 @@
             $('#errorModalContent').html('<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...</p>');
 
             $.ajax({
-                url: '@Url.Action("GetActivityDetails", "DataEmployee")',
+                url: '@Url.Action("GetActivityDetails", "Profile")',
                 type: 'GET',
                 data: {
                     employeeCode: employeeCode,
@@ -1183,14 +1122,14 @@
             $('#violation5SModalContent').html('<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...</p>');
 
             $.ajax({
-                url: '@Url.Action("GetActivityDetails", "DataEmployee")',
+                url: '@Url.Action("GetActivityDetails", "Profile")',
                 type: 'GET',
                 data: {
                     employeeCode: employeeCode,
                     type: 'Violation5S',
                     startDate: startDate,
                     endDate: endDate,
-                    selectedYear: selectedYear 
+                    selectedYear: selectedYear
                 },
                 success: function (data) {
                     const htmlContent = createTableHtml(data, 'Violation5S');
@@ -1230,7 +1169,7 @@
 
             const selectYear = $('#select5SYear');
             selectYear.empty();
-        
+
             let defaultYear = currentYear >= startYear && currentYear <= endYear ? currentYear : endYear;
 
             for (let y = endYear; y >= startYear; y--) {
@@ -1242,12 +1181,12 @@
         });
         $('#select5SYear').on('change', function() {
             const selectedYear = $(this).val();
-        
+
             if (current5SData.employeeCode && selectedYear) {
                 loadViolation5SData(
-                    current5SData.employeeCode, 
-                    current5SData.startDate, 
-                    current5SData.endDate, 
+                    current5SData.employeeCode,
+                    current5SData.startDate,
+                    current5SData.endDate,
                     selectedYear
                 );
             }
@@ -1308,63 +1247,6 @@
                 });
             });
 
-            // thêm feedback
-            $('#addFeedbackModal').on('show.bs.modal', function(event) {
-                const button = $(event.relatedTarget);
-                const employeeId = button.data('employee-id');
-                const modal = $(this);
-
-                modal.find('#employeeIdInput').val(employeeId);
-
-                $('#feedbackForm')[0].reset();
-                $('#statusMessage').addClass('d-none').text('');
-            });
-
-            $('#feedbackForm').on('submit', function(e) {
-                e.preventDefault();
-
-                const url = '/DataEmployee/SaveFeedback';
-                const statusMessage = $('#statusMessage');
-
-                const formData = {
-                    employeeId: $('#employeeIdInput').val(),
-                    comment: $('#feedbackTextarea').val()
-                };
-                statusMessage.removeClass('d-none alert-success alert-danger').addClass('alert alert-info').text('Đang gửi dữ liệu...');
-                $.ajax({
-                    type: 'POST',
-                    url: url,
-                    contentType: 'application/json',
-                    data: JSON.stringify(formData),
-                    success: function(response) {
-                        if (response.success) {
-                            $('#addFeedbackModal').removeClass('show');
-                            $('#addFeedbackModal').attr('style', '');
-                            $('#addFeedbackModal').attr('aria-hidden', 'true');
-
-                            $('.modal-backdrop').remove();
-                            $('body').removeClass('modal-open');
-                            $('body').attr('style', '');
-
-                            Swal.fire({
-                                title: 'Thành công',
-                                text: response.message,
-                                icon: 'success'
-                            });
-
-                            $('#addFeedbackModal').data('bs.modal', null);
-
-                            loadFeedbacks();
-                        } else {
-                            statusMessage.removeClass('alert-info').addClass('alert-danger').text('Lỗi: ' + response.message);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        statusMessage.removeClass('alert-info').addClass('alert-danger').text('Có lỗi xảy ra khi kết nối: ' + xhr.statusText);
-                    }
-                });
-            });
-
             // xem dữ liệu chạy thử thực hành
             $('#testPracticeDetailModal').on('show.bs.modal', function (event) {
                 const button = $(event.relatedTarget);
@@ -1417,26 +1299,6 @@
             });
         });
 
-        // xử lý phản hồi
-        const CAN_MANAGE_FEEDBACK = @((ViewBag.CanManageFeedback ?? false) ? "true" : "false");
-
-        function loadFeedbacks() {
-            let employeeId = @Model.Id;
-            let dataToSend = employeeId ? { employeeId: employeeId } : {};
-            $.ajax({
-                url: '/DataEmployee/GetFeedbacks',
-                type: 'GET',
-                dataType: 'json',
-                data: dataToSend,
-                success: function (data) {
-                    renderTable(data);
-                },
-                error: function (xhr, status, error) {
-                    Swal.fire('Lỗi', 'Không thể tải dữ liệu phản hồi: ' + error, 'error');
-                }
-            });
-        }
-
         function renderTable(feedbacks) {
             let html = '';
             let count = 1;
@@ -1444,157 +1306,19 @@
                  html = '<tr><td colspan="5" class="text-center">Không có phản hồi nào.</td></tr>';
             } else {
                 feedbacks.forEach(item => {
-                    let statusBadge = '';
-                    let actions = '';
-
-                    if (item.status === 0) {
-                        if (CAN_MANAGE_FEEDBACK) {
-                            actions = `
-                                <a href="#" class="btn btn-sm btn-outline-success me-2" onclick="approveFeedback(${item.id})">Duyệt</a>
-                                <a href="#" class="btn btn-sm btn-outline-warning me-2" data-bs-toggle="modal" data-bs-target="#editFeedbackModal" onclick="prepareEdit(${item.id})">Sửa</a>
-                                <a href="#" class="btn btn-sm btn-outline-danger" onclick="deleteFeedback(${item.id})">Xóa</a>
-                            `;
-                        }else{
-                            statusBadge = '<span class="badge bg-danger">Chưa gửi</span>';
-                        }
-                    } else if (item.status === 1) {
-                        statusBadge = '<span class="badge bg-success">Đã gửi</span>';
-                    }
-
                     html += `
                         <tr>
                             <td>${count++}</td>
                             <td>${item.feedbackerName}</td>
                             <td>${item.comment}</td>
                             <td>${item.createdDate || 'N/A'}</td>
-                            <td>
-                                ${statusBadge}
-                                ${actions}
-                            </td>
+                            <td></td>
                         </tr>
                     `;
                 });
             }
 
             $('#feedbackTableBody').html(html);
-        }
-
-        function approveFeedback(id) {
-            Swal.fire({
-                title: 'Xác nhận duyệt?',
-                text: "Phản hồi này sẽ được gửi lên!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#dc3545',
-                confirmButtonText: 'Đồng ý duyệt',
-                cancelButtonText: 'Hủy'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: '/DataEmployee/Approve',
-                        type: 'POST',
-                        data: { id: id },
-                        success: function (response) {
-                            if (response.success) {
-                                Swal.fire('Thành công', response.message, 'success');
-                                loadFeedbacks();
-                            } else {
-                                Swal.fire('Lỗi', response.message, 'error');
-                            }
-                        },
-                        error: function (xhr, status, error) {
-                            Swal.fire('Lỗi', 'Có lỗi xảy ra khi duyệt: ' + error, 'error');
-                        }
-                    });
-                }
-            });
-        }
-
-        function deleteFeedback(id) {
-            Swal.fire({
-                title: 'Xác nhận xóa?',
-                text: "Phản hồi này sẽ bị xóa vĩnh viễn và không thể phục hồi!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Đồng ý xóa',
-                cancelButtonText: 'Hủy'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: '/DataEmployee/DeleteFeedback',
-                        type: 'POST',
-                        data: { id: id },
-                        success: function (response) {
-                            if (response.success) {
-                                Swal.fire('Thành công', response.message, 'success');
-                                loadFeedbacks();
-                            } else {
-                                Swal.fire('Lỗi', response.message, 'error');
-                            }
-                        },
-                        error: function (xhr, status, error) {
-                            Swal.fire('Lỗi', 'Có lỗi xảy ra khi xóa: ' + error, 'error');
-                        }
-                    });
-                }
-            });
-        }
-
-        function prepareEdit(id) {
-            $.ajax({
-                url: '/DataEmployee/GetFeedbackDetails',
-                type: 'GET',
-                data: { id: id },
-                dataType: 'json',
-                success: function (data) {
-                    $('#edit-id').val(data.id);
-                    $('#edit-feedbackerName').val(data.feedbackerName);
-                    $('#edit-comment').val(data.comment);
-                    new bootstrap.Modal(document.getElementById('editFeedbackModal')).show();
-                },
-                error: function (xhr, status, error) {
-                    Swal.fire('Lỗi', 'Không thể lấy chi tiết phản hồi để sửa: ' + error, 'error');
-                }
-            });
-        }
-
-        function submitEdit() {
-            const id = $('#edit-id').val();
-            const feedbackerName = $('#edit-feedbackerName').val();
-            const comment = $('#edit-comment').val();
-
-            if (!feedbackerName || !comment) {
-                Swal.fire('Cảnh báo', 'Vui lòng điền đầy đủ thông tin.', 'warning');
-                return;
-            }
-
-            const dataToSend = {
-                Id: id,
-                FeedbackerName: feedbackerName,
-                Comment: comment
-            };
-
-            $.ajax({
-                url: '/DataEmployee/EditFeedback',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(dataToSend),
-                success: function (response) {
-                    if (response.success) {
-                        Swal.fire('Thành công', response.message, 'success');
-                        $('#editFeedbackModal').modal('hide');
-                        loadFeedbacks();
-                    } else {
-                        Swal.fire('Lỗi', response.message, 'error');
-                    }
-                },
-                error: function (xhr, status, error) {
-                    Swal.fire('Lỗi', 'Có lỗi xảy ra khi cập nhật: ' + error, 'error');
-                }
-            });
         }
     </script>
 }

@@ -47,6 +47,9 @@ builder.Services.AddAuthorization(options =>
         policy.RequireClaim("Permission", "Dashboard.View"));
 
     //thông báo
+    options.AddPolicy("ViewNotifi", policy =>
+        policy.RequireClaim("Permission", "Notification.View"));
+
     options.AddPolicy("EditNotifi", policy =>
         policy.RequireClaim("Permission", "Notification.Edit"));
 
@@ -269,6 +272,16 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy("UpdateMonthlyPayroll", policy =>
        policy.RequireClaim("Permission", "ManageMonthlySalary.Update"));
+
+    //bảng chấm công
+    options.AddPolicy("ViewTimeSheet", policy =>
+       policy.RequireClaim("Permission", "TimeSheet.View"));
+
+    options.AddPolicy("ApproveTimeSheet", policy =>
+       policy.RequireClaim("Permission", "TimeSheet.Approve"));
+
+    options.AddPolicy("ViewAllTimeSheet", policy =>
+       policy.RequireClaim("Permission", "TimeSheet.ViewAll"));
 
     //client
     options.AddPolicy("ClientViewEmpl", policy =>
