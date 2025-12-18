@@ -73,13 +73,18 @@
         <div class="pdf-wrapper">
             @if (ViewBag.PdfImages is List<string> pdfImagesList)
             {
-                @foreach (var base64Image in pdfImagesList)
-                {
-                    <div class="a4-ratio-container">
-                        <img src="data:image/jpeg;base64, @base64Image"
-                             class="pdf-page-image"/>
-                    </div>
-                }
+                <h4>Phần câu hỏi tự luận (trả lời trên giấy, làm xong mới được nộp bài)</h4>
+
+                <div class="pdf-wrapper">
+
+                    @foreach (var base64Image in pdfImagesList)
+                    {
+                        <div class="a4-ratio-container">
+                            <img src="data:image/jpeg;base64, @base64Image"
+                                 class="pdf-page-image" />
+                        </div>
+                    }
+                </div>
             }
         </div>
     </div>

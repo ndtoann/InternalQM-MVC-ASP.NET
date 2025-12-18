@@ -27,12 +27,13 @@ namespace Web_QM.Areas.Admin.Controllers
         }
 
         [Authorize(Policy = "ViewExam")]
-        public async Task<IActionResult> Index(string name, int isActive = -1)
+        public async Task<IActionResult> Index(string name, string department, int isActive = -1)
         {
             var res = await _context.ExamPeriodics
                                 .AsNoTracking()
                                 .Where(m => (isActive == -1 || m.IsActive == isActive)
-                                && (string.IsNullOrEmpty(name) || m.ExamName.ToLower().Contains(name.ToLower())))
+                                && (string.IsNullOrEmpty(name) || m.ExamName.ToLower().Contains(name.ToLower()))
+                                && (string.IsNullOrEmpty(department) || m.ExamName.ToLower().Contains(department.ToLower())))
                                 .OrderByDescending(e => e.Id)
                                 .Take(200)
                                 .ToListAsync();
@@ -44,6 +45,15 @@ namespace Web_QM.Areas.Admin.Controllers
                 new SelectListItem { Value = "0", Text = "Tạm dừng" }
             };
             ViewData["IsActiveList"] = new SelectList(statusOptions, "Value", "Text", isActive);
+            var departments = await _context.Departments.AsNoTracking().ToListAsync();
+            var departmentsList = departments.Select(d => new SelectListItem
+            {
+                Value = d.DepartmentName,
+                Text = d.DepartmentName,
+                Selected = d.DepartmentName == department
+            }).ToList();
+            departmentsList.Insert(0, new SelectListItem { Value = "", Text = "Chọn bộ phận" });
+            ViewData["Departments"] = departmentsList;
             ViewBag.Name = name;
 
             return View(res);
@@ -105,7 +115,7 @@ namespace Web_QM.Areas.Admin.Controllers
             }
             try
             {
-                exam.CreatedDate = DateTime.Now.ToString("HH:mm:ss-dd/MM/yyyy");
+                exam.CreatedDate = DateOnly.FromDateTime(DateTime.Now);
                 _context.ExamPeriodics.Add(exam);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Dữ liệu đã được lưu thành công!";
@@ -175,7 +185,7 @@ namespace Web_QM.Areas.Admin.Controllers
             }
             try
             {
-                exam.UpdatedDate = DateTime.Now.ToString("HH:mm:ss-dd/MM/yyyy");
+                exam.UpdatedDate = DateOnly.FromDateTime(DateTime.Now);
                 _context.ExamPeriodics.Update(exam);
                 await _context.SaveChangesAsync();
 
@@ -583,7 +593,7 @@ namespace Web_QM.Areas.Admin.Controllers
                 EssayQuestion = newEssayQuestionFileName,
                 TlTotal = originalExam.TlTotal,
                 IsActive = originalExam.IsActive,
-                CreatedDate = DateTime.Now.ToString("HH:mm:ss-dd/MM/yyyy")
+                CreatedDate = DateOnly.FromDateTime(DateTime.Now)
             };
 
             _context.ExamPeriodics.Add(newExam);

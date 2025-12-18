@@ -68,20 +68,21 @@
 		}
 	</form>
 	<div class="essay-question fw-bold fs-4 border-top p-3">
-		<h4>Phần câu hỏi tự luận (trả lời trên giấy, làm xong mới được nộp bài)</h4>
+		@if (ViewBag.PdfImages is List<string> pdfImagesList)
+		{
+			<h4>Phần câu hỏi tự luận (trả lời trên giấy, làm xong mới được nộp bài)</h4>
 
-		<div class="pdf-wrapper">
-			@if (ViewBag.PdfImages is List<string> pdfImagesList)
-			{
+			<div class="pdf-wrapper">
+
 				@foreach (var base64Image in pdfImagesList)
 				{
 					<div class="a4-ratio-container">
 						<img src="data:image/jpeg;base64, @base64Image"
-							 class="pdf-page-image"/>
+							 class="pdf-page-image" />
 					</div>
 				}
-			}
-		</div>
+			</div>
+		}
 	</div>
 </div>
 

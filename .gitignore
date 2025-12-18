@@ -50,7 +50,7 @@ appsettings.json
 **/appsettings.json
 **/appsettings.Production.json
 **/appsettings.Staging.json
-
+**/wwwroot/files
 # Visual Studio Code
 .vscode/
 

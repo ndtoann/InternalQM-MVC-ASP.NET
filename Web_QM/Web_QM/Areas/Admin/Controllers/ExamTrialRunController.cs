@@ -102,7 +102,7 @@ namespace Web_QM.Areas.Admin.Controllers
             }
             try
             {
-                exam.CreatedDate = DateTime.Now.ToString("HH:mm:ss-dd/MM/yyyy");
+                exam.CreatedDate = DateOnly.FromDateTime(DateTime.Now);
                 _context.ExamTrialRuns.Add(exam);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Dữ liệu đã được lưu thành công!";
@@ -171,7 +171,7 @@ namespace Web_QM.Areas.Admin.Controllers
             }
             try
             {
-                exam.UpdatedDate = DateTime.Now.ToString("HH:mm:ss-dd/MM/yyyy");
+                exam.UpdatedDate = DateOnly.FromDateTime(DateTime.Now);
                 _context.ExamTrialRuns.Update(exam);
                 await _context.SaveChangesAsync();
 
@@ -581,7 +581,7 @@ namespace Web_QM.Areas.Admin.Controllers
                 TestLevel = originalExam.TestLevel,
                 IsActive = originalExam.IsActive,
                 EssayQuestion = newEssayQuestionFileName,
-                CreatedDate = DateTime.Now.ToString("HH:mm:ss-dd/MM/yyyy")
+                CreatedDate = DateOnly.FromDateTime(DateTime.Now)
             };
 
             _context.ExamTrialRuns.Add(newExam);

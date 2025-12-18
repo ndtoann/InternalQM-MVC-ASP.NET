@@ -20,8 +20,8 @@ namespace Web_QM.Models
 
         public int IsActive { get; set; } = 0;
 
-        public string? CreatedDate { get; set; }
+        public DateOnly? CreatedDate { get; set; }
 
-        public string? UpdatedDate { get; set; }
+        public DateOnly? UpdatedDate { get; set; }
     }
 }

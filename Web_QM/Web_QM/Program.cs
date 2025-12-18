@@ -109,7 +109,7 @@ builder.Services.AddAuthorization(options =>
         policy.RequireClaim("Permission", "ManageEmployee.Edit"));
 
     options.AddPolicy("DeleteEmployee", policy =>
-       policy.RequireClaim("Permission", "ManageEmployee.Delet"));
+       policy.RequireClaim("Permission", "ManageEmployee.Delete"));
 
     options.AddPolicy("DataEmpl", policy =>
        policy.RequireClaim("Permission", "DataEmpl.Update"));

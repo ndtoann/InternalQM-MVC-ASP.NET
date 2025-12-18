@@ -351,6 +351,10 @@ namespace Web_QM.Controllers
 
         public List<string> ConvertAllPagesToBase64(string pdfFileName, int imageWidth = 500)
         {
+            if(string.IsNullOrEmpty(pdfFileName))
+            {
+                return null;
+            }
             string pdfRelativePath = Path.Combine(PdfBaseFolder, pdfFileName);
             string pdfInputPath = Path.Combine(_env.WebRootPath, pdfRelativePath);
 
@@ -670,31 +674,6 @@ namespace Web_QM.Controllers
             }
 
             return score;
-        }
-
-        public int GetPdfPageCount(string filePath)
-        {
-            if (!System.IO.File.Exists(filePath))
-            {
-                return 0;
-            }
-            int pageCount = 0;
-            try
-            {
-                using (var reader = new PdfReader(filePath))
-                {
-                    using (var pdfDocument = new PdfDocument(reader))
-                    {
-                        pageCount = pdfDocument.GetNumberOfPages();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                return 0;
-            }
-
-            return pageCount;
         }
     }
 }

@@ -148,16 +148,12 @@ public partial class QMContext : DbContext
 
         modelBuilder.Entity<ExamPeriodic>(entity =>
         {
-            entity.Property(e => e.CreatedDate).HasMaxLength(50);
             entity.Property(e => e.ExamName).HasMaxLength(500);
-            entity.Property(e => e.UpdatedDate).HasMaxLength(50);
         });
 
         modelBuilder.Entity<ExamTraining>(entity =>
         {
-            entity.Property(e => e.CreatedDate).HasMaxLength(50);
             entity.Property(e => e.ExamName).HasMaxLength(500);
-            entity.Property(e => e.UpdatedDate).HasMaxLength(50);
         });
 
         modelBuilder.Entity<Feedback>(entity =>
@@ -207,8 +203,6 @@ public partial class QMContext : DbContext
         {
             entity.Property(e => e.ExamName).HasMaxLength(500);
             entity.Property(e => e.TestLevel).HasMaxLength(20);
-            entity.Property(e => e.CreatedDate).HasMaxLength(50);
-            entity.Property(e => e.UpdatedDate).HasMaxLength(50);
         });
 
         modelBuilder.Entity<QuestionTrialRun>(entity =>

@@ -55,6 +55,7 @@
                         <table class="table table-hover table-bordered">
                             <thead>
                                 <tr>
+                                    <th></th>
                                     <th>STT</th>
                                     <th>Mã Code</th>
                                     <th>Tên Nhân Viên</th>
@@ -83,6 +84,16 @@
                                         data-essayresultpdf="@item.EssayResultPDF"
                                         data-note="@item.Note"
                                         data-createddate="@item.CreatedDate">
+                                        <td>
+                                            @if (item.IsShow == 1)
+                                            {
+                                                <span>✅</span>
+                                            }
+                                            else
+                                            {
+                                                <span>❌</span>
+                                            }
+                                        </td>
                                         <td>@counter</td>
                                         <td>@item.EmployeeCode</td>
                                         <td>@item.EmployeeName</td>
