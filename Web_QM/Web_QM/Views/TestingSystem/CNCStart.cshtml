@@ -107,7 +107,7 @@
     <div class="calculator-keys">
         <button class="key clear-key" data-key="clear">C</button>
         <button class="key operator" data-key="/">/</button>
-        <button class="key operator" data-key="*">*</button>
+        <button class="key operator" data-key="*">x</button>
         <button class="key operator" data-key="-">-</button>
 
         <button class="key" data-key="7">7</button>
@@ -130,6 +130,34 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
+    <script>
+        var noSleep = new NoSleep();
+        var isExamStarted = false;
+
+        function activateStableMode() {
+            if (!isExamStarted) {
+                noSleep.enable();
+
+                setInterval(function() {
+                    fetch(window.location.href, { method: 'HEAD' })
+                    .catch(function(err) {});
+                }, 120000);
+
+                isExamStarted = true;
+            }
+        }
+
+        document.addEventListener('click', function() {
+            activateStableMode();
+        }, { once: true });
+
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible' && isExamStarted) {
+                noSleep.enable();
+            }
+        });
+    </script>
     <script>
          var durationMinute = @Model.exam.DurationMinute;
          var timeLimitInSeconds = durationMinute*60;
@@ -162,10 +190,11 @@
 
              Swal.fire({
                  title: 'Hết giờ!',
-                 text: 'Yêu cầu nộp bài.',
+                 text: 'Tự động nộp bài.',
                  icon: 'warning'
              }).then((result) => {
                  if (result.isConfirmed) {
+                     submit()
                  }
              })
          }
@@ -294,7 +323,6 @@
                           EmployeeCode: employeeCode,
                           ListAnswer: listAnswers
                       }
-                      console.log(dataToSend)
                       fetch('@Url.Action("SaveTrialRunAnswer", "TestingSystem")', {
                           method: 'POST',
                           headers: {
@@ -311,15 +339,14 @@
                       .then(data => {
                           console.log('Đang nộp bài:...')
                           if(data.status){
-                              console.log('Nộp bài thành công!')
                               Swal.fire({
                                   title: 'Nộp bài thành công!',
-                                  text: 'Cảm ơn bạn đã hoàn thành bài thi.',
+                                  text: 'Kết quả thi trắc nghiệm: ' + data.results,
                                   icon: 'success'
                               }).then((result) => {
                                   if (result.isConfirmed) {
                                       hasAnswered = false
-                                      window.location.href = '@Url.Action("Index", "TestingSystem")';
+                                      window.location.href = '/TestingSystem';
                                   }
                               })
                               }

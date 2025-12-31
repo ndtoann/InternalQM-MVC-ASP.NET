@@ -26,9 +26,9 @@
             </div>
         }
 
-        <div class="w-full max-w-sm my-6">
-            <label for="emplCode" class="block text-gray-700 text-sm font-bold mb-2">Nhập mã nhân viên để vào làm bài</label>
-            <input type="text" name="emplCode" id="emplCode" placeholder="Mã nhân viên" class="input-field shadow-sm appearance-none rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        <div class="w-full max-w-xl my-6">
+            <label for="emplCode" class="block text-gray-700 text-2xl font-bold mb-2">Nhập mã nhân viên để vào làm bài</label>
+            <input type="text" name="emplCode" id="emplCode" placeholder="Nhập mã nhân viên..." class="border border-5 input-field shadow-sm appearance-none rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
         </div>
 
         <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center">
@@ -44,10 +44,10 @@
 
 @section Scripts {
     <script>
-        var quizId = @Model.Id;
+        var quizId = @Model.Id
 
         document.getElementById('join-quiz').addEventListener('click', function() {
-            const emplCode = document.getElementById('emplCode').value;
+            var emplCode = document.getElementById('emplCode').value;
 
             if (!emplCode) {
                 Swal.fire({
@@ -69,7 +69,8 @@
                 cancelButtonColor: '#d33',
                 confirmButtonText: 'Vào làm bài',
                 cancelButtonText: 'Hủy bỏ',
-                reverseButtons: true
+                reverseButtons: true,
+                heightAuto: false
             }).then((result) => {
                 if (result.isConfirmed) {
                     window.location.href = '@Url.Action("testtrainingstart", "testingsystem", new { id = "quizIdPlaceholder", emplCode = "emplCodePlaceholder" })'

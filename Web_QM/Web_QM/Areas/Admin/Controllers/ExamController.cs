@@ -46,14 +46,23 @@ namespace Web_QM.Areas.Admin.Controllers
             };
             ViewData["IsActiveList"] = new SelectList(statusOptions, "Value", "Text", isActive);
             var departments = await _context.Departments.AsNoTracking().ToListAsync();
-            var departmentsList = departments.Select(d => new SelectListItem
+            var departmentsList = new List<SelectListItem>
             {
-                Value = d.DepartmentName,
-                Text = d.DepartmentName,
-                Selected = d.DepartmentName == department
-            }).ToList();
-            departmentsList.Insert(0, new SelectListItem { Value = "", Text = "Chọn bộ phận" });
-            ViewData["Departments"] = departmentsList;
+                new SelectListItem { Value = "", Text = "Tất cả" },
+                new SelectListItem { Value = "Kỹ thuật", Text = "Kỹ thuật" },
+                new SelectListItem { Value = "Kế hoạch", Text = "Kế hoạch" },
+                new SelectListItem { Value = "HC-KT", Text = "HC-KT" },
+                new SelectListItem { Value = "KCS", Text = "KCS" },
+                new SelectListItem { Value = "Kho", Text = "Kho" },
+                new SelectListItem { Value = "CNC", Text = "CNC" },
+                new SelectListItem { Value = "Taro", Text = "Taro" },
+                new SelectListItem { Value = "Bavia", Text = "Bavia" },
+                new SelectListItem { Value = "Hàn-Cưa", Text = "Hàn-Cưa" },
+                new SelectListItem { Value = "Phay", Text = "Phay" },
+                new SelectListItem { Value = "Tiện", Text = "Tiện" },
+                new SelectListItem { Value = "Đánh bóng", Text = "Đánh bóng" },
+            };
+            ViewData["Departments"] = new SelectList(departmentsList, "Value", "Text", department);
             ViewBag.Name = name;
 
             return View(res);

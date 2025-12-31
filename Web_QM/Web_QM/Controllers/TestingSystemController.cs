@@ -412,7 +412,10 @@ namespace Web_QM.Controllers
                 _context.ExamPeriodicAnswers.Add(employeeAnswer);
                 await _context.SaveChangesAsync();
 
-                var res = new { status = true, message = "Lưu bài làm thành công." };
+                var tnPoint = employeeAnswer.TnPoint.HasValue ? employeeAnswer.TnPoint.Value : 0;
+                var cQuestions = await _context.Questions.CountAsync(q => q.ExamId == examID);
+                var results = tnPoint + "/" + cQuestions;
+                var res = new { status = true, message = "Lưu bài làm thành công.", results = results };
                 return Ok(res);
             }
             catch (Exception ex)
@@ -505,7 +508,10 @@ namespace Web_QM.Controllers
                 _context.ExamTrainingAnswers.Add(employeeAnswer);
                 await _context.SaveChangesAsync();
 
-                var res = new { status = true, message = "Lưu bài làm thành công." };
+                var tnPoint = employeeAnswer.TnPoint.HasValue ? employeeAnswer.TnPoint.Value : 0;
+                var cQuestions = await _context.QuestionTrainings.CountAsync(q => q.ExamTrainingId == examID);
+                var results = tnPoint + "/" + cQuestions;
+                var res = new { status = true, message = "Lưu bài làm thành công.", results = results };
                 return Ok(res);
             }
             catch (Exception ex)
@@ -601,7 +607,8 @@ namespace Web_QM.Controllers
                 _context.ExamTrialRunAnswers.Add(employeeAnswer);
                 await _context.SaveChangesAsync();
 
-                var res = new { status = true, message = "Lưu bài làm thành công." };
+                var results = "Đúng: " + eS.Correct + " - Sai: " + eS.Incorrect + " - Liệt: " + eS.CriticalFail;
+                var res = new { status = true, message = "Lưu bài làm thành công.", results = results };
                 return Ok(res);
             }
             catch (Exception ex)
