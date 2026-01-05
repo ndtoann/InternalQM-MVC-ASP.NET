@@ -1,0 +1,50 @@
+﻿@using Web_QM.Models
+@model Training;
+@{
+    ViewData["Title"] = "Sửa nội dung đào tạo";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Sửa nội dung đào tạo</h4>
+                    <form action="edit" class="forms-sample" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <input type="hidden" asp-for="Id" />
+                        <div class="form-group">
+                            <label asp-for="TrainingName">Tên</label>
+                            <input asp-for="TrainingName" type="text" class="form-control" placeholder="Nhập tên">
+                            <span asp-validation-for="TrainingName" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Type">Phân loại (Đào tạo chung hay riêng CNC)</label>
+                            <select asp-for="Type" class="form-control">
+                                <option value="">Chọn phân loại đào tạo</option>
+                                <option value="General">Chung</option>
+                                <option value="CNC">CNC</option>
+                            </select>
+                            <span asp-validation-for="Type" class="text-danger"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="ti-file btn-icon-prepend"></i>
+                            Lưu
+                        </button>
+                        <button type="reset" class="btn btn-warning btn-icon-text">
+                            <i class="ti-reload btn-icon-prepend"></i>
+                            Làm mới
+                        </button>
+                        <a href="~/hr/training" class="btn btn-light">Trờ về</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

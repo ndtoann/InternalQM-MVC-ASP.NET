@@ -2,211 +2,132 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<div class="content-wrapper">
-    <div class="row">
-        <div class="col-sm-12">
-            <div class="home-tab">
-                <div class="d-sm-flex align-items-center justify-content-between border-bottom">
-                    <ul class="nav nav-tabs" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link active ps-0" id="home-tab" data-bs-toggle="tab" href="#overview" role="tab" aria-controls="overview" aria-selected="true">Nhân viên</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="profile-tab" data-bs-toggle="tab" href="#audiences" role="tab" aria-controls="audiences" aria-selected="false">Máy móc</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link border-0" id="more-tab" data-bs-toggle="tab" href="#more" role="tab" aria-selected="false">More</a>
-                        </li>
-                    </ul>
-                    <div>
-                        <div class="btn-wrapper">
-                            <a href="#" class="btn btn-otline-dark align-items-center" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.href), '_blank');"><i class="icon-share"></i> Share</a>
-                            <a href="javascript:window.print();" class="btn btn-otline-dark"><i class="icon-printer"></i> Print</a>
-                            <a href="#" class="btn btn-primary text-white me-0"><i class="icon-download"></i> Export</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="tab-content tab-content-basic">
-                    <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview">
-                        <div class="row d-none d-lg-flex">
-                            <div class="col-lg-3">
-                                <p class="statistics-title">Nhân viên công ty</p>
-                                <h3 class="rate-percentage">@ViewBag.CountEmployee nhân viên</h3>
-                                <p class="text-success d-flex"><a href="~/admin/employee">Xem thêm</a></p>
-                            </div>
-                            <div class="col-lg-3">
-                                <p class="statistics-title">Số kaizen</p>
-                                <h3 class="rate-percentage">@ViewBag.CountKaizen</h3>
-                                <p class="text-success d-flex"><a href="~/admin/kaizen">Xem thêm</a></p>
-                            </div>
-                            <div class="col-lg-3">
-                                <p class="statistics-title">Số lỗi sản xuất</p>
-                                <h3 class="rate-percentage">@ViewBag.CountError</h3>
-                                <p class="text-success d-flex"><a href="~/admin/errordata">Xem thêm</a></p>
-                            </div>
-                            <div class="col-lg-3">
-                                <p class="statistics-title">Số lỗi 5S</p>
-                                <h3 class="rate-percentage">@ViewBag.Count5S</h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="tab-pane fade" id="audiences" role="tabpanel" aria-labelledby="audiences">
-                        <div class="row d-none d-lg-flex">
-                            <div class="col-lg-3">
-                                <p class="statistics-title">Máy móc</p>
-                                <h3 class="rate-percentage">@ViewBag.CountMachine máy</h3>
-                                <p class="text-success d-flex"><a href="~/admin/machine">Xem thêm</a></p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="tab-pane fade" id="more" role="tabpanel" aria-labelledby="more-tab">
-                        <div class="row d-none d-lg-flex">
-                            More tab
-                        </div>
-                    </div>
-                </div>
-            </div>
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap');
+
+    .terminal-container {
+        width: 80vw;
+        margin: 20px auto;
+        background-color: #0f0f0f;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        font-family: 'Fira Code', monospace;
+        border: 1px solid #333;
+    }
+
+    .terminal-header {
+        background-color: #252525;
+        padding: 10px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .dots { display: flex; gap: 8px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .red { background: #ff5f56; }
+    .yellow { background: #ffbd2e; }
+    .green { background: #27c93f; }
+    .terminal-title { color: #666; font-size: 12px; }
+
+    .terminal-body {
+        padding: 30px;
+        color: #d4d4d4;
+        font-size: 14px;
+        line-height: 1.8;
+    }
+
+    .main-title {
+        color: #4fc1ff;
+        font-size: 2.5rem;
+        font-weight: 600;
+        margin: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        border-right: 3px solid #4fc1ff;
+        width: 0;
+        animation: typing 1s steps(5, end) forwards, blink 0.8s infinite;
+    }
+
+    .progress-section {
+        margin: 25px 0;
+        opacity: 0;
+        animation: fadeIn 0.4s forwards 1.2s;
+    }
+
+    .progress-bar-bg {
+        width: 100%;
+        height: 4px;
+        background: #333;
+        border-radius: 2px;
+        margin-top: 10px;
+        overflow: hidden;
+    }
+
+    .progress-bar-fill {
+        width: 0;
+        height: 100%;
+        background: #4fc1ff;
+        animation: load 1.5s ease-in-out forwards 1.5s;
+    }
+
+    .code-logs {
+        margin-top: 20px;
+        list-style: none;
+        padding: 0;
+    }
+
+    .code-line {
+        opacity: 0;
+        transform: translateX(-10px);
+        margin-bottom: 6px;
+    }
+
+    .code-line.green { color: #ffffff; }
+    .code-line.blue { color: #9cdcfe; }
+    .code-line.orange { color: #ce9178; }
+
+    .line-1 { animation: fadeIn 0.4s forwards 2.0s; }
+    .line-2 { animation: fadeIn 0.4s forwards 2.3s; }
+    .line-3 { animation: fadeIn 0.4s forwards 2.6s; }
+    .line-4 { animation: fadeIn 0.4s forwards 2.9s; }
+    .line-5 { animation: fadeIn 0.4s forwards 3.2s; }
+
+    @@keyframes typing { from { width: 0 } to { width: 160px } }
+    @@keyframes blink { 50% { border-color: transparent } }
+    @@keyframes fadeIn { to { opacity: 1; transform: translateX(0); } }
+    @@keyframes load { to { width: 100%; } }
+</style>
+
+<div class="terminal-container">
+    <div class="terminal-header">
+        <div class="dots">
+            <div class="dot red"></div>
+            <div class="dot yellow"></div>
+            <div class="dot green"></div>
         </div>
+        <div class="terminal-title">bash — it-quang-minh</div>
     </div>
+    <div class="terminal-body">
+        <h1 class="main-title">Admin</h1>
 
-    <div class="row flex-grow">
-        <div class="col-lg-6 grid-margin stretch-card">
-            <div class="card card-rounded">
-                <div class="card-body card-rounded">
-                    <h4 class="card-title card-title-dash">Thông báo</h4>
-
-                    <div class="overflow-auto" style="height: 400px;">
-                        <div id="notification-list-container">
-                        </div>
-                    </div>
-
-                    <div class="list align-items-center pt-3">
-                        <div class="wrapper w-100">
-                            <p class="mb-0">
-                                <a href="~/admin/employee" class="fw-bold text-primary">Danh sách nhân viên<i class="mdi mdi-arrow-right ms-2"></i></a>
-                            </p>
-                        </div>
-                    </div>
-                </div>
+        <div class="progress-section">
+            <div style="color: #b5cea8">> Đang nạp dữ liệu hệ thống...</div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill"></div>
             </div>
         </div>
-        <div class="col-lg-6 grid-margin stretch-card">
-            <div class="card">
-                <div class="card-body">
-                    <h4 class="card-title">Danh sách nhân viên</h4>
-                    <canvas id="pieChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="row flex-grow">
-        <div class="col-lg-6 grid-margin stretch-card">
-            <div class="card">
-                <div class="card-body">
-                    <h4 class="card-title">Thống kê lỗi 5S năm @DateTime.Now.Year</h4>
-                    <canvas id="barChart"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6 grid-margin stretch-card">
-            <div class="card">
-                <div class="card-body">
-                    <h4 class="card-title">Thống kê kaizen năm @DateTime.Now.Year</h4>
-                    <canvas id="lineChart"></canvas>
-                </div>
-            </div>
-        </div>
+        <ul class="code-logs">
+            <li class="code-line blue line-1">> system.initialize("IT_Quang_Minh")</li>
+            <li class="code-line green line-2">[OK] Core modules loaded 100%</li>
+            <li class="code-line orange line-3">> session.status: authenticated</li>
+            <li class="code-line line-4">> Đang kết nối cơ sở dữ liệu...</li>
+            <li class="code-line green line-5">> Chào mừng quay trở lại, Admin!</li>
+        </ul>
     </div>
 </div>
 
 @section Scripts {
-    <script>
-        var labelPie = @(ViewBag.LabelPie == null ? Html.Raw("[]") : Html.Raw(Json.Serialize(ViewBag.LabelPie)));
-        var dataPie = @(ViewBag.DataPie == null ? Html.Raw("[]") : Html.Raw(Json.Serialize(ViewBag.DataPie)));
-        var dataBar = @(ViewBag.DataBar == null ? Html.Raw("[]") : Html.Raw(Json.Serialize(ViewBag.DataBar)));
-        var dataLine = @(ViewBag.DataLine == null ? Html.Raw("[]") : Html.Raw(Json.Serialize(ViewBag.DataLine)));
-    </script>
-
-    @if (User.HasPermission("Notification.View"))
-    {
-        <script>
-            $(document).ready(function () {
-             function loadNotifications() {
-                 $.ajax({
-                     url: '/Admin/Dashboard/GetNotifications',
-                     type: 'GET',
-                     dataType: 'json',
-                     success: function (data) {
-                         $('#notification-list-container').empty();
-                         if (data.length > 0) {
-                             $.each(data, function (index, notification) {
-                                 var isReadClass = notification.isRead ? "text-muted" : "fw-bold";
-                                 var readButtonHtml = notification.isRead ? '' : `<button class="btn btn-sm btn-outline-success mark-as-read-btn" data-id="${notification.id}">Đã đọc</button>`;
-
-                                 var notificationHtml = `
-                                     <div class="list align-items-center border-bottom py-2">
-                                         <div class="wrapper w-100">
-                                             <p class="mb-2 font-weight-medium ${isReadClass}">
-                                                 ${notification.message}
-                                             </p>
-                                             <div class="d-flex justify-content-between align-items-center">
-                                                 <div class="d-flex align-items-center">
-                                                     <i class="mdi mdi-calendar text-muted me-1"></i>
-                                                     <p class="mb-0 text-small text-muted">${notification.createdDate}</p>
-                                                 </div>
-                                                 <div class="d-flex gap-2">
-                                                     ${readButtonHtml}
-                                                     <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${notification.id}">Xóa</button>
-                                                 </div>
-                                             </div>
-                                         </div>
-                                     </div>
-                                 `;
-                                 $('#notification-list-container').append(notificationHtml);
-                             });
-                         } else {
-                             $('#notification-list-container').append('<div class="text-center py-4 text-muted">Không có thông báo nào.</div>');
-                         }
-                     },
-                     error: function (xhr, status, error) {
-                         console.error("Lỗi khi tải thông báo: " + error);
-                     }
-                 });
-             }
-
-             loadNotifications();
-
-             setInterval(loadNotifications, 20000);
-
-             $(document).on('click', '.mark-as-read-btn', function () {
-                 var notificationId = $(this).data('id');
-                 $.ajax({
-                     url: '/Admin/Dashboard/MarkAsRead?id=' + notificationId,
-                     type: 'GET',
-                     success: function () {
-                         loadNotifications();
-                     },
-                     error: function (xhr, status, error) {
-                         console.error("Lỗi khi đánh dấu đã đọc: " + error);
-                     }
-                 });
-             });
-
-             $(document).on('click', '.delete-btn', function () {
-                 var notificationId = $(this).data('id');
-                 $.ajax({
-                     url: '/Admin/Dashboard/DeleteNotification?id=' + notificationId,
-                     type: 'GET',
-                     success: function () {
-                         loadNotifications();
-                     },
-                     error: function (xhr, status, error) {
-                         console.error("Lỗi khi xóa: " + error);
-                     }
-                 });
-             });
-         });
-    </script>
-    }
 }

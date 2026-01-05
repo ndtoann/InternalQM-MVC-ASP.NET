@@ -1,0 +1,130 @@
+﻿@using Web_QM.Models
+@model IEnumerable<Training>;
+@{
+    ViewData["Title"] = "Hạng mục đào tạo";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Các nội dung đào tạo</h4>
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    <a class="btn btn-success" href="~/hr/training/add">Thêm mới</a>
+                    <div class="row mt-3">
+                        <div class="table-responsive col-lg-6">
+                            <h4 class="text-center">Nội dung đào tạo chung</h4>
+                            <table class="table table-hover table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Tên hạng mục</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="training-table-body">
+                                    @{
+                                        var count1 = 1;
+                                    }
+                                    @foreach (var item in (IEnumerable<Training>)ViewBag.GeneralTrainings)
+                                    {
+                                        <tr class="context-menu-row" data-id="@item.Id" data-training-name="@item.TrainingName">
+                                            <td>@(count1++)</td>
+                                            <td>@item.TrainingName</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="table-responsive col-lg-6">
+                            <h4 class="text-center">Nội dung đào tạo cho CNC</h4>
+                            <table class="table table-hover table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Tên hạng mục</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="training-table-body">
+                                    @{
+                                        var count2 = 1;
+                                    }
+                                    @foreach (var item in (IEnumerable<Training>)ViewBag.CNCTrainings)
+                                    {
+                                        <tr class="context-menu-row" data-id="@item.Id" data-training-name="@item.TrainingName">
+                                            <td>@(count2++)</td>
+                                            <td>@item.TrainingName</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="contextMenu" class="dropdown-menu" style="position: absolute; display: none;">
+    <a class="dropdown-item" href="#" id="editLink">Sửa</a>
+    <a class="dropdown-item" href="#" id="deleteLink">Xóa</a>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tableBodies = document.querySelectorAll('.training-table-body');
+            const contextMenu = document.getElementById('contextMenu');
+            let trainingId = null;
+            let trainingName = null;
+
+            tableBodies.forEach(tableBody => {
+                tableBody.addEventListener('contextmenu', function (event) {
+                    const row = event.target.closest('tr');
+                    if (!row) return;
+
+                    event.preventDefault();
+
+                    trainingId = row.getAttribute('data-id');
+                    trainingName = row.getAttribute('data-training-name');
+
+                    contextMenu.style.display = 'block';
+                    contextMenu.style.left = event.pageX + 'px';
+                    contextMenu.style.top = event.pageY + 'px';
+                });
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!contextMenu.contains(e.target)) {
+                    contextMenu.style.display = 'none';
+                }
+            });
+
+            document.getElementById('editLink').addEventListener('click', function (event) {
+                if (trainingId) {
+                    window.location.href = '/hr/training/edit?id=${trainingId}';
+                }
+            });
+
+            document.getElementById('deleteLink').addEventListener('click', function (event) {
+                if (trainingId && confirm(`Bạn có chắc chắn muốn xóa hạng mục ${trainingName}?`)) {
+                    window.location.href = '/hr/training/delete?id=${trainingId}';
+                }
+            });
+        });
+    </script>
+}

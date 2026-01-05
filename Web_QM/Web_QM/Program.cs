@@ -43,8 +43,14 @@ builder.Services.AddAuthentication("SecurityScheme")
 builder.Services.AddAuthorization(options =>
 {
     //quản lý dashboard
-    options.AddPolicy("ViewDashboard", policy =>
-        policy.RequireClaim("Permission", "Dashboard.View"));
+    options.AddPolicy("ViewAdmin", policy =>
+        policy.RequireClaim("Permission", "Admin.View"));
+
+    options.AddPolicy("ViewHr", policy =>
+        policy.RequireClaim("Permission", "Hr.View"));
+
+    options.AddPolicy("ViewWareHouse", policy =>
+        policy.RequireClaim("Permission", "WareHouse.View"));
 
     //thông báo
     options.AddPolicy("ViewNotifi", policy =>

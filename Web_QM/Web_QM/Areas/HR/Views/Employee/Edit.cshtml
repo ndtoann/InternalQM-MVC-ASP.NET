@@ -1,0 +1,122 @@
+﻿@using Web_QM.Models
+@model Employee;
+@{
+    ViewData["Title"] = "Cập nhật nhân viên";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Cập nhật thông tin nhân viên</h4>
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    <form action="edit" class="forms-sample" method="post" enctype="multipart/form-data">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <input type="hidden" asp-for="Id" />
+                        <div class="row">
+                            <div class="form-group col-md-3">
+                                <label asp-for="EmployeeCode">Mã nhân viên</label>
+                                <input asp-for="EmployeeCode" type="text" class="form-control" placeholder="Nhập mã nhân viên">
+                                <span asp-validation-for="EmployeeCode" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label asp-for="EmployeeName">Tên nhân viên</label>
+                                <input asp-for="EmployeeName" type="text" class="form-control" placeholder="Nhập tên nhân viên">
+                                <span asp-validation-for="EmployeeName" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-5">
+                                @if (!string.IsNullOrEmpty(Model.Avatar))
+                                {
+                                    <div class="form-group">
+                                        <label class="control-label">Avatar hiện tại</label>
+                                        <img src="~/imgs/avatars/@Model.Avatar" alt="Avatar hiện tại" style="max-width: 150px; border-radius: 8px;" />
+                                    </div>
+                                }
+                                <label asp-for="Avatar">Avatar</label>
+                                <input asp-for="Avatar" type="file" class="form-control" name="avatarFile" accept="image/*">
+                                <span asp-validation-for="Avatar" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="form-group col-md-3">
+                                <label asp-for="DateOfBirth">Ngày sinh</label>
+                                <input asp-for="DateOfBirth" type="date" class="form-control">
+                                <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label asp-for="Gender">Giới tính</label>
+                                <select asp-for="Gender" class="form-control">
+                                    <option value="">Chọn giới tính</option>
+                                    <option value="Nam">Nam</option>
+                                    <option value="Nữ">Nữ</option>
+                                </select>
+                                <span asp-validation-for="Gender" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label asp-for="Department">Bộ phận</label>
+                                <select asp-for="Department" asp-items="@(ViewData["Departments"] as List<SelectListItem>)" class="form-control"></select>
+                                <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label asp-for="HireDate">Ngày vào công ty</label>
+                                <input asp-for="HireDate" type="date" class="form-control">
+                                <span asp-validation-for="HireDate" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Position">Chức vụ</label>
+                            <select asp-for="Position" class="form-control">
+                                <option value="">Chọn chức vụ</option>
+                                <option value="Giám đốc">Giám đốc</option>
+                                <option value="Phó giám đốc">Phó giám đốc</option>
+                                <option value="Quản lý sản xuất">Quản lý sản xuất</option>
+                                <option value="Tổ trưởng">Tổ trưởng</option>
+                                <option value="Tổ phó">Tổ phó</option>
+                                <option value="Trưởng nhóm">Trưởng nhóm</option>
+                                <option value="Nhân viên">Nhân viên</option>
+                                <option value="Vật tư">Vật tư</option>
+                                <option value="Bảo trì">Bảo trì</option>
+                                <option value="IT">IT</option>
+                                <option value="Lái xe">Lái xe</option>
+                                <option value="Kế hoạch xưởng">Kế hoạch xưởng</option>
+                                <option value="Công nhân">Công nhân</option>
+                                <option value="Thử việc">Thử việc</option>
+                                <option value="Đã nghỉ">Đã nghỉ</option>
+                            </select>
+                            <span asp-validation-for="Position" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Note">Ghi chú</label>
+                            <input asp-for="Note" type="text" class="form-control" placeholder="Ghi chú gì đó...">
+                            <span asp-validation-for="Note" class="text-danger"></span>
+                        </div>
+                        <input type="hidden" asp-for="CreatedDate" />
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="ti-file btn-icon-prepend"></i>
+                            Lưu
+                        </button>
+                        <button type="reset" class="btn btn-warning btn-icon-text">
+                            <i class="ti-reload btn-icon-prepend"></i>
+                            Làm mới
+                        </button>
+                        <a href="~/hr/employee" class="btn btn-light">Trờ về</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,359 @@
+﻿@using System.Security.Claims;
+@{
+    var employeeCode = User.Claims.FirstOrDefault(c => c.Type == "EmployeeCode")?.Value;
+    var employeeName = User.Claims.FirstOrDefault(c => c.Type == "EmployeeName")?.Value;
+    var department = User.Claims.FirstOrDefault(c => c.Type == "Department")?.Value;
+    var avatar = User.Claims.FirstOrDefault(c => c.Type == "Avatar")?.Value;
+}﻿
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Nhân sự - @ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/admin/vendors/feather/feather.css">
+    <link rel="stylesheet" href="~/admin/vendors/mdi/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="~/admin/vendors/ti-icons/css/themify-icons.css">
+    <link rel="stylesheet" href="~/admin/vendors/typicons/typicons.css">
+    <link rel="stylesheet" href="~/admin/vendors/simple-line-icons/css/simple-line-icons.css">
+    <link rel="stylesheet" href="~/admin/vendors/css/vendor.bundle.base.css">
+    <link rel="stylesheet" href="~/admin/js/select.dataTables.min.css">
+
+    <link rel="stylesheet" href="~/admin/vendors/select2/select2.min.css">
+    <link rel="stylesheet" href="~/admin/vendors/select2-bootstrap-theme/select2-bootstrap.min.css">
+    <link rel="stylesheet" href="~/admin/css/vertical-layout-light/style.css">
+    <link rel="stylesheet" href="~/admin/css/admin.css">
+    <link rel="shortcut icon" href="/logo.ico" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css" />
+</head>
+<body class="sidebar-light">
+    <div class="container-scroller">
+        <nav class="navbar default-layout col-lg-12 col-12 p-0 fixed-top d-flex align-items-top flex-row">
+            <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
+                <div class="me-3">
+                    <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-bs-toggle="minimize">
+                        <span class="icon-menu"></span>
+                    </button>
+                </div>
+                <div>
+                    <a class="navbar-brand brand-logo" href="~/">
+                        <img src="~/imgs/logo.png" alt="logo" style="width:100px; height:80px;"/>
+                    </a>
+                    <a class="navbar-brand brand-logo-mini" href="~/">
+                        <img src="~/imgs/logo.png" alt="logo" style="width:100px; height:80px;" />
+                    </a>
+                </div>
+            </div>
+            <div class="navbar-menu-wrapper d-flex align-items-top">
+                <ul class="navbar-nav">
+                    <li class="nav-item font-weight-semibold d-none d-lg-block ms-0">
+                        <h1 class="welcome-text">Xin chào, <span class="text-black fw-bold">
+                                @employeeName
+                            </span>
+                        </h1>
+                        <h3 class="welcome-sub-text">Welcome to QUANG MINH</h3>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item d-none d-lg-block">
+                        <div id="datepicker-popup" class="input-group date datepicker navbar-date-picker">
+                            <span class="input-group-addon input-group-prepend border-right">
+                                <span class="icon-calendar input-group-text calendar-icon"></span>
+                            </span>
+                            <input type="text" class="form-control d-none d-xxl-block">
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <form class="search-form" action="#">
+                            <i class="icon-search"></i>
+                            <input type="search" class="form-control" placeholder="Search" title="Search">
+                        </form>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link count-indicator" id="countDropdown" href="#countDropdown" data-bs-toggle="dropdown">
+                            <i class="icon-mail icon-lg"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list pb-0" aria-labelledby="countDropdown">
+                            <a class="dropdown-item py-3">
+                                <p class="mb-0 font-weight-medium float-left">Bạn có 0 mail chưa đọc</p>
+                                <span class="badge badge-pill badge-primary float-right">View all</span>
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item preview-item">
+                                <div class="preview-thumbnail">
+                                    <img src="~/admin/images/faces/face1.jpg" alt="image" class="img-sm profile-pic">
+                                </div>
+                                <div class="preview-item-content flex-grow py-2">
+                                    <p class="preview-subject ellipsis font-weight-medium text-dark"></p>
+                                    <p class="fw-light small-text mb-0"></p>
+                                </div>
+                            </a>
+                        </div>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link count-indicator" id="notificationDropdown" href="#notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="icon-bell"></i>
+                            <span class="count" id="notification-count"></span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list pb-0 overflow-auto" aria-labelledby="notificationDropdown" id="notification-list" style="height: 300px;">
+                            <a class="dropdown-item py-3 border-bottom">
+                                <p class="mb-0 font-weight-medium float-left" id="notification-title">Bạn có 0 thông báo mới</p>
+                            </a>
+                        </div>
+                    </li>
+                    <li class="nav-item dropdown d-none d-lg-block user-dropdown">
+                        <a class="nav-link" id="UserDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img class="img-xs rounded-circle" src="~/imgs/avatars/@avatar" alt="Profile image">
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="UserDropdown">
+                            <div class="dropdown-header text-center">
+                                <img class="img-md rounded-circle" src="~/imgs/avatars/@avatar" alt="Profile image" width="100px">
+                                <p class="mb-1 mt-3 font-weight-semibold">@employeeCode - @employeeName</p>
+                                <p class="fw-light text-muted mb-0">Bộ phận: @department</p>
+                            </div>
+                            <a class="dropdown-item" href="#"><i class="dropdown-item-icon mdi mdi-account-outline text-primary me-2"></i> Trang cá nhân <span class="badge badge-pill badge-danger">1</span></a>
+                            <a class="dropdown-item"><i class="dropdown-item-icon mdi mdi-message-text-outline text-primary me-2"></i> Tin nhắn</a>
+                            <a class="dropdown-item js-skip-auth" href="~/admin/account/logout"><i class="dropdown-item-icon mdi mdi-power text-primary me-2"></i>Đăng xuất</a>
+                        </div>
+                    </li>
+                </ul>
+                <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-bs-toggle="offcanvas">
+                    <span class="mdi mdi-menu"></span>
+                </button>
+            </div>
+        </nav>
+        <div class="container-fluid page-body-wrapper">
+            <div class="theme-setting-wrapper">
+                <div id="settings-trigger"><i class="ti-settings"></i></div>
+                <div id="theme-settings" class="settings-panel">
+                    <i class="settings-close ti-close"></i>
+                    <p class="settings-heading">SIDEBAR SKINS</p>
+                    <div class="sidebar-bg-options selected" id="sidebar-light-theme"><div class="img-ss rounded-circle bg-light border me-3"></div>Light</div>
+                    <div class="sidebar-bg-options" id="sidebar-dark-theme"><div class="img-ss rounded-circle bg-dark border me-3"></div>Dark</div>
+                    <p class="settings-heading mt-2">HEADER SKINS</p>
+                    <div class="color-tiles mx-0 px-4">
+                        <div class="tiles success"></div>
+                        <div class="tiles warning"></div>
+                        <div class="tiles danger"></div>
+                        <div class="tiles info"></div>
+                        <div class="tiles dark"></div>
+                        <div class="tiles default"></div>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar sidebar-offcanvas" id="sidebar">
+                <ul class="nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="~/hr">
+                            <i class="mdi mdi-view-dashboard menu-icon"></i>
+                            <span class="menu-title">Tổng quan dữ liệu</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="collapse" href="#dataEmpl" aria-expanded="false" aria-controls="dataEmpl">
+                            <i class="menu-icon mdi mdi-account"></i>
+                            <span class="menu-title">Quản lý nhân viên</span>
+                            <i class="menu-arrow"></i>
+                        </a>
+                        <div class="collapse " id="dataEmpl">
+                            <ul class="nav flex-column sub-menu">
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/employee" asp-policy="ViewEmployee">Danh sách</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/department" asp-policy="ViewDepartment">Bộ phận công ty</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/training" asp-policy="DataEmpl">Hạng mục đào tạo</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    @* <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="collapse" href="#salary" aria-expanded="false" aria-controls="salary">
+                            <i class="menu-icon mdi mdi-cash-multiple"></i>
+                            <span class="menu-title">Quản lý lương</span>
+                            <i class="menu-arrow"></i>
+                        </a>
+                        <div class="collapse " id="salary">
+                            <ul class="nav flex-column sub-menu">
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/salary" asp-policy="ViewSalary">Lương cơ bản</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/monthlypayroll" asp-policy="ViewMonthlyPayroll">Bảng lương</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/timesheet" asp-policy="ViewTimeSheet">Bảng chấm công</a></li>
+                            </ul>
+                        </div>
+                    </li> *@
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="collapse" href="#exam" aria-expanded="false" aria-controls="exam">
+                            <i class="menu-icon mdi mdi-book-open-variant"></i>
+                            <span class="menu-title">Hệ thống kiếm tra</span>
+                            <i class="menu-arrow"></i>
+                        </a>
+                        <div class="collapse" id="exam">
+                            <ul class="nav flex-column sub-menu">
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/examtraining" asp-policy="ViewExam">Bài Kiểm tra sau đào tạo</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/resulttraining" asp-policy="ViewResultExam">Kết quả KT sau đào tạo</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/exam" asp-policy="ViewExam">Bài Kiểm tra định kỳ</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/result" asp-policy="ViewResultExam">Kết quả KT định kỳ</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/examtrialrun" asp-policy="ViewExam">Bài Kiểm tra chạy thử</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/resulttrialrun" asp-policy="ViewResultExam">Kết quả KT chạy thử</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="collapse" href="#machine" aria-expanded="false" aria-controls="machine">
+                            <i class="menu-icon mdi mdi-wrench"></i>
+                            <span class="menu-title">Quản lý thiết bị</span>
+                            <i class="menu-arrow"></i>
+                        </a>
+                        <div class="collapse" id="machine">
+                            <ul class="nav flex-column sub-menu">
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/machine" asp-policy="ViewMachine">Thông số máy</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/MachineGroup" asp-policy="ViewMachineGroup">Nhóm máy</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/equipmentrepairhistory" asp-policy="ViewMachineRepair">Báo lỗi sửa chữa</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/machinemaintenance" asp-policy="ViewMachineMaintenance">Kế hoạch bảo dưỡng</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="collapse" href="#ns" aria-expanded="false" aria-controls="ns">
+                            <i class="mdi mdi-chart-line menu-icon"></i>
+                            <span class="menu-title">Thống kê năng suất</span>
+                            <i class="menu-arrow"></i>
+                        </a>
+                        <div class="collapse" id="ns">
+                            <ul class="nav flex-column sub-menu">
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/productivity" asp-policy="ViewProductivity">Năng suất</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/hr/sawingperformance" asp-policy="ViewProductivity">Doanh số cưa</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="~/hr/errordata" asp-policy="ViewKaizen">
+                            <i class="mdi mdi-alert-circle-outline menu-icon"></i>
+                            <span class="menu-title">Lỗi sản xuất</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="~/hr/kaizen" asp-policy="ViewKaizen">
+                            <i class="mdi mdi-lightbulb-on menu-icon"></i>
+                            <span class="menu-title">Tổng hợp Kaizen</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="~/hr/violation5S" asp-policy="ViewViolation5S">
+                            <i class="mdi mdi-alpha-s-circle-outline menu-icon"></i>
+                            <span class="menu-title">Quy định lỗi 5S</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="main-panel">
+
+                @RenderBody()
+
+                <footer class="footer">
+                    <div class="d-sm-flex justify-content-center justify-content-sm-between">
+                        <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">HR premium by IT QUANG MINH</span>
+                        <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">Copyright © 2025. All rights reserved.</span>
+                    </div>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="~/admin/vendors/js/vendor.bundle.base.js"></script>
+    <script src="~/admin/vendors/chart.js/Chart.min.js"></script>
+    <script src="~/admin/vendors/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
+    <script src="~/admin/vendors/progressbar.js/progressbar.min.js"></script>
+
+    <script src="~/admin/vendors/typeahead.js/typeahead.bundle.min.js"></script>
+    <script src="~/admin/vendors/select2/select2.min.js"></script>
+    <script src="~/admin/js/off-canvas.js"></script>
+    <script src="~/admin/js/hoverable-collapse.js"></script>
+    <script src="~/admin/js/template.js"></script>
+    <script src="~/admin/js/settings.js"></script>
+    <script src="~/admin/js/dashboard.js"></script>
+    <script src="~/admin/js/Chart.roundedBarCharts.js"></script>
+    <script src="~/admin/js/chart.js"></script>
+    <script src="~/admin/js/file-upload.js"></script>
+    <script src="~/admin/js/typeahead.js"></script>
+    <script src="~/admin/js/select2.js"></script>
+
+    @*plugin*@
+    <script src="~/admin/plugin/ckfinder/ckfinder.js"></script>
+    <script src="~/admin/plugin/ckeditor/ckeditor.js"></script>
+    @RenderSection("ckeditorJS", false);
+    @await RenderSectionAsync("Scripts", false)
+
+    <script>
+        $(document).ready(function () {
+            const currentPath = window.location.pathname.toLowerCase();
+            $('.sidebar .nav-item a').each(function () {
+                const $this = $(this);
+                const linkPath = $this.attr('href') ? $this.attr('href').toLowerCase() : '';
+                if (linkPath === currentPath) {
+                    $this.addClass('active');
+                    const $collapseMenu = $this.closest('.collapse');
+                    if ($collapseMenu.length) {
+                        $collapseMenu.addClass('show');
+                        $collapseMenu.siblings('.nav-link').addClass('active');
+                    }
+                }
+            });
+        });
+    </script>
+
+    @if (User.HasPermission("Notification.View"))
+    {
+        <script>
+            function fetchAndRenderNotifications() {
+                const apiUrl = '/Admin/Dashboard/GetNotifications';
+
+                fetch(apiUrl)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Lỗi mạng');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        const notificationCountElement = document.getElementById('notification-count');
+                        const notificationTitleElement = document.getElementById('notification-title');
+                        const notificationListElement = document.getElementById('notification-list');
+
+                        const oldNotifications = notificationListElement.querySelectorAll('.preview-item');
+                        oldNotifications.forEach(item => item.remove());
+
+                        const unreadNotifications = data.filter(notification => notification.isRead === 0);
+
+                        const notificationCount = unreadNotifications.length;
+                        notificationCountElement.textContent = notificationCount;
+                        notificationTitleElement.textContent = `Bạn có ${notificationCount} thông báo mới`;
+
+                        unreadNotifications.forEach(notification => {
+                            const notificationHtml = `
+                                <a class="dropdown-item preview-item py-3">
+                                    <div class="preview-thumbnail">
+                                        <i class="mdi mdi-alert m-auto text-primary"></i>
+                                    </div>
+                                    <div class="preview-item-content">
+                                        <h6 class="preview-subject fw-normal text-dark mb-1">${notification.message}</h6>
+                                        <p class="fw-light small-text mb-0"> ${notification.createdDate} </p>
+                                    </div>
+                                </a>
+                            `;
+                            notificationListElement.insertAdjacentHTML('beforeend', notificationHtml);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Lỗi mạng:', error);
+                    });
+            }
+
+            document.addEventListener('DOMContentLoaded', fetchAndRenderNotifications);
+            setInterval(fetchAndRenderNotifications, 30000);
+        </script>
+    }
+</body>
+</html>

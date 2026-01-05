@@ -76,6 +76,16 @@
                         </ul>
                     </li>
                     <li class="nav-item has-dropdown">
+                        <a href="#" class="nav-link">Phân hệ <i class="icon chevron-icon fa-solid fa-chevron-down"></i></a>
+                        <ul class="nav-list dropdown">
+                            <li class="nav-item">
+                                <a href="/admin" class="nav-link" asp-policy="ViewAdmin">Admin</a>
+                                <a href="/hr" class="nav-link" asp-policy="ViewHr">Nhân sự</a>
+                                <a href="/warehouse" class="nav-link" asp-policy="ViewWareHouse">Kho</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item has-dropdown">
                         <a href="#" class="nav-link">Xin chào, @employeeName (@employeeCode) <i class="icon chevron-icon fa-solid fa-chevron-down"></i></a>
                         <ul class="nav-list dropdown">
                             <li class="nav-item">
@@ -86,11 +96,6 @@
                                 <a href="/home/logout" class="nav-link">Đăng xuất</a>
                             </li>
                         </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/admin" class="nav-link" asp-policy="ViewDashboard">
-                            Quản lý
-                        </a>
                     </li>
                 </ul>
 

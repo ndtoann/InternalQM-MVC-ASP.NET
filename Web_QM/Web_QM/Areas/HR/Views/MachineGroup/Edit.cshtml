@@ -1,0 +1,58 @@
+﻿@using Web_QM.Models
+@model MachineGroup;
+@{
+    ViewData["Title"] = "Sửa thông tin nhóm máy";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Sửa nội dung nhóm máy</h4>
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    <form action="edit" class="forms-sample" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <input type="hidden" asp-for="Id" />
+                        <div class="form-group">
+                            <label asp-for="GroupName">Tên nhóm máy</label>
+                            <input asp-for="GroupName" type="text" class="form-control">
+                            <span asp-validation-for="GroupName" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="MachineType">Loại nhóm máy</label>
+                            <input asp-for="MachineType" type="text" class="form-control">
+                            <span asp-validation-for="MachineType" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Standard">Tiêu chí nhóm máy</label>
+                            <textarea asp-for="Standard" class="form-control" style="min-height: 100px;"></textarea>
+                            <span asp-validation-for="Standard" class="text-danger"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="ti-file btn-icon-prepend"></i>
+                            Lưu
+                        </button>
+                        <button type="reset" class="btn btn-warning btn-icon-text">
+                            <i class="ti-reload btn-icon-prepend"></i>
+                            Làm mới
+                        </button>
+                        <a href="~/hr/machinegroup" class="btn btn-light">Trờ về</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

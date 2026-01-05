@@ -1,0 +1,212 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="home-tab">
+                <div class="d-sm-flex align-items-center justify-content-between border-bottom">
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active ps-0" id="home-tab" data-bs-toggle="tab" href="#overview" role="tab" aria-controls="overview" aria-selected="true">Nhân viên</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="profile-tab" data-bs-toggle="tab" href="#audiences" role="tab" aria-controls="audiences" aria-selected="false">Máy móc</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link border-0" id="more-tab" data-bs-toggle="tab" href="#more" role="tab" aria-selected="false">More</a>
+                        </li>
+                    </ul>
+                    <div>
+                        <div class="btn-wrapper">
+                            <a href="#" class="btn btn-otline-dark align-items-center" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.href), '_blank');"><i class="icon-share"></i> Share</a>
+                            <a href="javascript:window.print();" class="btn btn-otline-dark"><i class="icon-printer"></i> Print</a>
+                            <a href="#" class="btn btn-primary text-white me-0"><i class="icon-download"></i> Export</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-content tab-content-basic">
+                    <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview">
+                        <div class="row d-none d-lg-flex">
+                            <div class="col-lg-3">
+                                <p class="statistics-title">Nhân viên công ty</p>
+                                <h3 class="rate-percentage">@ViewBag.CountEmployee nhân viên</h3>
+                                <p class="text-success d-flex"><a href="~/hr/employee">Xem thêm</a></p>
+                            </div>
+                            <div class="col-lg-3">
+                                <p class="statistics-title">Số kaizen</p>
+                                <h3 class="rate-percentage">@ViewBag.CountKaizen</h3>
+                                <p class="text-success d-flex"><a href="~/hr/kaizen">Xem thêm</a></p>
+                            </div>
+                            <div class="col-lg-3">
+                                <p class="statistics-title">Số lỗi sản xuất</p>
+                                <h3 class="rate-percentage">@ViewBag.CountError</h3>
+                                <p class="text-success d-flex"><a href="~/hr/errordata">Xem thêm</a></p>
+                            </div>
+                            <div class="col-lg-3">
+                                <p class="statistics-title">Số lỗi 5S</p>
+                                <h3 class="rate-percentage">@ViewBag.Count5S</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="audiences" role="tabpanel" aria-labelledby="audiences">
+                        <div class="row d-none d-lg-flex">
+                            <div class="col-lg-3">
+                                <p class="statistics-title">Máy móc</p>
+                                <h3 class="rate-percentage">@ViewBag.CountMachine máy</h3>
+                                <p class="text-success d-flex"><a href="~/hr/machine">Xem thêm</a></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="more" role="tabpanel" aria-labelledby="more-tab">
+                        <div class="row d-none d-lg-flex">
+                            More tab
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row flex-grow">
+        <div class="col-lg-6 grid-margin stretch-card">
+            <div class="card card-rounded">
+                <div class="card-body card-rounded">
+                    <h4 class="card-title card-title-dash">Thông báo</h4>
+
+                    <div class="overflow-auto" style="height: 400px;">
+                        <div id="notification-list-container">
+                        </div>
+                    </div>
+
+                    <div class="list align-items-center pt-3">
+                        <div class="wrapper w-100">
+                            <p class="mb-0">
+                                <a href="~/hr/employee" class="fw-bold text-primary">Danh sách nhân viên<i class="mdi mdi-arrow-right ms-2"></i></a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Danh sách nhân viên</h4>
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row flex-grow">
+        <div class="col-lg-6 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Thống kê lỗi 5S năm @DateTime.Now.Year</h4>
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Thống kê kaizen năm @DateTime.Now.Year</h4>
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var labelPie = @(ViewBag.LabelPie == null ? Html.Raw("[]") : Html.Raw(Json.Serialize(ViewBag.LabelPie)));
+        var dataPie = @(ViewBag.DataPie == null ? Html.Raw("[]") : Html.Raw(Json.Serialize(ViewBag.DataPie)));
+        var dataBar = @(ViewBag.DataBar == null ? Html.Raw("[]") : Html.Raw(Json.Serialize(ViewBag.DataBar)));
+        var dataLine = @(ViewBag.DataLine == null ? Html.Raw("[]") : Html.Raw(Json.Serialize(ViewBag.DataLine)));
+    </script>
+
+    @if (User.HasPermission("Notification.View"))
+    {
+        <script>
+            $(document).ready(function () {
+             function loadNotifications() {
+                 $.ajax({
+                     url: '/Hr/Dashboard/GetNotifications',
+                     type: 'GET',
+                     dataType: 'json',
+                     success: function (data) {
+                         $('#notification-list-container').empty();
+                         if (data.length > 0) {
+                             $.each(data, function (index, notification) {
+                                 var isReadClass = notification.isRead ? "text-muted" : "fw-bold";
+                                 var readButtonHtml = notification.isRead ? '' : `<button class="btn btn-sm btn-outline-success mark-as-read-btn" data-id="${notification.id}">Đã đọc</button>`;
+
+                                 var notificationHtml = `
+                                     <div class="list align-items-center border-bottom py-2">
+                                         <div class="wrapper w-100">
+                                             <p class="mb-2 font-weight-medium ${isReadClass}">
+                                                 ${notification.message}
+                                             </p>
+                                             <div class="d-flex justify-content-between align-items-center">
+                                                 <div class="d-flex align-items-center">
+                                                     <i class="mdi mdi-calendar text-muted me-1"></i>
+                                                     <p class="mb-0 text-small text-muted">${notification.createdDate}</p>
+                                                 </div>
+                                                 <div class="d-flex gap-2">
+                                                     ${readButtonHtml}
+                                                     <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${notification.id}">Xóa</button>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     </div>
+                                 `;
+                                 $('#notification-list-container').append(notificationHtml);
+                             });
+                         } else {
+                             $('#notification-list-container').append('<div class="text-center py-4 text-muted">Không có thông báo nào.</div>');
+                         }
+                     },
+                     error: function (xhr, status, error) {
+                         console.error("Lỗi khi tải thông báo: " + error);
+                     }
+                 });
+             }
+
+             loadNotifications();
+
+             setInterval(loadNotifications, 20000);
+
+             $(document).on('click', '.mark-as-read-btn', function () {
+                 var notificationId = $(this).data('id');
+                 $.ajax({
+                     url: '/Hr/Dashboard/MarkAsRead?id=' + notificationId,
+                     type: 'GET',
+                     success: function () {
+                         loadNotifications();
+                     },
+                     error: function (xhr, status, error) {
+                         console.error("Lỗi khi đánh dấu đã đọc: " + error);
+                     }
+                 });
+             });
+
+             $(document).on('click', '.delete-btn', function () {
+                 var notificationId = $(this).data('id');
+                 $.ajax({
+                     url: '/Hr/Dashboard/DeleteNotification?id=' + notificationId,
+                     type: 'GET',
+                     success: function () {
+                         loadNotifications();
+                     },
+                     error: function (xhr, status, error) {
+                         console.error("Lỗi khi xóa: " + error);
+                     }
+                 });
+             });
+         });
+    </script>
+    }
+}

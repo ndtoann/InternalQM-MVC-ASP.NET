@@ -1,0 +1,662 @@
+﻿@using Web_QM.Models
+@model IEnumerable<Machine>;
+@{
+    ViewData["Title"] = "Quản lý máy";
+    List<string> toleranceTypes = new List<string> {
+        "Độ chính xác",
+        "Độ đảo trục chính",
+        "Dung sai vị trí",
+        "Độ song song",
+        "Độ vuông góc"
+    };
+}
+<style>
+    .modal-lg-font .modal-body,
+    .modal-lg-font dt,
+    .modal-lg-font dd {
+        font-size: 1.3rem;
+    }
+    .modal-lg-font .modal-header h5 {
+        font-size: 1.25rem;
+    }
+</style>
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Danh sách máy</h4>
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    <form action="" method="get">
+                        <div class="row align-items-center">
+                            <div class="col-lg-3">
+                                <div class="form-group mb-0">
+                                    <select class="form-control" name="status" asp-items="@(ViewData["Status"] as SelectList)"></select>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="form-group mb-0">
+                                    <select class="form-control" name="department" asp-items="@(ViewData["Departments"] as List<SelectListItem>)"></select>
+                                </div>
+                            </div>
+                            <div class="col-lg-5 d-flex align-items-center">
+                                <div class="form-group me-2 flex-grow-1 mb-0">
+                                    <input type="text"
+                                           class="form-control"
+                                           name="key"
+                                           placeholder="Nhập vào đây để tìm kiếm"
+                                           value="@ViewBag.KeySearch" />
+                                </div>
+                                <div class="form-group mb-0">
+                                    <button type="submit" class="btn btn-primary">
+                                        Tìm kiếm
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <a class="btn btn-success" href="~/hr/machine/add" asp-policy="AddMachine">Thêm máy</a>
+                    <div class="table-responsive overflow-auto" style="height: 1000px;">
+                        <table class="table table-hover table-bordered">
+                            <thead class="text-white bg-dark" style="position: sticky; top: 0; z-index: 1;">
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Bộ phận</th>
+                                    <th>Loại máy</th>
+                                    <th>Mã máy</th>
+                                    <th>Tên máy</th>
+                                    <th>Đời máy</th>
+                                    <th>Hình ảnh</th>
+                                    @* <th>Giá thành</th>
+                                    <th class="text-wrap">Công suất máy (kVA)</th> *@
+                                    <th>Nơi ĐK</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody class="machine-table-body">
+                                @{
+                                    var count = 1;
+                                }
+                                @foreach (var item in Model)
+                                {
+                                    <tr class="context-menu-row"
+                                        data-id="@item.Id"
+                                        data-machine-code="@item.MachineCode"
+                                        data-machine-name="@item.MachineName"
+                                        data-department="@item.Department"
+                                        data-version="@item.Version"
+                                        data-axes="@(item.NumberOfAxes ?? 0)"
+                                        data-knives="@(item.NumberOfKnifeSocket ?? 0)"
+                                        data-spindle-speed="@item.SpindleSpeed"
+                                        data-taper="@item.BottleTaper"
+                                        data-table-x="@(item.MachineTableSizeX ?? 0)"
+                                        data-table-y="@(item.MachineTableSizeY ?? 0)"
+                                        data-journey-x="@(item.MachineJourneyX ?? 0)"
+                                        data-journey-y="@(item.MachineJourneyY ?? 0)"
+                                        data-journey-z="@(item.MachineJourneyZ ?? 0)"
+                                        data-wide-size="@(item.WideSize ?? 0)"
+                                        data-deep-size="@(item.DeepSize ?? 0)"
+                                        data-high-size="@(item.HighSize ?? 0)"
+                                        data-weight="@(item.Weight ?? 0)"
+                                        data-price="@(item.Price?.ToString("N0") ?? "0")"
+                                        data-capacity="@(item.MachineCapacity ?? 0)"
+                                        data-origin="@item.MachineOrigin"
+                                        data-place="@item.Place"
+                                        data-status="@item.Status"
+                                        data-note="@item.Note"
+                                        data-picture="@item.Picture"
+                                        data-outer-pair-x="@(item.OuterPairX ?? 0)"
+                                        data-outer-pair-z="@(item.OuterPairZ ?? 0)"
+                                        data-pair-inside-x="@(item.PairInsideX ?? 0)"
+                                        data-pair-inside-z="@(item.PairInsideZ ?? 0)"
+                                        data-tailstock-x="@(item.TailstockX ?? 0)"
+                                        data-tailstock-z="@(item.TailstockZ ?? 0)">
+
+                                        <td>@(count++)</td>
+                                        <td>@item.Department</td>
+                                        <td>@item.TypeMachine</td>
+                                        <td>@item.MachineCode</td>
+                                        <td>@item.MachineName</td>
+                                        <td>@item.Version</td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(item.Picture))
+                                            {
+                                                <div class="form-group">
+                                                    <img src="~/imgs/machines/@item.Picture" alt="Image" loading="lazy" style="width: 250px; height:100%; border-radius: 8px;" />
+                                                </div>
+                                            }
+                                        </td>
+                                        @* <td>@(item.Price?.ToString("N0") ?? "")</td>
+                                        <td>@item.MachineCapacity</td> *@
+                                        <td>@item.Place</td>
+                                        <td>
+                                            @if(item.Status == "Đang hoạt động")
+                                            {
+                                                <span class="badge bg-success">@item.Status</span>
+                                            }
+                                            else if(item.Status == "Đã bán" || item.Status == "Ngưng hoạt động")
+                                            {
+                                                <span class="badge bg-danger">@item.Status</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="contextMenu" class="dropdown-menu" style="position: absolute; display: none;">
+    <a class="dropdown-item" href="#" id="detailLink">Xem chi tiết</a>
+    <a class="dropdown-item" href="#" id="allowanceLink">Cập nhật dung sai</a>
+    <a class="dropdown-item" href="#" id="groupLink">Xem nhóm máy</a>
+    <a class="dropdown-item" href="#" id="editLink">Sửa</a>
+    <a class="dropdown-item" href="#" id="deleteLink">Xóa</a>
+</div>
+
+@* modal xem danh sách nhóm máy của một máy *@
+<div class="modal fade" id="machineGroupModal" tabindex="-1" aria-labelledby="machineGroupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="machineGroupModalLabel">
+                    <i class="mdi mdi-buffer me-2"></i> Danh sách nhóm máy thuộc máy: <span id="modalMachineGroupCode"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>Tên nhóm máy</th>
+                                <th>Loại nhóm máy</th>
+                                <th>Vật liệu</th>
+                                <th>Tiêu chí</th>
+                            </tr>
+                        </thead>
+                        <tbody id="machineGroupListTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* modal xem thông tin máy *@
+<div class="modal fade" id="machineDetailModal" tabindex="-1" aria-labelledby="machineDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content modal-lg-font">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="machineDetailModalLabel">
+                    <i class="mdi mdi-wrench me-2"></i> Chi tiết máy: <span id="modalMachineCode"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-light">Thông tin chung</div>
+                            <div class="card-body">
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-4">Mã máy:</dt>
+                                    <dd class="col-sm-8 fw-bold" id="Detail_MachineCode"></dd>
+
+                                    <dt class="col-sm-4">Tên máy:</dt>
+                                    <dd class="col-sm-8" id="Detail_MachineName"></dd>
+
+                                    <dt class="col-sm-4">Bộ phận:</dt>
+                                    <dd class="col-sm-8" id="Detail_Department"></dd>
+
+                                    <dt class="col-sm-4">Đời máy:</dt>
+                                    <dd class="col-sm-8" id="Detail_Version"></dd>
+
+                                    <dt class="col-sm-4">Xuất xứ:</dt>
+                                    <dd class="col-sm-8" id="Detail_MachineOrigin"></dd>
+
+                                    <dt class="col-sm-4">Nơi đăng ký:</dt>
+                                    <dd class="col-sm-8" id="Detail_Place"></dd>
+
+                                    <dt class="col-sm-4">Giá thành:</dt>
+                                    <dd class="col-sm-8 text-danger fw-bold" id="Detail_Price"></dd>
+
+                                    <dt class="col-sm-4">Trạng thái:</dt>
+                                    <dd class="col-sm-8 text-info fw-bold" id="Detail_Status"></dd>
+                                </dl>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-light">Hình ảnh máy</div>
+                            <div class="card-body text-center">
+                                <img id="Detail_Picture" src="" alt="Hình ảnh máy" class="img-fluid rounded" style="max-height: 350px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header bg-light">Thông số kỹ thuật & Kích thước</div>
+                            <div class="card-body">
+                                <dl class="row">
+                                    <dt class="col-sm-6 text-muted">Số trục/Số ổ dao:</dt>
+                                    <dd class="col-sm-6" id="Detail_AxesKnives"></dd>
+
+                                    <dt class="col-sm-6 text-muted">Tốc độ trục chính:</dt>
+                                    <dd class="col-sm-6" id="Detail_SpindleSpeed"></dd>
+
+                                    <dt class="col-sm-6 text-muted">Đầu BT (Bottle Taper):</dt>
+                                    <dd class="col-sm-6" id="Detail_BottleTaper"></dd>
+
+                                    <dt class="col-sm-6 text-muted">Công suất (kVA):</dt>
+                                    <dd class="col-sm-6" id="Detail_MachineCapacity"></dd>
+
+                                    <dt class="col-sm-6 text-muted">Cân nặng (Tấn):</dt>
+                                    <dd class="col-sm-6" id="Detail_Weight"></dd>
+
+                                    <dt class="col-sm-6 text-muted border-top pt-2 mt-2">Kích thước Bàn máy (X/Y) (mm):</dt>
+                                    <dd class="col-sm-6 border-top pt-2 mt-2" id="Detail_TableSizeXY"></dd>
+
+                                    <dt class="col-sm-6 text-muted">Hành trình máy (X/Y/Z) (mm):</dt>
+                                    <dd class="col-sm-6" id="Detail_JourneyXYZ"></dd>
+
+                                    <dt class="col-sm-6 text-muted">Kích thước máy (Rộng x Sâu x Cao) (mm):</dt>
+                                    <dd class="col-sm-6" id="Detail_OverallSize"></dd>
+
+                                    <dt class="col-sm-12 border-top pt-2 mt-2 fw-bold">Hành trình chấu kẹp:</dt>
+
+                                    <dt class="col-sm-6 text-muted">Cặp ngoài (X/Z):</dt>
+                                    <dd class="col-sm-6" id="Detail_OuterPairXZ"></dd>
+
+                                    <dt class="col-sm-6 text-muted">Cặp bung phía trong (X/Z):</dt>
+                                    <dd class="col-sm-6" id="Detail_PairInsideXZ"></dd>
+
+                                    <dt class="col-sm-6 text-muted">Tiện chống tâm (X/Z):</dt>
+                                    <dd class="col-sm-6" id="Detail_TailstockXZ"></dd>
+
+
+                                    <dt class="col-sm-12 border-top pt-2 mt-2">Ghi chú:</dt>
+                                    <dd class="col-sm-12" id="Detail_Note"></dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Modal Cập nhật Dung sai *@
+<div class="modal fade" id="allowanceModal" tabindex="-1" aria-labelledby="allowanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="allowanceModalLabel">
+                    <i class="mdi mdi-tune-vertical me-2"></i> Cập nhật Dung sai cho máy: <span id="modalAllowanceMachineCode"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="allowance-alert" class="alert d-none" role="alert"></div>
+
+                <form id="addAllowanceForm" class="mb-4 p-3 border rounded bg-light">
+                    <input type="hidden" id="add_MachineCode" name="MachineCode" value="" />
+                    <h6 class="border-bottom pb-2 mb-3">Thêm mới Dung sai</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="add_Type" class="form-label">Loại Dung sai</label>
+                            <select class="form-control" id="add_Type" name="Type" required>
+                                <option value="" disabled selected>Chọn loại</option>
+                                @foreach (var type in toleranceTypes)
+                                {
+                                    <option value="@type">@type</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="add_Parameters" class="form-label">Thông số</label>
+                            <input type="number" step="any" class="form-control" id="add_Parameters" name="Parameters" required />
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="add_DateMonth" class="form-label">Ngày/Tháng</label>
+                            <input type="date" class="form-control" id="add_DateMonth" name="DateMonth" required value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end mb-3">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <span id="add-spinner" class="spinner-border spinner-border-sm d-none me-1" role="status" aria-hidden="true"></span>
+                                Thêm
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <h6 class="border-bottom pb-2 mb-3">Danh sách Dung sai hiện tại</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%">#</th>
+                                <th style="width: 35%">Loại</th>
+                                <th style="width: 30%">Thông số</th>
+                                <th style="width: 20%">Ngày/Tháng</th>
+                                <th style="width: 10%">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allowanceListTableBody">
+                            <tr><td colspan="5" class="text-center">Vui lòng chọn máy để xem dung sai.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            let machineId = null;
+            let machineCode = null;
+            let machineName = null;
+            let currentRow = null;
+            const contextMenu = $('#contextMenu');
+            const detailModal = new bootstrap.Modal(document.getElementById('machineDetailModal'));
+            const groupModal = new bootstrap.Modal(document.getElementById('machineGroupModal'));
+            const allowanceModal = new bootstrap.Modal(document.getElementById('allowanceModal'));
+
+            $('.context-menu-row').on('contextmenu', function (e) {
+                e.preventDefault();
+                currentRow = $(this);
+                machineId = currentRow.data('id');
+                machineCode = currentRow.data('machine-code');
+                machineName = currentRow.data('machine-name');
+
+                contextMenu.css({
+                    left: e.pageX,
+                    top: e.pageY
+                }).show();
+            });
+
+            $(document).on('click', function () {
+                contextMenu.hide();
+            });
+
+            $('#detailLink').on('click', function (e) {
+                e.preventDefault();
+                contextMenu.hide();
+
+                if (currentRow) {
+                    fillModalWithData(currentRow);
+                    detailModal.show();
+                }
+            });
+
+            $('#editLink').on('click', function (event) {
+                event.preventDefault();
+                if (machineId) {
+                    window.location.href = `/hr/machine/edit?id=${machineId}`;
+                }
+            });
+
+            $('#deleteLink').on('click', function (event) {
+                event.preventDefault();
+                if (machineId && confirm(`Bạn có chắc chắn muốn xóa thông tin máy ${machineName}?`)) {
+                    window.location.href = `/hr/machine/delete?id=${machineId}`;
+                }
+            });
+
+            $('#groupLink').on('click', function (e) {
+                e.preventDefault();
+                contextMenu.hide();
+
+                if (machineCode) {
+                    $('#modalMachineGroupCode').text(machineCode);
+                    loadMachineGroups(machineCode);
+                    groupModal.show();
+                }
+            });
+
+            function loadMachineGroups(mCode) {
+                const tbody = $('#machineGroupListTableBody');
+                tbody.html('<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm me-2"></div>Đang tải danh sách nhóm máy...</td></tr>');
+
+                $.ajax({
+                    url: `/hr/machine/GetMachineGroupsByCode`,
+                    type: 'GET',
+                    data: { machineCode: mCode },
+                    success: function (data) {
+                        renderMachineGroupTable(data);
+                    },
+                    error: function (xhr, status, error) {
+                        tbody.html('<tr><td colspan="4" class="text-danger text-center">Lỗi tải dữ liệu. Không thể lấy danh sách nhóm máy.</td></tr>');
+                        console.error("Lỗi tải nhóm máy:", error);
+                    }
+                });
+            }
+
+            function renderMachineGroupTable(data) {
+                const tbody = $('#machineGroupListTableBody');
+                tbody.empty();
+
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        const row = `
+                            <tr>
+                                <td>${item.groupName}</td>
+                                <td>${item.machineType}</td>
+                                <td>${item.material}</td>
+                                <td>${item.standard || ''}</td>
+                            </tr>
+                        `;
+                        tbody.append(row);
+                    });
+                } else {
+                    tbody.append('<tr><td colspan="4" class="text-center">Máy này hiện chưa thuộc nhóm máy nào.</td></tr>');
+                }
+            }
+
+            function fillModalWithData(row) {
+                const data = row.data();
+                const imagePath = `/imgs/machines/${data.picture}`;
+                const currency = ' VNĐ';
+                const mm = ' (mm)';
+
+                $('#modalMachineCode').text(data.machineCode);
+
+                $('#Detail_MachineCode').text(data.machineCode);
+                $('#Detail_MachineName').text(data.machineName);
+                $('#Detail_Department').text(data.department || 'N/A');
+                $('#Detail_Version').text(data.version || 'N/A');
+                $('#Detail_MachineOrigin').text(data.origin || 'N/A');
+                $('#Detail_Place').text(data.place || 'N/A');
+                $('#Detail_Status').text(data.status || 'N/A');
+                $('#Detail_Price').text((data.price ? data.price + currency : 'N/A'));
+
+                $('#Detail_AxesKnives').text(`${data.axes} trục / ${data.knives} ổ dao`);
+                $('#Detail_SpindleSpeed').text(data.spindleSpeed || 'N/A');
+                $('#Detail_BottleTaper').text(data.taper || 'N/A');
+                $('#Detail_MachineCapacity').text(data.capacity !== 'N/A' ? data.capacity + ' kVA' : 'N/A');
+                $('#Detail_Weight').text(data.weight !== 'N/A' ? data.weight + ' tấn' : 'N/A');
+                $('#Detail_TableSizeXY').text(`${data.tableX} x ${data.tableY}${mm}`);
+                $('#Detail_JourneyXYZ').text(`${data.journeyX} x ${data.journeyY} x ${data.journeyZ}${mm}`);
+                $('#Detail_OverallSize').text(`${data.wideSize} x ${data.deepSize} x ${data.highSize}${mm}`);
+                $('#Detail_Note').text(data.note || 'Không có ghi chú.');
+                $('#Detail_Picture').attr('src', imagePath);
+                $('#Detail_OuterPairXZ').text(`${data.outerPairX} x ${data.outerPairZ}${mm}`);
+                $('#Detail_PairInsideXZ').text(`${data.pairInsideX} x ${data.pairInsideZ}${mm}`);
+                $('#Detail_TailstockXZ').text(`${data.tailstockX} x ${data.tailstockZ}${mm}`);
+            }
+
+            //dung sai máy
+            $('#allowanceLink').on('click', function (e) {
+                e.preventDefault();
+                contextMenu.hide();
+
+                if (machineCode) {
+                    $('#modalAllowanceMachineCode').text(machineCode);
+                    $('#add_MachineCode').val(machineCode);
+                    loadMachineParameters(machineCode);
+                    allowanceModal.show();
+                }
+            });
+
+            $('#addAllowanceForm').on('submit', function (e) {
+                e.preventDefault();
+                const btn = $(this).find('button[type="submit"]');
+                const spinner = $('#add-spinner');
+                const alertDiv = $('#allowance-alert');
+
+                btn.prop('disabled', true);
+                spinner.removeClass('d-none');
+                alertDiv.addClass('d-none').removeClass('alert-success alert-danger').empty();
+
+                const dateMonthValue = $('#add_DateMonth').val();
+
+                const formData = {
+                    MachineCode: $('#add_MachineCode').val(),
+                    Type: $('#add_Type').val(),
+                    Parameters: parseFloat($('#add_Parameters').val()),
+                    DateMonth: dateMonthValue
+                };
+
+                $.ajax({
+                    url: '/hr/machine/AddMachineParameter',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function (response) {
+                        if (response.success) {
+                            loadMachineParameters(formData.MachineCode);
+                            alertDiv.removeClass('d-none').addClass('alert-success').text(response.message || 'Thêm dung sai thành công!');
+                            $('#addAllowanceForm')[0].reset();
+                            $('#add_MachineCode').val(formData.MachineCode);
+                        } else {
+                            alertDiv.removeClass('d-none').addClass('alert-danger').text(response.message || 'Lỗi: Không thể thêm dung sai.');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        alertDiv.removeClass('d-none').addClass('alert-danger').text('Lỗi kết nối hoặc định dạng: Không thể thêm dung sai.');
+                        console.error("Lỗi thêm dung sai:", error);
+                    },
+                    complete: function () {
+                        btn.prop('disabled', false);
+                        spinner.addClass('d-none');
+                    }
+                });
+            });
+
+            $(document).on('click', '.delete-allowance', function () {
+                const paramId = $(this).data('id');
+                const mCode = $('#add_MachineCode').val();
+                const alertDiv = $('#allowance-alert');
+
+                if (confirm('Bạn có chắc chắn muốn xóa dung sai này?')) {
+                    $.ajax({
+                        url: '/hr/machine/DeleteMachineParameter',
+                        type: 'GET',
+                        data: { id: paramId },
+                        success: function (response) {
+                            if (response.success) {
+                                loadMachineParameters(mCode);
+                                alertDiv.removeClass('d-none').addClass('alert-success').text(response.message || 'Xóa dung sai thành công!');
+                            } else {
+                                alertDiv.removeClass('d-none').addClass('alert-danger').text(response.message || 'Lỗi: Không thể xóa dung sai.');
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            alertDiv.removeClass('d-none').addClass('alert-danger').text('Lỗi kết nối: Không thể xóa dung sai.');
+                            console.error("Lỗi xóa dung sai:", error);
+                        }
+                    });
+                }
+            });
+            function loadMachineParameters(mCode) {
+                const tbody = $('#allowanceListTableBody');
+                tbody.html('<tr><td colspan="5" class="text-center"><div class="spinner-border spinner-border-sm me-2"></div>Đang tải danh sách dung sai...</td></tr>');
+                $('#allowance-alert').addClass('d-none').empty();
+
+                $.ajax({
+                    url: `/hr/machine/GetMachineParametersByCode`,
+                    type: 'GET',
+                    data: { machineCode: mCode },
+                    success: function (data) {
+                        renderMachineParametersTable(data);
+                    },
+                    error: function (xhr, status, error) {
+                        tbody.html('<tr><td colspan="5" class="text-danger text-center">Lỗi tải dữ liệu. Không thể lấy danh sách dung sai.</td></tr>');
+                        console.error("Lỗi tải dung sai:", error);
+                    }
+                });
+            }
+
+            function renderMachineParametersTable(data) {
+                const tbody = $('#allowanceListTableBody');
+                tbody.empty();
+
+                if (data && data.length > 0) {
+                    let count = 1;
+                    data.forEach(item => {
+                        let dateDisplay = 'N/A';
+                        if (item.dateMonth) {
+                            const dateObj = new Date(item.dateMonth);
+                            if (!isNaN(dateObj)) {
+                                dateDisplay = dateObj.toLocaleDateString('vi-VN', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                });
+                            }
+                        }
+
+                        const row = `
+                            <tr data-id="${item.id}">
+                                <td>${count++}</td>
+                                <td>${item.type}</td>
+                                <td>${item.parameters}</td>
+                                <td>${dateDisplay}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-danger delete-allowance" data-id="${item.id}">
+                                        <i class="mdi mdi-delete"></i> Xóa
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.append(row);
+                    });
+                } else {
+                    tbody.append('<tr><td colspan="5" class="text-center">Máy này hiện chưa có thông số dung sai nào.</td></tr>');
+                }
+            }
+        });
+    </script>
+}

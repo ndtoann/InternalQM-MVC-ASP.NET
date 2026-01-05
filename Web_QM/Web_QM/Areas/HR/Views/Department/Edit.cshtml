@@ -1,0 +1,46 @@
+﻿@using Web_QM.Models
+@model Department;
+@{
+    ViewData["Title"] = "Sửa bộ phận";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Sửa bộ phận</h4>
+                    <form action="edit" class="forms-sample" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <input type="hidden" asp-for="Id" />
+                        <div class="form-group">
+                            <label asp-for="DepartmentName">Tên bộ phận</label>
+                            <input asp-for="DepartmentName" type="text" class="form-control" placeholder="Nhập tên bộ phận">
+                            <span asp-validation-for="DepartmentName" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Note">Ghi chú</label>
+                            <input asp-for="Note" type="text" class="form-control" placeholder="Nhập ghi chú">
+                            <span asp-validation-for="Note" class="text-danger"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="ti-file btn-icon-prepend"></i>
+                            Lưu
+                        </button>
+                        <button type="reset" class="btn btn-warning btn-icon-text">
+                            <i class="ti-reload btn-icon-prepend"></i>
+                            Làm mới
+                        </button>
+                        <a href="~/hr/department" class="btn btn-light">Trờ về</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,88 @@
+﻿@using Web_QM.Models
+@model QuestionTrialRun
+@{
+    ViewData["Title"] = "Thêm câu hỏi";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Thêm câu hỏi mới</h4>
+                    <form action="addquestion" class="forms-sample" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <div class="form-group">
+                            <label for="isCriticalQuestion">Câu điểm liệt:</label>
+                            <input type="checkbox" id="isCriticalQuestion" name="isCriticalQuestion" value="true"/>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="QuestionText">Câu hỏi:</label>
+                            <textarea asp-for="QuestionText" id="QuestionText" class="form-control" required></textarea>
+                            <span asp-validation-for="QuestionText" class="text-danger"></span>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label asp-for="OptionA">Đáp án A:</label>
+                                    <textarea asp-for="OptionA" id="OptionA" class="form-control"></textarea>
+                                    <span asp-validation-for="OptionA" class="text-danger"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label asp-for="OptionC">Đáp án C:</label>
+                                    <textarea asp-for="OptionC" id="OptionC" class="form-control"></textarea>
+                                    <span asp-validation-for="OptionC" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label asp-for="OptionB">Đáp án B:</label>
+                                    <textarea asp-for="OptionB" id="OptionB" class="form-control"></textarea>
+                                    <span asp-validation-for="OptionB" class="text-danger"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label asp-for="OptionD">Đáp án D</label>
+                                    <textarea asp-for="OptionD" id="OptionD" class="form-control"></textarea>
+                                    <span asp-validation-for="OptionD" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="CorrectOption">Chọn đáp án đúng</label>
+                            <select asp-for="CorrectOption" class="form-control">
+                                <option value="">Chọn đáp án</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                            </select>
+                            <span asp-validation-for="CorrectOption" class="text-danger"></span>
+                        </div>
+                        <input type="hidden" asp-for="ExamTrialRunId" value="@ViewBag.ExamId"/>
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="ti-file btn-icon-prepend"></i>
+                            Lưu
+                        </button>
+                        <a href="~/hr/examtrialrun/detail?id=@ViewBag.ExamId" class="btn btn-light">Trở về</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section ckeditorJS {
+    <script>
+        CKEDITOR.replace("QuestionText");
+        CKEDITOR.replace("OptionA");
+        CKEDITOR.replace("OptionB");
+        CKEDITOR.replace("OptionC");
+        CKEDITOR.replace("OptionD");
+    </script>
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

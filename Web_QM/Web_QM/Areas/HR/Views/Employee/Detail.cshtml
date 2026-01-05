@@ -1,0 +1,846 @@
+﻿@using Web_QM.Models.ViewModels
+@model Employee;
+@{
+    ViewData["Title"] = $"Nhân viên - {Model.EmployeeCode}";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    
+                    <div class="row">
+                        <div class="col-lg-6 text-center my-3 fw-bolder fs-5">
+                            <h3 class="text-center">@Model.EmployeeCode - @Model.EmployeeName</h3>
+                            <p>Bộ phận: @Model.Department</p>
+                            <p>Giới tính: @Model.Gender</p>
+                            <p>
+                                Ngày sinh:
+                                @if (Model.DateOfBirth.HasValue)
+                                {
+                                    @Model.DateOfBirth.Value.ToString("dd/MM/yyyy")
+                                }
+                                else
+                                {
+                                    <span>00/00/0000</span>
+                                }
+                            </p>
+                            <p>
+                                Ngày vào công ty:
+                                @if (Model.HireDate != null)
+                                {
+                                    @Model.HireDate.ToString("dd/MM/yyyy")
+                                }
+                                else
+                                {
+                                    <span>00/00/0000</span>
+                                }
+                            </p>
+                            <p>Chức vụ: @Model.Position</p>
+                            <p>Ghi chú: @Model.Note</p>
+                        </div>
+                        <div class="col-lg-6 text-center">
+                            @if (!string.IsNullOrEmpty(Model.Avatar))
+                            {
+                                <img src="~/imgs/avatars/@Model.Avatar" alt="Avatar" style="max-width: 300px; border-radius: 10px;" />
+                            }
+                            else
+                            {
+                                <img src="~/imgs/avatars/default.png" alt="Avatar" style="max-width: 300px; border-radius: 10px;" />
+                            }
+                        </div>
+                    </div>
+                    <div class="row border-top border-5 py-3">
+                        <h4 class="text-success fw-bolder fs-5">1. Phản hồi từ tổ trưởng</h4>
+                        <div class="table-responsive overflow-auto" style="height: 300px;">
+                            <table class="table table-bordered table-striped">
+                                <thead class="bg-info">
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Tổ trưởng</th>
+                                        <th>Phản hồi</th>
+                                        <th>Ngày phản hồi</th>
+                                        <th>#</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        var count1 = 1;
+                                    }
+                                    @foreach (var item in ViewBag.Feedbacks)
+                                    {
+                                        <tr>
+                                            <td>@(count1++)</td>
+                                            <td>@item.FeedbackerName</td>
+                                            <td>@item.Comment</td>
+                                            <td>@item.CreatedDate</td>
+                                            <td>
+                                                <a title="Xóa" href="#" onclick="if(confirm('Xóa phản hồi này?') == true){ location.href = '/hr/employee/deleteFeedback?id=@item.Id' }">xóa</a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row border-top border-5 py-3">
+                        <h4 class="text-success fw-bolder fs-5">2. Dữ liệu đào tạo</h4>
+                        <div class="table-responsive overflow-auto" style="height: 300px;">
+                            <a class="btn btn-success"
+                               href="#"
+                               data-bs-toggle="modal"
+                               data-bs-target="#addTrainingModal"
+                               data-employee-id="@Model.Id"
+                               data-training-type="General">
+                                Thêm dữ liệu đào tạo chung
+                            </a>
+                            @if (Model.Department == "CNC")
+                            {
+                                <a class="btn btn-success"
+                                   href="#"
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#addTrainingModal"
+                                   data-employee-id="@Model.Id"
+                                   data-training-type="CNC">
+                                    Thêm dữ liệu đào tạo CNC
+                                </a>
+                            }
+                            <table class="table table-bordered table-striped">
+                                <thead class="bg-info">
+                                    <tr>
+                                        <th>Đợt đào tạo</th>
+                                        <th>Kết quả</th>
+                                        <th>#</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in ViewBag.EvaluationPeriods)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <a href="#"
+                                                   class="text-decoration-none text-dark flex-grow-1"
+                                                   data-employee-id="@Model.Id"
+                                                   data-evaluation-period="@item.EvaluationPeriod"
+                                                   data-score="@item.Score"
+                                                   data-bs-toggle="modal"
+                                                   data-bs-target="#trainingResultModal">
+                                                    @item.EvaluationPeriod
+                                                </a>
+                                            </td>
+                                            <td>Đạt @item.Score %</td>
+                                            <td><a class="text-danger" href="#" onclick="if(confirm('Xóa dữ liệu đào tạo: @item.EvaluationPeriod?') == true){ location.href = '/hr/employee/deleteDataTraining?emplId=@item.EmployeeId&period=@item.EvaluationPeriod' }">xóa</a></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="table-responsive overflow-auto" style="height: 300px;">
+                            <h4>Kết quả kiểm tra sau đào tạo</h4>
+                            <table class="table table-bordered table-hover">
+                                <thead class="bg-info">
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Bài kiểm tra</th>
+                                        <th>Điểm thi trắc nghiệm</th>
+                                        <th>Điểm thi tự luận</th>
+                                        <th>Tổng điểm</th>
+                                        <th>Ghi chú</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        var count2 = 1;
+                                    }
+                                    @foreach (var item in ViewBag.ExamTrainingAnswers)
+                                    {
+                                        <tr>
+                                            <td>@(count2++)</td>
+                                            <td>@item.QuizName</td>
+                                            <td>
+                                                @{
+                                                    double percentageTn = (double)item.PointTn / item.CountQuestion * 100;
+                                                    string colorClassTn = percentageTn <= 50 ? "text-danger" : (percentageTn <= 60 ? "text-warning" : "text-success");
+                                                }
+                                                <span class="@colorClassTn">
+                                                    @($"{item.PointTn}/{item.CountQuestion} - Đạt {Math.Round(percentageTn, 2)}%")
+                                                </span>
+                                            </td>
+
+                                            <td>
+                                                @{
+                                                    double percentageTl = (double)item.PointTl / item.ToltalTl * 100;
+                                                    string colorClassTl = percentageTl <= 50 ? "text-danger" : (percentageTl <= 60 ? "text-warning" : "text-success");
+                                                }
+                                                <span class="@colorClassTl">
+                                                    @($"{item.PointTl}/{item.ToltalTl} - Đạt {Math.Round(percentageTl, 2)}%")
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @{
+                                                    double percentageTotal = (double)(item.PointTn + item.PointTl) / (item.CountQuestion + item.ToltalTl) * 100;
+                                                    string colorClassTT = percentageTotal <= 50 ? "text-danger" : (percentageTotal <= 60 ? "text-warning" : "text-success");
+                                                }
+                                                <span class="@colorClassTT">
+                                                    @($"{item.PointTn + item.PointTl}/{item.CountQuestion + item.ToltalTl} - Đạt {Math.Round(percentageTotal, 2)}%")
+                                                </span>
+                                            </td>
+                                            <td>@item.Note</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row border-top border-5 py-3">
+                        <h4 class="text-success fw-bolder fs-5">3. Dữ liệu kiểm tra định kỳ</h4>
+                        <div class="table-responsive overflow-auto" style="height: 300px;">
+                            <table class="table table-bordered table-hover">
+                                <thead class="bg-info">
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Bài kiểm tra</th>
+                                        <th>Điểm thi trắc nghiệm</th>
+                                        <th>Điểm thi tự luận</th>
+                                        <th>Tổng điểm</th>
+                                        <th>Ghi chú</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        var count3 = 1;
+                                    }
+                                    @foreach (var item in ViewBag.ExamPeriodicAnswers)
+                                    {
+                                        <tr>
+                                            <td>@(count3++)</td>
+                                            <td>@item.QuizName</td>
+                                            <td>
+                                                @{
+                                                    double percentageTn = (double)item.PointTn / item.CountQuestion * 100;
+                                                    string colorClassTn = percentageTn <= 50 ? "text-danger" : (percentageTn <= 60 ? "text-warning" : "text-success");
+                                                }
+                                                <span class="@colorClassTn">
+                                                    @($"{item.PointTn}/{item.CountQuestion} - Đạt {Math.Round(percentageTn, 2)}%")
+                                                </span>
+                                            </td>
+
+                                            <td>
+                                                @{
+                                                    double percentageTl = (double)item.PointTl / item.ToltalTl * 100;
+                                                    string colorClassTl = percentageTl <= 50 ? "text-danger" : (percentageTl <= 60 ? "text-warning" : "text-success");
+                                                }
+                                                <span class="@colorClassTl">
+                                                    @($"{item.PointTl}/{item.ToltalTl} - Đạt {Math.Round(percentageTl, 2)}%")
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @{
+                                                    double percentageTotal = (double)(item.PointTn + item.PointTl) / (item.CountQuestion + item.ToltalTl) * 100;
+                                                    string colorClassTT = percentageTotal <= 50 ? "text-danger" : (percentageTotal <= 60 ? "text-warning" : "text-success");
+                                                }
+                                                <span class="@colorClassTT">
+                                                    @($"{item.PointTn + item.PointTl}/{item.CountQuestion + item.ToltalTl} - Đạt {Math.Round(percentageTotal, 2)}%")
+                                                </span>
+                                            </td>
+                                            <td>@item.Note</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row border-top border-5 py-3">
+                        <h4 class="text-success fw-bolder fs-5">4. Dữ liệu chạy thử</h4>
+                        <div class="row">
+                            <div class="p-3">
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <h5>(+) Lý thuyết</h5>
+                                        <div class="table-responsive overflow-auto" style="height: 300px;">
+                                            <table class="table table-bordered table-striped">
+                                                <thead class="bg-info">
+                                                    <tr>
+                                                        <th>Đợt đánh giá</th>
+                                                        <th>Cấp độ</th>
+                                                        <th>Đúng</th>
+                                                        <th>Sai</th>
+                                                        <th>Liệt</th>
+                                                        <th>Ghi chú</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var item in ViewBag.TrialRunAnswer)
+                                                    {
+                                                        <tr>
+                                                            <td>@item.ExamName</td>
+                                                            <td>@item.TestLevel</td>
+                                                            @{
+                                                                var totalQuestions = item.Correct + item.Incorrect + item.CriticalFail;
+
+                                                                var correctPercentage = (double)item.Correct / totalQuestions * 100;
+                                                                var correctClass = "";
+                                                                if (item.CriticalFail == 0)
+                                                                {
+                                                                    if (correctPercentage >= 60)
+                                                                    {
+                                                                        correctClass = "text-success";
+                                                                    }
+                                                                    else if (correctPercentage >= 50)
+                                                                    {
+                                                                        correctClass = "text-warning";
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        correctClass = "text-danger";
+                                                                    }
+                                                                }
+                                                                else
+                                                                {
+                                                                    correctClass = "text-danger";
+                                                                }
+                                                            }
+                                                            <td class="@correctClass">@item.Correct</td>
+                                                            <td>@item.Incorrect</td>
+                                                            <td>@item.CriticalFail</td>
+                                                            <td>@item.Note</td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <h5>(+) Thực hành
+                                            <a class="btn btn-success"
+                                               href="#"
+                                               data-bs-toggle="modal"
+                                               data-bs-target="#addTestPracticeModal">
+                                                Thêm dữ liệu
+                                            </a>
+                                        </h5>
+                                       
+                                        <div class="table-responsive overflow-auto" style="height: 300px;">
+                                            <table class="table table-bordered table-striped">
+                                                <thead class="bg-info">
+                                                    <tr>
+                                                        <th>Đợt đánh giá</th>
+                                                        <th>Cấp độ</th>
+                                                        <th>Kết quả</th>
+                                                        <th>#</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var test in ViewBag.TestPractices as List<TestPractice>)
+                                                    {
+                                                        <tr>
+                                                            <td>
+                                                                <a href="#" class="view-details-btn"
+                                                                   data-bs-toggle="modal"
+                                                                   data-bs-target="#testPracticeDetailModal"
+                                                                   data-test-id="@test.Id">
+                                                                    @test.TestName
+                                                                </a>
+                                                            </td>
+                                                            <td>@test.TestLevel</td>
+                                                            <td>@test.Result</td>
+                                                            <td><a class="text-danger" href="#" onclick="if(confirm('Xóa dữ liệu chạy thử: @test.TestName?') == true){ location.href = '/hr/employee/deleteTestPractice?id=@test.Id' }">xóa</a></td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@* modal xem dữ liệu đào tạo *@
+<div class="modal fade" id="trainingResultModal" tabindex="-1" aria-labelledby="trainingResultModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="trainingResultModalLabel">Kết quả đào tạo đợt 
+                    <span id="modalEvaluationPeriod"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Nội dung đào tạo</th>
+                            <th>Kết quả</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trainingResultTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* modal thêm dữ liệu đào tạo *@
+<div class="modal fade" id="addTrainingModal" tabindex="-1" aria-labelledby="addTrainingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addTrainingModalLabel">Thêm kết quả đào tạo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addTrainingForm">
+                    <input type="hidden" id="employeeIdHiddenInput" name="EmployeeId" value="@Model.Id" />
+                    <input type="hidden" id="typeTrainingHiddenInput" />
+                    <div class="row">
+                        <label for="evaluationPeriodInput" class="form-label">Đợt đánh giá:</label>
+                        <input type="text" class="form-control" id="evaluationPeriodInput" name="EvaluationPeriod" required>
+                    </div>
+                    
+                    <h6 class="mt-4">Nội dung đào tạo</h6>
+                    <div class="row" id="trainingListGrid">
+                        </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-success" id="saveTrainingData">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* modal xem dữ liệu chạy thử thực hành *@
+<div class="modal fade" id="testPracticeDetailModal" tabindex="-1" aria-labelledby="testPracticeDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="testPracticeDetailModalLabel">Chi tiết dữ liệu Chạy thử</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h4><strong>Đợt đánh giá:</strong> <span id="modalTestName"></span></h4>
+                <h4><strong>Cấp độ:</strong> <span id="modalTestLevel"></span></h4>
+                <h4><strong>Tên chi tiết:</strong> <span id="modalPartName"></span></h4>
+                <h4><strong>Kết quả cuối cùng:</strong> <span id="modalResult"></span></h4>
+
+                <h5 class="mt-4">Chi tiết Nguyên công</h5>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Nguyên công</th>
+                            <th>Thời gian chuẩn bị định mức</th>
+                            <th>Thời gian chuẩn bị thực tế</th>
+                            <th>Số lần Offset định mức</th>
+                            <th>Số lần Offset thực tế</th>
+                            <th>Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalDetailsBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* modal thêm chạy thử thực hành *@
+<div class="modal fade" id="addTestPracticeModal" tabindex="-1" aria-labelledby="addTestPracticeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addTestPacticeModalLabel">Thêm Kết quả Chạy thử (Thực hành)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="practiceForm">
+                    <input type="hidden" id="employeeId" name="EmployeeId" value="@Model.Id">
+                    <div class="form-group">
+                        <label class="fs-5" for="testNameP">Đợt đánh giá</label>
+                        <input type="text" class="form-control" name="TestName" id="testNameP" required>
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-lg-3">
+                            <label for="testLevel">Cấp độ</label>
+                            <select class="form-control" id="testLevelP" name="TestLevel">
+                                <option value="">Cấp độ chạy thử</option>
+                                <option value="Cấp 1">Cấp 1</option>
+                                <option value="Cấp 2">Cấp 2</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-lg-6">
+                            <label for="partName">Tên chi tiết:</label>
+                            <input type="text" class="form-control" name="PartName" id="partName" placeholder="Nhập tên chi tiết đã chạy thử" required>
+                        </div>
+                        <div class="form-group col-lg-3">
+                            <label for="result">Kết quả</label>
+                            <select class="form-control" id="result" name="Result">
+                                <option value="">Kết quả cuối cùng</option>
+                                <option value="OK">OK</option>
+                                <option value="NG">NG</option>
+                            </select>
+                        </div>
+                    </div>
+                    <h4 class="mt-4 border-bottom border-4">Danh sách nguyên công</h4>
+                    <div id="testDetailsContainer"></div>
+                    <button type="button" class="btn btn-success btn-sm mt-2" id="addDetailButton">+</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="saveButton">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="testDetailTemplate">
+    <div class="row mt-2 test-detail-row">
+        <div class="col-auto">
+            <label>Nguyên công</label>
+            <input type="text" class="form-control" placeholder="Nguyên công" name="OperationName" value="NC" required>
+        </div>
+        <div class="col-auto">
+            <label>TG chuẩn bị DM</label>
+            <input type="number" class="form-control" placeholder="Thời gian chuẩn bị định mức" min="0" name="PrepTimeStandard">
+        </div>
+        <div class="col-auto">
+            <label>TG chuẩn bị TT</label>
+            <input type="number" class="form-control" placeholder="Thời gian chuẩn bị thực tế" min="0" name="PrepTimeActual">
+        </div>
+        <div class="col-auto">
+            <label>Số lần Offset DM</label>
+            <input type="number" class="form-control" placeholder="Số lần Offset định mức" min="0" name="OffsetCountStandard">
+        </div>
+        <div class="col-auto">
+            <label>Số lần Offset TT</label>
+            <input type="number" class="form-control" placeholder="Số lần Offset thực tế" min="0" name="OffsetCountActual">
+        </div>
+        <div class="col-auto">
+            <label>Ghi chú</label>
+            <input type="text" class="form-control" placeholder="Ghi chú" name="Note">
+        </div>
+        <div class="col-auto p-4">
+            <button type="button" class="btn btn-danger btn-sm remove-detail-btn">-</button>
+        </div>
+    </div>
+</template>
+
+@section scripts {
+    <script>
+        $(document).ready(function () {
+            $('#trainingResultModal').on('show.bs.modal', function (event) {
+                var button = $(event.relatedTarget);
+                var employeeId = button.data('employeeId');
+                var evaluationPeriod = button.data('evaluationPeriod');
+                var score = button.data('score');
+
+                var modalTitle = $(this).find('#modalEvaluationPeriod');
+                modalTitle.text(evaluationPeriod);
+
+                var tableBody = $(this).find('#trainingResultTableBody');
+                tableBody.html('<tr><td colspan="2">Đang tải...</td></tr>');
+
+                $.ajax({
+                    url: '@Url.Action("GetTrainingResults", "Employee", new { area = "hr" })',
+                    type: 'GET',
+                    data: {
+                        employeeId: employeeId,
+                        evaluationPeriod: evaluationPeriod
+                    },
+                    success: function (groupedResults) {
+                        tableBody.empty();
+
+                        if (groupedResults.General && groupedResults.General.length > 0) {
+                            tableBody.append('<tr><td class="bg-light fw-bold">Đào tạo chung (General)</td><td class="bg-light fw-bold">' + score + '%</td></tr>');
+                            $.each(groupedResults.General, function (index, result) {
+                                var statusText = result.status === 1 ? 'OK ✅' : 'NG ❌';
+                                var row = '<tr><td>' + result.trainingName + '</td><td>' + statusText + '</td></tr>';
+                                tableBody.append(row);
+                            });
+                        }
+
+                        if (groupedResults.CNC && groupedResults.CNC.length > 0) {
+                            tableBody.append('<tr><td class="bg-light fw-bold">Đào tạo CNC</td><td class="bg-light fw-bold">' + score + '%</td></tr>');
+                            $.each(groupedResults.CNC, function (index, result) {
+                                var statusText = result.status === 1 ? 'OK ✅' : 'NG ❌';
+                                var row = '<tr><td>' + result.trainingName + '</td><td>' + statusText + '</td></tr>';
+                                tableBody.append(row);
+                            });
+                        }
+
+                        if ((!groupedResults.General || groupedResults.General.length === 0) &&
+                            (!groupedResults.CNC || groupedResults.CNC.length === 0)) {
+                            tableBody.html('<tr><td colspan="2">Không có kết quả đào tạo cho đợt này.</td></tr>');
+                        }
+                    },
+                    error: function () {
+                        tableBody.html('<tr><td colspan="2">Lỗi khi tải dữ liệu.</td></tr>');
+                    }
+                });
+            });
+        });
+
+        // thêm dữ liệu đào tạo
+        $(document).ready(function () {
+            $('#addTrainingModal').on('show.bs.modal', function (event) {
+                var button = $(event.relatedTarget);
+                var employeeId = button.data('employee-id');
+                var typeTraining = button.data('training-type');
+
+                var modal = $(this);
+                modal.find('input[name="employeeId"]').val(employeeId);
+                $('#typeTrainingHiddenInput').val(typeTraining);
+
+                var gridContainer = modal.find('#trainingListGrid');
+                gridContainer.html('<p class="text-center">Đang tải danh sách đào tạo...</p>');
+
+                $.ajax({
+                    url: '@Url.Action("GetTrainings", "Employee", new { area = "hr" })',
+                    data: {
+                        type: typeTraining
+                    },
+                    type: 'GET',
+                    success: function (trainings) {
+                        gridContainer.empty();
+                        if (trainings.length > 0) {
+                            $.each(trainings, function (index, training) {
+                                var col = '<div class="col-12 col-md-3 mb-3">' +
+                                            '<div class="card p-3" data-training-id="' + training.id + '">' +
+                                                '<h5>' + training.trainingName + '</h5>' +
+                                                '<div class="form-check-inline">' +
+                                                    '<input class="form-check-input" type="radio" name="status_' + training.id + '" id="status_pass_' + training.id + '" value="1" required>' +
+                                                    '<label class="form-check-label" for="status_pass_' + training.id + '">OK</label>' +
+                                                '</div>' +
+                                                '<div class="form-check-inline">' +
+                                                    '<input class="form-check-input" type="radio" name="status_' + training.id + '" id="status_fail_' + training.id + '" value="0" required>' +
+                                                    '<label class="form-check-label" for="status_fail_' + training.id + '">NG</label>' +
+                                                '</div>' +
+                                            '</div>' +
+                                          '</div>';
+                                gridContainer.append(col);
+                            });
+                        } else {
+                            gridContainer.html('<p class="text-center">Không có danh mục đào tạo nào.</p>');
+                        }
+                    },
+                    error: function () {
+                        gridContainer.html('<p class="text-center text-danger">Lỗi khi tải nội dung đào tạo.</p>');
+                    }
+                });
+            });
+
+            // lưu dữ liệu đào tạo
+            $('#saveTrainingData').click(function () {
+                var employeeId = $('#employeeIdHiddenInput').val();
+                var evaluationPeriod = $('#evaluationPeriodInput').val();
+                var typeTraining = $('#typeTrainingHiddenInput').val();
+
+                if (!evaluationPeriod) {
+                    alert('Vui lòng nhập Đợt đánh giá.');
+                    return;
+                }
+
+                var results = [];
+                $('#trainingListGrid').find('.card').each(function() {
+                    var trainingId = $(this).data('training-id');
+                    var status = $(this).find('input[type="radio"]:checked').val();
+
+                    if (status !== undefined) {
+                        results.push({
+                            EmployeeId: employeeId,
+                            TrainingId: trainingId,
+                            Status: status,
+                            EvaluationPeriod: evaluationPeriod
+                        });
+                    }
+                });
+
+                console.log('Lấy dữ liệu: ', results);
+                console.log('Type: ', typeTraining);
+
+                if (results.length === 0) {
+                    alert('Vui lòng chọn ít nhất một kết quả đào tạo.');
+                    return;
+                }
+                console.log(results)
+                $.ajax({
+                    url: '@Url.Action("SaveTrainingResults", "Employee", new { area = "hr" })',
+                    type: 'POST',
+                    data: JSON.stringify({
+                        results: results,
+                        type: typeTraining 
+                    }),
+                    contentType: 'application/json',
+                    success: function (response) {
+                        if (response.success) {
+                            alert(response.message);
+                            $('#addTrainingModal').modal('hide');
+                            location.reload();
+                        } else {
+                            console.log('Xảy ra lỗi!')
+                            alert('Lỗi: ' + response.message);
+                        }
+                    },
+                    error: function () {
+                        alert('Đã xảy ra lỗi khi lưu dữ liệu.');
+                    }
+                });
+            });
+        });
+
+        // xem dữ liệu chạy thử thực hành
+        $(document).ready(function () {
+            $('#testPracticeDetailModal').on('show.bs.modal', function (event) {
+                var button = $(event.relatedTarget);
+                var testId = button.data('test-id');
+
+                $.ajax({
+                    url: `/hr/Employee/GetTestPracticeDetails?id=${testId}`,
+                    type: 'GET',
+                    success: function (data) {
+                        var modal = $('#testPracticeDetailModal');
+                        modal.find('#modalTestName').text(data.testName);
+                        modal.find('#modalTestLevel').text(data.testLevel);
+                        modal.find('#modalPartName').text(data.partName);
+                        modal.find('#modalResult').text(data.result);
+
+                        var detailsBody = modal.find('#modalDetailsBody');
+                        detailsBody.empty();
+
+                        if (data.details && data.details.length > 0) {
+                            data.details.forEach(function (detail) {
+                                const prepTimeClass = detail.prepTimeActual > detail.prepTimeStandard ? 'text-danger' : 'text-success';
+
+                                const offsetCountClass = detail.offsetCountActual > detail.offsetCountStandard ? 'text-danger' : 'text-success';
+
+                                var row = `<tr>
+                                    <td>${detail.operationName}</td>
+                                    <td>${detail.prepTimeStandard || 'N/A'}</td>
+                                    <td class="${prepTimeClass}">${detail.prepTimeActual || 'N/A'}</td>
+                                    <td>${detail.offsetCountStandard || 'N/A'}</td>
+                                    <td class="${offsetCountClass}">${detail.offsetCountActual || 'N/A'}</td>
+                                    <td>${detail.note || 'N/A'}</td>
+                                </tr>`;
+                                detailsBody.append(row);
+                            });
+                        } else {
+                            detailsBody.append('<tr><td colspan="6" class="text-center">Không có chi tiết nào.</td></tr>');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        alert('Không thể tải dữ liệu chi tiết.');
+                        console.error("Lỗi:", error);
+                    }
+                });
+            });
+        });
+
+
+        // thêm dữ liệu chạy thử thực hành
+        $(document).ready(function () {
+            var rowCount = 0;
+
+            $('#addTestPracticeModal').on('show.bs.modal', function () {
+                $('#practiceForm')[0].reset();
+                $('#testDetailsContainer').empty();
+                rowCount = 0;
+            });
+
+            function addTestDetailRow() {
+                var template = $('#testDetailTemplate').html();
+                var $row = $(template);
+                $row.find('input, select').each(function() {
+                    var originalName = $(this).attr('name');
+                    $(this).attr('name', `Details[${rowCount}].` + originalName);
+                });
+                $('#testDetailsContainer').append($row);
+                rowCount++;
+            }
+
+            $('#addTestPracticeModal').on('shown.bs.modal', function () {
+                if (rowCount === 0) {
+                    addTestDetailRow();
+                }
+            });
+
+            $('#addDetailButton').on('click', function () {
+                addTestDetailRow();
+            });
+
+            $(document).on('click', '.remove-detail-btn', function () {
+                $(this).closest('.test-detail-row').remove();
+            });
+
+            $('#saveButton').on('click', function () {
+                var details = [];
+                $('#testDetailsContainer .test-detail-row').each(function() {
+                    var detail = {};
+                    $(this).find('input, select').each(function() {
+                        var name = $(this).attr('name').split('.').pop();
+                        detail[name] = $(this).val();
+                    });
+                    details.push(detail);
+                });
+
+                var testData = {
+                    EmployeeId: $('#employeeId').val(),
+                    TestName: $('#testNameP').val(),
+                    TestLevel: $('#testLevelP').val(),
+                    PartName: $('#partName').val(),
+                    Result: $('#result').val(),
+                    Details: details
+                };
+
+                console.log(testData)
+                $.ajax({
+                    url: '/hr/Employee/SavePracticeData',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(testData),
+                    success: function (response) {
+                        if (response.success){
+                            alert(response.message);
+                            $('#addTestPracticeModal').modal('hide');
+                            location.reload();
+                        }
+                        else {
+                            console.log('Xảy ra lỗi!')
+                            alert('Lỗi: ' + response.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        var errorMessage = xhr.responseJSON ? xhr.responseJSON.message : "Đã xảy ra lỗi khi gửi dữ liệu.";
+                        alert(errorMessage);
+                        console.error("Lỗi:", error);
+                    }
+                });
+            });
+        });
+    </script>
+}

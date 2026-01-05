@@ -1,0 +1,298 @@
+﻿@using Web_QM.Models.ViewModels
+@model IEnumerable<EmployeeViolation5SView>;
+@{
+    ViewData["Title"] = "Danh sách lỗi 5S";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Danh sách lỗi 5S của @ViewBag.EmployeeCode - @ViewBag.EmployeeName</h4>
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["ErrorMessage"]
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                    }
+                    <a class="btn btn-success mb-3" href="#" data-bs-toggle="modal" data-bs-target="#addModal">Thêm lỗi 5S</a>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Ngày tháng</th>
+                                    <th>Lỗi vi phạm</th>
+                                    <th>Số lần vi phạm</th>
+                                    <th>Phạt tiền /lỗi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeeTableBody">
+                                @{
+                                    var count = 1;
+                                }
+                                @foreach (var item in Model)
+                                {
+                                        <tr class="context-menu-row" data-id="@item.Id">
+                                            <td>@(count++)</td>
+                                            <td>@item.DateMonth.ToString("dd/MM/yyyy")</td>
+                                            <td class="text-wrap">@item.Content5S</td>
+                                            <td>@item.Qty</td>
+                                            <td>@(item.Amount.ToString("N0") ?? "") vnd</td>
+                                        </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addModalLabel">Thêm Mới Lỗi 5S</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addViolationForm">
+                    <input type="hidden" name="EmployeeCode" value="@ViewBag.EmployeeCode" />
+
+                    <div class="mb-3">
+                        <label for="addViolation5SId" class="form-label">Lỗi 5S</label>
+                        <select id="addViolation5SId" name="Violation5SId" asp-items="ViewBag.ListViolation5S" class="form-select">
+                            <option value="">Chọn lỗi 5S</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addDateMonth" class="form-label">Ngày Vi Phạm</label>
+                        <input type="date" class="form-control" id="addDateMonth" name="DateMonth" required value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="addQty" class="form-label">Số lần</label>
+                        <input type="number" class="form-control" id="addQty" name="Qty" required value="1" />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="saveAddButton">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel">Sửa Lỗi 5S</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editViolationForm">
+                    <input type="hidden" id="editId" name="Id" />
+                    <input type="hidden" name="EmployeeCode" value="@ViewBag.EmployeeCode" />
+
+                    <div class="mb-3">
+                        <label for="editViolation5SId" class="form-label">Lỗi 5S</label>
+                        <select id="editViolation5SId" name="Violation5SId" asp-items="ViewBag.ListViolation5S" class="form-select">
+                            <option value="">Chọn lỗi 5S</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDateMonth" class="form-label">Ngày Vi Phạm</label>
+                        <input type="date" class="form-control" id="editDateMonth" name="DateMonth" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editQty" class="form-label">Số lần</label>
+                        <input type="number" class="form-control" id="editQty" name="Qty" required />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="saveEditButton">Lưu Thay Đổi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="contextMenu" class="dropdown-menu" style="position: absolute; display: none;">
+    <a class="dropdown-item" href="#" id="editLink">Sửa</a>
+    <a class="dropdown-item" href="#" id="deleteLink">Xóa</a>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const contextMenu = document.getElementById('contextMenu');
+            let empl5SId = null;
+            const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+
+            async function handleResponse(response) {
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    alert('Lỗi: ' + (errorData.message || response.statusText));
+                    return false;
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(result.message);
+                    window.location.reload();
+                    return true;
+                } else {
+                    alert('Thất bại: ' + (result.message || 'Có lỗi xảy ra.'));
+                    return false;
+                }
+            }
+
+            document.getElementById('saveAddButton').addEventListener('click', async function () {
+                const form = document.getElementById('addViolationForm');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                const data = {
+                    EmployeeCode: form.querySelector('[name="EmployeeCode"]').value,
+                    Violation5SId: form.querySelector('[name="Violation5SId"]').value,
+                    DateMonth: form.querySelector('[name="DateMonth"]').value,
+                    Qty: form.querySelector('[name="Qty"]').value
+                };
+                if(data.Qty <=0){
+                    alert('Số lần không hợp lệ')
+                    return;
+                }
+                try {
+                    const response = await fetch('/hr/employee/AddViolation', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    await handleResponse(response);
+                } catch (error) {
+                    console.error('Lỗi khi thêm mới:', error);
+                    alert('Lỗi kết nối hoặc xử lý. Vui lòng thử lại.');
+                }
+            });
+
+            document.getElementById('employeeTableBody').addEventListener('contextmenu', function (event) {
+                const row = event.target.closest('tr');
+                if (!row) return;
+
+                event.preventDefault();
+                empl5SId = row.getAttribute('data-id');
+
+                contextMenu.style.display = 'block';
+                contextMenu.style.left = event.pageX + 'px';
+                contextMenu.style.top = event.pageY + 'px';
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!contextMenu.contains(e.target)) {
+                    contextMenu.style.display = 'none';
+                }
+            });
+
+            document.getElementById('editLink').addEventListener('click', async function (event) {
+                event.preventDefault();
+                contextMenu.style.display = 'none';
+
+                if (empl5SId) {
+                    try {
+                        const response = await fetch(`/hr/employee/GetViolationDetails?id=${empl5SId}`);
+                        let data;
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`Yêu cầu thất bại: ${response.status} - ${errorText.substring(0, 50)}...`);
+                        }
+
+                        data = await response.json();
+
+                        if (!data || data.id == null) {
+                             throw new Error('Dữ liệu lỗi 5S không hợp lệ hoặc rỗng.');
+                        }
+                        document.getElementById('editId').value = data.id;
+                        document.getElementById('editViolation5SId').value = data.violation5SId;
+                        document.getElementById('editDateMonth').value = data.dateMonth;
+                        document.getElementById('editQty').value = data.qty;
+
+                        editModal.show();
+
+                    } catch (error) {
+                        console.error('Lỗi khi lấy dữ liệu Sửa:', error);
+                        alert('Không thể tải chi tiết lỗi. Vui lòng thử lại: ' + error.message);
+                    }
+                }
+            });
+
+            document.getElementById('saveEditButton').addEventListener('click', async function () {
+                const form = document.getElementById('editViolationForm');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                const data = {
+                    Id: parseInt(form.querySelector('[name="Id"]').value),
+                    EmployeeCode: form.querySelector('[name="EmployeeCode"]').value,
+                    Violation5SId: parseInt(form.querySelector('[name="Violation5SId"]').value),
+                    DateMonth: form.querySelector('[name="DateMonth"]').value,
+                    Qty: form.querySelector('[name="Qty"]').value
+                };
+                if(data.Qty <=0){
+                    alert('Số lần không hợp lệ')
+                    return;
+                }
+                try {
+                    const response = await fetch('/hr/employee/UpdateViolation', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    editModal.hide();
+                    await handleResponse(response);
+                } catch (error) {
+                    console.error('Lỗi khi cập nhật:', error);
+                    alert('Lỗi kết nối hoặc xử lý. Vui lòng thử lại.');
+                }
+            });
+
+            document.getElementById('deleteLink').addEventListener('click', async function (event) {
+                event.preventDefault();
+                contextMenu.style.display = 'none';
+
+                if (empl5SId && confirm(`Bạn có chắc muốn xóa lỗi 5S ?`)) {
+                    try {
+                        const response = await fetch(`/hr/employee/DeleteViolation?id=${empl5SId}`, {
+                            method: 'GET',
+                        });
+                        await handleResponse(response); 
+                    } catch (error) {
+                        console.error('Lỗi khi xóa:', error);
+                        alert('Lỗi kết nối hoặc xử lý. Vui lòng thử lại.');
+                    }
+                }
+            });
+        });
+    </script>
+}

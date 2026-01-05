@@ -11,7 +11,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>QUANGMINH - @ViewData["Title"]</title>
+    <title>Admin - @ViewData["Title"]</title>
     <link rel="stylesheet" href="~/admin/vendors/feather/feather.css">
     <link rel="stylesheet" href="~/admin/vendors/mdi/css/materialdesignicons.min.css">
     <link rel="stylesheet" href="~/admin/vendors/ti-icons/css/themify-icons.css">
@@ -27,9 +27,9 @@
     <link rel="shortcut icon" href="/logo.ico" />
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css" />
 </head>
-<body class="sidebar-light">
+<body class="sidebar-dark">
     <div class="container-scroller">
-        <nav class="navbar default-layout col-lg-12 col-12 p-0 fixed-top d-flex align-items-top flex-row">
+        <nav class="navbar default-layout col-lg-12 col-12 p-0 fixed-top d-flex align-items-top flex-row navbar-warning">
             <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
                 <div class="me-3">
                     <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-bs-toggle="minimize">
@@ -148,7 +148,7 @@
                     <li class="nav-item">
                         <a class="nav-link" href="~/admin">
                             <i class="mdi mdi-view-dashboard menu-icon"></i>
-                            <span class="menu-title">Tổng quan dữ liệu</span>
+                            <span class="menu-title">Dashboard</span>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -157,103 +157,12 @@
                             <span class="menu-title">Tài khoản đăng nhập</span>
                             <i class="menu-arrow"></i>
                         </a>
-                        <div class="collapse" id="account">
+                        <div class="collapse show" id="account">
                             <ul class="nav flex-column sub-menu">
                                 <li class="nav-item"> <a class="nav-link" href="~/admin/account" asp-policy="ViewAccount">Danh sách</a></li>
                                 <li class="nav-item"> <a class="nav-link" href="~/admin/permission" asp-policy="ViewPermission">Phân quyền</a></li>
                             </ul>
                         </div>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="collapse" href="#dataEmpl" aria-expanded="false" aria-controls="dataEmpl">
-                            <i class="menu-icon mdi mdi-account"></i>
-                            <span class="menu-title">Quản lý nhân viên</span>
-                            <i class="menu-arrow"></i>
-                        </a>
-                        <div class="collapse " id="dataEmpl">
-                            <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/employee" asp-policy="ViewEmployee">Danh sách</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/department" asp-policy="ViewDepartment">Bộ phận công ty</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/training" asp-policy="DataEmpl">Hạng mục đào tạo</a></li>
-                            </ul>
-                        </div>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="collapse" href="#salary" aria-expanded="false" aria-controls="salary">
-                            <i class="menu-icon mdi mdi-cash-multiple"></i>
-                            <span class="menu-title">Quản lý lương</span>
-                            <i class="menu-arrow"></i>
-                        </a>
-                        <div class="collapse " id="salary">
-                            <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/salary" asp-policy="ViewSalary">Lương cơ bản</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/monthlypayroll" asp-policy="ViewMonthlyPayroll">Bảng lương</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/timesheet" asp-policy="ViewTimeSheet">Bảng chấm công</a></li>
-                            </ul>
-                        </div>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="collapse" href="#exam" aria-expanded="false" aria-controls="exam">
-                            <i class="menu-icon mdi mdi-book-open-variant"></i>
-                            <span class="menu-title">Hệ thống kiếm tra</span>
-                            <i class="menu-arrow"></i>
-                        </a>
-                        <div class="collapse" id="exam">
-                            <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/examtraining" asp-policy="ViewExam">Bài Kiểm tra sau đào tạo</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/resulttraining" asp-policy="ViewResultExam">Kết quả KT sau đào tạo</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/exam" asp-policy="ViewExam">Bài Kiểm tra định kỳ</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/result" asp-policy="ViewResultExam">Kết quả KT định kỳ</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/examtrialrun" asp-policy="ViewExam">Bài Kiểm tra chạy thử</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/resulttrialrun" asp-policy="ViewResultExam">Kết quả KT chạy thử</a></li>
-                            </ul>
-                        </div>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="collapse" href="#machine" aria-expanded="false" aria-controls="machine">
-                            <i class="menu-icon mdi mdi-wrench"></i>
-                            <span class="menu-title">Quản lý thiết bị</span>
-                            <i class="menu-arrow"></i>
-                        </a>
-                        <div class="collapse" id="machine">
-                            <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/machine" asp-policy="ViewMachine">Thông số máy</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/MachineGroup" asp-policy="ViewMachineGroup">Nhóm máy</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/equipmentrepairhistory" asp-policy="ViewMachineRepair">Báo lỗi sửa chữa</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/machinemaintenance" asp-policy="ViewMachineMaintenance">Kế hoạch bảo dưỡng</a></li>
-                            </ul>
-                        </div>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="collapse" href="#ns" aria-expanded="false" aria-controls="ns">
-                            <i class="mdi mdi-chart-line menu-icon"></i>
-                            <span class="menu-title">Thống kê năng suất</span>
-                            <i class="menu-arrow"></i>
-                        </a>
-                        <div class="collapse" id="ns">
-                            <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/productivity" asp-policy="ViewProductivity">Năng suất</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/admin/sawingperformance" asp-policy="ViewProductivity">Doanh số cưa</a></li>
-                            </ul>
-                        </div>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="~/admin/errordata" asp-policy="ViewKaizen">
-                            <i class="mdi mdi-alert-circle-outline menu-icon"></i>
-                            <span class="menu-title">Lỗi sản xuất</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="~/admin/kaizen" asp-policy="ViewKaizen">
-                            <i class="mdi mdi-lightbulb-on menu-icon"></i>
-                            <span class="menu-title">Tổng hợp Kaizen</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="~/admin/violation5S" asp-policy="ViewViolation5S">
-                            <i class="mdi mdi-alpha-s-circle-outline menu-icon"></i>
-                            <span class="menu-title">Quy định lỗi 5S</span>
-                        </a>
                     </li>
                 </ul>
             </nav>
@@ -262,12 +171,12 @@
 
                 @RenderBody()
 
-                <footer class="footer">
+                @* <footer class="footer">
                     <div class="d-sm-flex justify-content-center justify-content-sm-between">
                         <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Admin premium by IT QUANG MINH</span>
                         <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">Copyright © 2025. All rights reserved.</span>
                     </div>
-                </footer>
+                </footer> *@
             </div>
         </div>
     </div>
@@ -316,57 +225,5 @@
             });
         });
     </script>
-
-    @if (User.HasPermission("Notification.View"))
-    {
-        <script>
-            function fetchAndRenderNotifications() {
-                const apiUrl = '/Admin/Dashboard/GetNotifications';
-
-                fetch(apiUrl)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Lỗi mạng');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        const notificationCountElement = document.getElementById('notification-count');
-                        const notificationTitleElement = document.getElementById('notification-title');
-                        const notificationListElement = document.getElementById('notification-list');
-
-                        const oldNotifications = notificationListElement.querySelectorAll('.preview-item');
-                        oldNotifications.forEach(item => item.remove());
-
-                        const unreadNotifications = data.filter(notification => notification.isRead === 0);
-
-                        const notificationCount = unreadNotifications.length;
-                        notificationCountElement.textContent = notificationCount;
-                        notificationTitleElement.textContent = `Bạn có ${notificationCount} thông báo mới`;
-
-                        unreadNotifications.forEach(notification => {
-                            const notificationHtml = `
-                                <a class="dropdown-item preview-item py-3">
-                                    <div class="preview-thumbnail">
-                                        <i class="mdi mdi-alert m-auto text-primary"></i>
-                                    </div>
-                                    <div class="preview-item-content">
-                                        <h6 class="preview-subject fw-normal text-dark mb-1">${notification.message}</h6>
-                                        <p class="fw-light small-text mb-0"> ${notification.createdDate} </p>
-                                    </div>
-                                </a>
-                            `;
-                            notificationListElement.insertAdjacentHTML('beforeend', notificationHtml);
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Lỗi mạng:', error);
-                    });
-            }
-
-            document.addEventListener('DOMContentLoaded', fetchAndRenderNotifications);
-            setInterval(fetchAndRenderNotifications, 30000);
-        </script>
-    }
 </body>
 </html>
