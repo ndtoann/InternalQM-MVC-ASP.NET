@@ -1,0 +1,154 @@
+﻿@{
+    ViewData["Title"] = "Đóng góp, ý kiến";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title">Danh sách ý kiến đóng góp</h3>
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <input type="text" id="txtSearch" class="form-control" placeholder="Tìm kiếm tiêu đề hoặc nội dung...">
+                        </div>
+                        <div class="col-md-3">
+                            <select id="selectStatus" class="form-control" onchange="loadData()">
+                                <option value="">-- Tất cả trạng thái --</option>
+                                <option value="0">Chưa đọc</option>
+                                <option value="1">Đã đọc</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-primary" onclick="loadData()">Tìm kiếm</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Loại</th>
+                                <th>Nhân viên</th>
+                                <th>Tiêu đề</th>
+                                <th>Nội dung</th>
+                                <th>Ngày gửi</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tblOpinion"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            loadData();
+
+            $('#txtSearch').on('keyup', function (e) {
+                if (e.key === 'Enter') {
+                    loadData();
+                }
+            });
+        });
+
+        function loadData() {
+        let keyword = $('#txtSearch').val();
+        let status = $('#selectStatus').val();
+
+        $.ajax({
+            url: '/Admin/Opinion/GetList',
+            type: 'GET',
+            data: { 
+                keyword: keyword,
+                status: status 
+            },
+            success: function (res) {
+                let html = '';
+                if (res.length > 0) {
+                    res.forEach((item, index) => {
+                        let statusBadge = item.status === 1 
+                            ? '<span class="badge bg-success">Đã đọc</span>' 
+                            : '<span class="badge bg-warning text-dark">Chưa đọc</span>';
+                        
+                        let actionBtn = item.status === 0 
+                            ? `<button class="btn btn-sm btn-info" onclick="updateStatus(${item.id})">Đã đọc</button>` 
+                            : '';
+
+                        let dateObj = new Date(item.createdDate);
+                        let formattedDate = dateObj.toLocaleDateString('vi-VN', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                        });
+
+                        html += `<tr>
+                                    <td>${index + 1}</td>
+                                    <td>${item.type}</td>
+                                    <td>${item.employeeCode} - ${item.employeeName}</td>
+                                    <td>${item.title}</td>
+                                    <td class="text-wrap">${item.content}</td>
+                                    <td>${formattedDate}</td>
+                                    <td>${statusBadge}</td>
+                                    <td>
+                                        ${actionBtn}
+                                        <button class="btn btn-sm btn-danger" onclick="deleteOpinion(${item.id})">Xóa</button>
+                                    </td>
+                                </tr>`;
+                    });
+                } else {
+                    html = '<tr><td colspan="8" class="text-center">Không có dữ liệu</td></tr>';
+                }
+                $('#tblOpinion').html(html);
+            }
+        });
+    }
+
+        function updateStatus(id) {
+            $.ajax({
+                url: '/Admin/Opinion/UpdateStatus',
+                type: 'GET',
+                data: { id: id },
+                success: function (res) {
+                    if (res.success) {
+                        Swal.fire("Thành công", "Đã cập nhật trạng thái", "success");
+                        loadData();
+                    }
+                }
+            });
+        }
+
+        function deleteOpinion(id) {
+            Swal.fire({
+                title: 'Xác nhận xóa?',
+                text: "Dữ liệu sẽ không thể khôi phục!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Đồng ý',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '/Admin/Opinion/Delete',
+                        type: 'GET',
+                        data: { id: id },
+                        success: function (res) {
+                            if (res.success) {
+                                Swal.fire("Đã xóa", "Xóa dữ liệu thành công", "success");
+                                loadData();
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+}

@@ -81,6 +81,8 @@ public partial class QMContext : DbContext
     public virtual DbSet<Timesheet> Timesheets { get; set; }
     public virtual DbSet<Timekeeping> Timekeepings { get; set; }
 
+    public virtual DbSet<Opinion> Opinions { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer("Server=192.168.10.251,1433;Database=QM_DaoTao;User Id=daotao01;Password=12341234;Trusted_Connection=False;MultipleActiveResultSets=true;Encrypt=False;");
 
@@ -419,6 +421,11 @@ public partial class QMContext : DbContext
         modelBuilder.Entity<Timekeeping>(entity => {
             entity.Property(e => e.Shift).HasMaxLength(20);
             entity.Property(e => e.TotalHours).HasColumnType("decimal(5, 2)");
+        });
+
+        modelBuilder.Entity<Opinion>(entity => {
+            entity.Property(e => e.Title).HasMaxLength(255);
+            entity.Property(e => e.Type).HasMaxLength(50);
         });
 
         OnModelCreatingPartial(modelBuilder);

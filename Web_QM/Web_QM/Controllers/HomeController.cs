@@ -220,6 +220,29 @@ namespace Web_QM.Controllers
         }
 
         [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> SaveOpinion(Opinion model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Json(new { success = false, model = model });
+            }
+            try
+            {
+                model.Status = 0;
+                model.CreatedBy = long.Parse(User.Claims.FirstOrDefault(c => c.Type == "EmployeeId")?.Value ?? "0");
+                model.CreatedDate = DateOnly.FromDateTime(DateTime.Now);
+                _context.Opinions.Add(model);
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, model = model });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, model = model });
+            }
+        }
+
+        [Authorize]
         public IActionResult Denied()
         {
             return View();

@@ -48,83 +48,53 @@
             </a>
         </div>
         <div class="col-lg-4" data-aos="zoom-in">
-            <a href="/dataemployee">
-                <h5 class="title">Dữ liệu nhân viên</h5>
+            <a href="/hr">
+                <h5 class="title">Nhân sự</h5>
                 <img src="~/imgs/bg-1.jpg" class="bg-content" />
             </a>
         </div>
         <div class="col-lg-4" data-aos="zoom-in">
-            <a href="/dataerror">
-                <h5 class="title">Thống kê lỗi</h5>
-                <img src="~/imgs/bg-3.jpeg" class="bg-content" />
+            <a href="/warehouse">
+                <h5 class="title">Quản lý kho</h5>
+                <img src="~/imgs/bg-3.jpg" class="bg-content" />
             </a>
         </div>
     </div>
 
-    <div class="machine-intro-section" data-aos="zoom-in">
+    <div class="machine-intro-section">
         <div class="container">
             <h1>Công Nghệ Chính Xác Tối Tân</h1>
             <p>Hệ thống máy móc thế hệ mới, đáp ứng mọi yêu cầu gia công từ đơn giản đến phức tạp nhất.</p>
-            <a href="/machine" class="cta-button">Xem Danh Sách Máy Móc</a>
         </div>
     </div>
 
-    <div class="quote-container" data-aos="fade-up">
-        <p class="quote-text">
-            "Chúng tôi không chỉ gia công chi tiết, chúng tôi gia công niềm tin. Chất lượng sản phẩm luôn là ưu tiên hàng đầu."
-        </p>
-        <p class="quote-author">
-            — Phương châm làm việc
-        </p>
-    </div>
-    <div class="container">
-        <h2>Một số chi tiết được gia công tại Quang Minh</h2>
-        <div class="swiper mySwiper">
-            <div class="swiper-wrapper">
-                <div class="swiper-slide">
-                    <img src="/imgs/Products/ct1.png" alt="Chi tiết">
-                    <div class="product-info">
-                        <h5>Chi tiết 1</h5>
-                        <p>Độ tinh xảo, hoàn hảo mọi mặt</p>
-                    </div>
-                </div>
-                <div class="swiper-slide">
-                    <img src="/imgs/Products/ct2.png" alt="Chi tiết">
-                    <div class="product-info">
-                        <h5>Chi tiết 2</h5>
-                        <p>Độ tinh xảo, hoàn hảo mọi mặt</p>
-                    </div>
-                </div>
-                <div class="swiper-slide">
-                    <img src="/imgs/Products/ct3.png" alt="Chi tiết">
-                    <div class="product-info">
-                        <h5>Chi tiết 3</h5>
-                        <p>Độ tinh xảo, hoàn hảo mọi mặt</p>
-                    </div>
-                </div>
-                <div class="swiper-slide">
-                    <img src="/imgs/Products/ct4.png" alt="Chi tiết">
-                    <div class="product-info">
-                        <h5>Chi tiết 4</h5>
-                        <p>Độ tinh xảo, hoàn hảo mọi mặt</p>
-                    </div>
-                </div>
-                <div class="swiper-slide">
-                    <img src="/imgs/Products/ct5.png" alt="Chi tiết">
-                    <div class="product-info">
-                        <h5>Chi tiết 5</h5>
-                        <p>Độ tinh xảo, hoàn hảo mọi mặt</p>
-                    </div>
-                </div>
-                <div class="swiper-slide">
-                    <img src="/imgs/Products/ct6.png" alt="Chi tiết">
-                    <div class="product-info">
-                        <h5>Chi tiết 6</h5>
-                        <p>Độ tinh xảo, hoàn hảo mọi mặt</p>
-                    </div>
-                </div>
+    <div class="cmt-form-container">
+        <h2>Đóng góp ý kiến, báo lỗi phần mềm</h2>
+
+        <form id="cmtForm">
+            <div class="form-group">
+                <select id="opinionType" class="form-control">
+                    <option value="">-- Chọn loại ý kiến --</option>
+                    <option value="Báo lỗi">Báo lỗi</option>
+                    <option value="Góp ý">Góp ý</option>
+                </select>
+                <span class="error-message" style="display:none; color:red;">Vui lòng chọn loại ý kiến.</span>
             </div>
-        </div>
+
+            <div class="form-group">
+                <label>Tiêu đề</label>
+                <input type="text" id="title" class="form-control" placeholder="Nhập tiêu đề...">
+                <span class="error-message" style="display:none; color:red;">Vui lòng nhập tiêu đề.</span>
+            </div>
+
+            <div class="form-group">
+                <label>Nội dung chi tiết</label>
+                <textarea id="content" class="form-control" placeholder="Mô tả chi tiết..."></textarea>
+                <span class="error-message" style="display:none; color:red;">Nội dung không được để trống.</span>
+            </div>
+
+            <button type="submit" class="btn-submit">Xác nhận gửi</button>
+        </form>
     </div>
 </div>
 
@@ -237,38 +207,50 @@
 
 @section Scripts {
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            var swiper = new Swiper(".mySwiper", {
-                effect: "coverflow",
-                grabCursor: true,
-                centeredSlides: true,
-                slidesPerView: "auto",
-                loop: true,
-                autoplay: {
-                    delay: 0,
-                    disableOnInteraction: false,
-                },
-                speed: 3000,
-                coverflowEffect: {
-                    rotate: 20,
-                    stretch: 0,
-                    depth: 100,
-                    modifier: 1,
-                    slideShadows: true,
-                },
-                breakpoints: {
-                    320: {
-                        slidesPerView: 1.5,
-                        spaceBetween: 10,
-                    },
-                    768: {
-                        slidesPerView: 2.5,
-                        spaceBetween: 20,
-                    },
-                    1024: {
-                        slidesPerView: 3.5,
-                        spaceBetween: 30,
-                    },
+        $(document).ready(function () {
+            $('#cmtForm').on('submit', function (e) {
+                e.preventDefault();
+
+                let isValid = true;
+                const data = {
+                    Type: $('#opinionType').val(),
+                    Title: $('#title').val().trim(),
+                    Content: $('#content').val().trim()
+                };
+
+                $('.error-message').hide();
+
+                if (!data.Type) {
+                    $('#opinionType').siblings('.error-message').show();
+                    isValid = false;
+                }
+                if (!data.Title) {
+                    $('#title').siblings('.error-message').show();
+                    isValid = false;
+                }
+                if (!data.Content) {
+                    $('#content').siblings('.error-message').show();
+                    isValid = false;
+                }
+
+                if (isValid) {
+                    $.ajax({
+                        url: '/Home/SaveOpinion',
+                        type: 'POST',
+                        data: data,
+                        success: function (res) {
+                            if (res.success){
+                                Swal.fire("Thành công!", "Cảm ơn bạn đã đóng góp ý kiến!", "success");
+                                $('#cmtForm')[0].reset();
+                            }
+                            else {
+                                Swal.fire("Thất bại", "Đã có lỗi xảy ra trong quá trình gửi.", "error");
+                            }
+                        },
+                        error: function () {
+                            Swal.fire("Thất bại", "Đã có lỗi xảy ra trong quá trình gửi.", "error");
+                        }
+                    });
                 }
             });
         });

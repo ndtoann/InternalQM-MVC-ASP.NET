@@ -62,6 +62,10 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("DeleteNotifi", policy =>
         policy.RequireClaim("Permission", "Notification.Delete"));
 
+    //đóng góp, ý kiến
+    options.AddPolicy("ViewOpinion", policy =>
+        policy.RequireClaim("Permission", "Opinion.View"));
+
     //tài khoản
     options.AddPolicy("ViewAccount", policy =>
         policy.RequireClaim("Permission", "Account.View"));
