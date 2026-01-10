@@ -114,7 +114,7 @@
                             </div>
                             <a class="dropdown-item" href="#"><i class="dropdown-item-icon mdi mdi-account-outline text-primary me-2"></i> Trang cá nhân <span class="badge badge-pill badge-danger">1</span></a>
                             <a class="dropdown-item"><i class="dropdown-item-icon mdi mdi-message-text-outline text-primary me-2"></i> Tin nhắn</a>
-                            <a class="dropdown-item js-skip-auth" href="~/admin/account/logout"><i class="dropdown-item-icon mdi mdi-power text-primary me-2"></i>Đăng xuất</a>
+                            <a class="dropdown-item js-skip-auth" href="~/hr/dashboard/logout"><i class="dropdown-item-icon mdi mdi-power text-primary me-2"></i>Đăng xuất</a>
                         </div>
                     </li>
                 </ul>
@@ -197,21 +197,6 @@
                         </div>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="collapse" href="#machine" aria-expanded="false" aria-controls="machine">
-                            <i class="menu-icon mdi mdi-wrench"></i>
-                            <span class="menu-title">Quản lý thiết bị</span>
-                            <i class="menu-arrow"></i>
-                        </a>
-                        <div class="collapse" id="machine">
-                            <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="~/hr/machine" asp-policy="ViewMachine">Thông số máy</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/hr/MachineGroup" asp-policy="ViewMachineGroup">Nhóm máy</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/hr/equipmentrepairhistory" asp-policy="ViewMachineRepair">Báo lỗi sửa chữa</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/hr/machinemaintenance" asp-policy="ViewMachineMaintenance">Kế hoạch bảo dưỡng</a></li>
-                            </ul>
-                        </div>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link" data-bs-toggle="collapse" href="#ns" aria-expanded="false" aria-controls="ns">
                             <i class="mdi mdi-chart-line menu-icon"></i>
                             <span class="menu-title">Thống kê năng suất</span>
@@ -223,12 +208,6 @@
                                 <li class="nav-item"> <a class="nav-link" href="~/hr/sawingperformance" asp-policy="ViewProductivity">Doanh số cưa</a></li>
                             </ul>
                         </div>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="~/hr/errordata" asp-policy="ViewKaizen">
-                            <i class="mdi mdi-alert-circle-outline menu-icon"></i>
-                            <span class="menu-title">Lỗi sản xuất</span>
-                        </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="~/hr/kaizen" asp-policy="ViewKaizen">

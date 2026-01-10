@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Web_QM.Areas.Demo.Controllers
@@ -10,6 +11,17 @@ namespace Web_QM.Areas.Demo.Controllers
         public async Task<IActionResult> Index()
         {
             return View();
+        }
+
+        [Authorize]
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(
+            scheme: "SecurityScheme");
+
+            HttpContext.Response.Cookies.Delete("email");
+
+            return Redirect(nameof(Index));
         }
     }
 }

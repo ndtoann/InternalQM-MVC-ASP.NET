@@ -205,16 +205,6 @@
         let errorLineChartInstance = null;
         let currentErrorData = [];
 
-        function formatDisplayDate(dateString) {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            if (isNaN(date)) return '';
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
-            return `${day}/${month}/${year}`;
-        }
-
         async function loadErrorTableData() {
             const key = $('#keySearch').val();
             const startDate = $('#startDate').val();
@@ -241,8 +231,6 @@
                 if (currentErrorData && currentErrorData.length > 0) {
                     currentErrorData.forEach(item => {
                         const ngRate = item.ngRate ? item.ngRate.toFixed(2) + '%' : '0.00%';
-                        const dateMonthDisplay = formatDisplayDate(item.dateMonth);
-                        const completionDateDisplay = formatDisplayDate(item.errorCompletionDate);
 
                         htmlContent += `<tr data-id="${item.id}">
                             <td>${stt++}</td>
@@ -251,13 +239,13 @@
                             <td>${item.qtyOrder || 0}</td>
                             <td class="text-danger">${item.qtyNG || 0}</td>
                             <td class="text-danger">${ngRate}</td>
-                            <td>${dateMonthDisplay}</td>
+                            <td>${item.dateMonth}</td>
                             <td>${item.errorDetected || ''}</td>
                             <td>${item.errorType || ''}</td>
                             <td>${item.ncc || ''}</td>
                             <td>${item.employeeCode || ''}</td>
                             <td>${item.department || ''}</td>
-                            <td>${completionDateDisplay}</td>
+                            <td>${item.errorCompletionDate}</td>
                         </tr>`;
                     });
                 } else {

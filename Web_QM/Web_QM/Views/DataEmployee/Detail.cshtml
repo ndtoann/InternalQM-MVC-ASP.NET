@@ -948,7 +948,7 @@
             }
 
             let tableHtml = '<table class="table table-sm table-striped table-bordered"><thead class="bg-info" style="position: sticky; top: 0; z-index: 1;"><tr>';
-
+            tableHtml += '<th>STT</th>';
             let headers = [];
 
             if (type === 'Kaizen') {
@@ -991,7 +991,7 @@
 
             $.each(data, function (index, detail) {
                 tableHtml += '<tr>';
-
+                tableHtml += `<td class="text-center">${index + 1}</td>`;
                 headers.forEach(h => {
                     let cellValue = detail[h.prop];
                     if (h.prop === 'dateMonth' && cellValue) {

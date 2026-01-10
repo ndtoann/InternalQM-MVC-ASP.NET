@@ -426,6 +426,7 @@ public partial class QMContext : DbContext
         modelBuilder.Entity<Opinion>(entity => {
             entity.Property(e => e.Title).HasMaxLength(255);
             entity.Property(e => e.Type).HasMaxLength(50);
+            entity.Property(e => e.Img).HasMaxLength(255);
         });
 
         OnModelCreatingPartial(modelBuilder);

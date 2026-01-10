@@ -30,6 +30,8 @@
     <Folder Include="Areas\Admin\Models\" />
     <Folder Include="Areas\HR\Data\" />
     <Folder Include="Areas\HR\Models\" />
+    <Folder Include="Areas\Production\Data\" />
+    <Folder Include="Areas\Production\Models\" />
     <Folder Include="Areas\Warehouse\Data\" />
     <Folder Include="Areas\Warehouse\Models\" />
     <Folder Include="wwwroot\files\answers\" />
@@ -38,6 +40,7 @@
     <Folder Include="wwwroot\imgs\avatars\" />
     <Folder Include="wwwroot\imgs\kaizens\" />
     <Folder Include="wwwroot\imgs\machines\" />
+    <Folder Include="wwwroot\imgs\opinions\" />
     <Folder Include="wwwroot\imgs\uploads\questions\" />
   </ItemGroup>
 

@@ -33,6 +33,7 @@ namespace Web_QM.Areas.Admin.Controllers
                             o.Title,
                             o.Type,
                             o.Content,
+                            o.Img,
                             Status = o.Status.HasValue ? (int)o.Status.Value : 0,
                             o.CreatedDate,
                             EmployeeCode = e != null ? e.EmployeeCode : "N/A",
@@ -61,9 +62,16 @@ namespace Web_QM.Areas.Admin.Controllers
             var item = await _context.Opinions.FindAsync(id);
             if (item == null) return Json(new { success = false });
 
-            item.Status = 1;
-            await _context.SaveChangesAsync();
-            return Json(new { success = true });
+            try
+            {
+                item.Status = 1;
+                await _context.SaveChangesAsync();
+                return Json(new { success = true });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Json(new { success = false });
+            }
         }
 
         public async Task<IActionResult> Delete(long id)
@@ -71,9 +79,25 @@ namespace Web_QM.Areas.Admin.Controllers
             var item = await _context.Opinions.FindAsync(id);
             if (item == null) return Json(new { success = false });
 
-            _context.Opinions.Remove(item);
-            await _context.SaveChangesAsync();
-            return Json(new { success = true });
+            try
+            {
+                if (item.Img != null)
+                {
+                    string oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "imgs", "opinions", item.Img);
+                    if (System.IO.File.Exists(oldFilePath))
+                    {
+                        System.IO.File.Delete(oldFilePath);
+                    }
+                }
+
+                _context.Opinions.Remove(item);
+                await _context.SaveChangesAsync();
+                return Json(new { success = true });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Json(new { success = false });
+            }
         }
     }
 }

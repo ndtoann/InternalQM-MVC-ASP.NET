@@ -41,19 +41,19 @@
     </div>
     <h3 class="text-center fs-4 fw-bold py-3">CÔNG TY TNHH SẢN XUẤT THƯƠNG MẠI QUANG MINH</h3>
     <div class="row p-lg-3 home-content py-5">
-        <div class="col-lg-4" data-aos="zoom-in">
+        <div class="col-lg-4">
             <a href="/testingsystem">
                 <h5 class="title">Hệ thống kiểm tra</h5>
                 <img src="~/imgs/bg-2.jpg" class="bg-content" />
             </a>
         </div>
-        <div class="col-lg-4" data-aos="zoom-in">
+        <div class="col-lg-4">
             <a href="/hr">
                 <h5 class="title">Nhân sự</h5>
                 <img src="~/imgs/bg-1.jpg" class="bg-content" />
             </a>
         </div>
-        <div class="col-lg-4" data-aos="zoom-in">
+        <div class="col-lg-4">
             <a href="/warehouse">
                 <h5 class="title">Quản lý kho</h5>
                 <img src="~/imgs/bg-3.jpg" class="bg-content" />
@@ -68,10 +68,23 @@
         </div>
     </div>
 
-    <div class="cmt-form-container">
+    <div class="seniority-container">
+        <h4 class="text-center mt-5 fs-3 fw-bold">─── 🎖️ NHÂN VIÊN KỲ CỰU 🎖️ ───</h4>
+        <div id="top-podium" class="podium-row"></div>
+        <div id="bottom-list" class="others-row"></div>
+    </div>
+
+    <div class="seniority-milestone-section mt-20">
+        <div class="container">
+            <h4 class="text-center fs-3 fw-bold text-warning">─── VINH DANH 10 NĂM CỐNG HIẾN ───</h4>
+            <div id="milestone-list" class="row justify-content-center mt-4"></div>
+        </div>
+    </div>
+
+    <div class="cmt-form-container" data-aos="fade-up">
         <h2>Đóng góp ý kiến, báo lỗi phần mềm</h2>
 
-        <form id="cmtForm">
+        <form id="cmtForm" enctype="multipart/form-data">
             <div class="form-group">
                 <select id="opinionType" class="form-control">
                     <option value="">-- Chọn loại ý kiến --</option>
@@ -93,12 +106,17 @@
                 <span class="error-message" style="display:none; color:red;">Nội dung không được để trống.</span>
             </div>
 
+            <div class="form-group">
+                <label>Hình ảnh đính kèm (nếu có)</label>
+                <input type="file" id="opinionImg" name="opinionImg" class="form-control" accept="image/*" />
+            </div>
+
             <button type="submit" class="btn-submit">Xác nhận gửi</button>
         </form>
     </div>
 </div>
 
-<button id="chat-toggle-button">
+<button id="chat-toggle-button" data-aos="fade-up">
     💬
 </button>
 
@@ -144,6 +162,7 @@
         const responses = {
             'xinchao': 'Chào bạn :)',
             'hello': 'Chào bạn :)',
+            'hi': 'Chào bạn :)',
             'quangminh': 'Công ty QUANG MINH là đơn vị hoạt động trong lĩnh vực Gia công cơ khí chính xác; Lắp đặt, bảo trì bảo dưỡng.',
             'thoigian': 'Thời gian làm việc từ 7h30p sáng đến 5h chiều, từ thứ Hai đến thứ Bảy.',
             'lienhe': 'Mọi thắc mắc vui lòng liên hệ phòng IT công ty Quang Minh.',
@@ -212,34 +231,43 @@
                 e.preventDefault();
 
                 let isValid = true;
-                const data = {
-                    Type: $('#opinionType').val(),
-                    Title: $('#title').val().trim(),
-                    Content: $('#content').val().trim()
-                };
+                const type = $('#opinionType').val();
+                const title = $('#title').val().trim();
+                const content = $('#content').val().trim();
+                const fileInput = $('#opinionImg')[0].files[0];
 
                 $('.error-message').hide();
 
-                if (!data.Type) {
+                if (!type) {
                     $('#opinionType').siblings('.error-message').show();
                     isValid = false;
                 }
-                if (!data.Title) {
+                if (!title) {
                     $('#title').siblings('.error-message').show();
                     isValid = false;
                 }
-                if (!data.Content) {
+                if (!content) {
                     $('#content').siblings('.error-message').show();
                     isValid = false;
                 }
 
                 if (isValid) {
+                    const formData = new FormData();
+                    formData.append('Type', type);
+                    formData.append('Title', title);
+                    formData.append('Content', content);
+                    if (fileInput) {
+                        formData.append('ImageFile', fileInput);
+                    }
+
                     $.ajax({
                         url: '/Home/SaveOpinion',
                         type: 'POST',
-                        data: data,
+                        data: formData,
+                        processData: false,
+                        contentType: false,
                         success: function (res) {
-                            if (res.success){
+                            if (res.success) {
                                 Swal.fire("Thành công!", "Cảm ơn bạn đã đóng góp ý kiến!", "success");
                                 $('#cmtForm')[0].reset();
                             }
@@ -254,5 +282,71 @@
                 }
             });
         });
+
+        $(document).ready(function () {
+            $.ajax({
+                url: '/Home/GetTopSeniors',
+                type: 'GET',
+                success: function (data) {
+                    let topHtml = '';
+                    let bottomHtml = '';
+
+                    data.forEach((emp, index) => {
+                        let html = `
+                            <div class="card ${index < 3 ? 'podium-item top-' + (index + 1) : 'other-item'}">
+                                <img src="${emp.avatar}" alt="Avatar">
+                                <span class="code">${emp.employeeCode} - ${emp.employeeName}</span>
+                                <span class="tenure">${emp.tenure}</span>
+                            </div>`;
+
+                        if (index < 3) {
+                            topHtml += html;
+                        } else {
+                            bottomHtml += html;
+                        }
+                    });
+
+                    $('#top-podium').html(topHtml);
+                    $('#bottom-list').html(bottomHtml);
+                }
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            fetchMilestoneSeniors();
+        });
+
+        function fetchMilestoneSeniors() {
+            $.ajax({
+                url: '/Home/GetMilestoneSeniors',
+                type: 'GET',
+                success: function (data) {
+                    let html = '';
+                    if (data && data.length > 0) {
+                        data.forEach(emp => {
+                            html += `
+                                <div class="col-6 col-md-4 col-lg-3 mb-4">
+                                    <div class="card milestone-card text-center p-4 h-100">
+                                        <div class="cup-animation">🏆</div>
+                                        <img src="${emp.avatar || '/imgs/default-avatar.png'}" class="rounded-circle mx-auto avatar-milestone" alt="Avatar">
+                                        <h5 class="mt-3 fw-bold text-dark mb-1">${emp.employeeName}</h5>
+                                        <p class="text-muted small mb-2">${emp.employeeCode}</p>
+                                        <div class="tenure-badge-10">
+                                            ${emp.tenure}
+                                        </div>
+                                        <span class="year-marker">${emp.hireDate}</span>
+                                    </div>
+                                </div>`;
+                        });
+                        $('#milestone-list').html(html);
+                    } else {
+                        $('.seniority-milestone-section').hide();
+                    }
+                },
+                error: function () {
+                    $('.seniority-milestone-section').hide();
+                }
+            });
+        }
     </script>
 }

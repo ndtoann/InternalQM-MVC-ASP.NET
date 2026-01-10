@@ -1,0 +1,606 @@
+﻿@using Web_QM.Models
+@model IEnumerable<EquipmentRepairHistory>;
+@{
+    ViewData["Title"] = "Báo lỗi sửa chữa thiết bị";
+    DateOnly todayOnly = DateOnly.FromDateTime(DateTime.Today);
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Báo lỗi sửa chữa thiết bị</h4>
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    <form action="" method="get">
+                        <div class="row align-items-center">
+                            <div class="col-lg-2">
+                                <div class="form-group mb-0">
+                                    <select class="form-control" name="isComplete" asp-items="@(ViewData["IsCompleteList"] as SelectList)"></select>
+                                </div>
+                            </div>
+                            <div class="col-lg-5 d-flex align-items-center">
+                                <div class="form-group me-2 flex-grow-1 mb-0">
+                                    <input type="text"
+                                           class="form-control"
+                                           name="key"
+                                           placeholder="Nhập vào đây để tìm kiếm"
+                                           value="@ViewBag.KeySearch" />
+                                </div>
+                                <div class="form-group mb-0">
+                                    <button type="submit" class="btn btn-primary">
+                                        Tìm kiếm
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <a class="btn btn-success" href="~/production/equipmentrepairhistory/add" asp-policy="AddMachineRepair">Thêm báo lỗi</a>
+                    <a class="btn btn-success" href="~/production/equipmentrepairhistory/equipmentreplace">Thiết bị vật tư đã thay thế</a>
+                    <div class="row mt-3">
+                        <div class="table-responsive overflow-auto" style="height: 1000px;">
+                            <table class="table table-hover table-bordered">
+                                <thead class="text-white bg-dark" style="position: sticky; top: 0; z-index: 1;">
+                                    <tr>
+                                        <th>STT</th>
+                                        <th class="text-wrap">Bộ phận</th>
+                                        <th class="text-wrap">Tên thiết bị</th>
+                                        <th class="text-wrap">Mã thiết bị</th>
+                                        <th class="text-wrap">Số lượng</th>
+                                        <th class="text-wrap">Tình trạng lỗi hỏng</th>
+                                        <th class="text-wrap">Nguyên nhân</th>
+                                        <th class="text-wrap">Phương pháp xử lý</th>
+                                        <th class="text-wrap">Ngày tiếp nhận</th>
+                                        <th class="text-wrap">BPBT xác nhận ngày hoàn thành</th>
+                                        <th class="text-wrap">Ngày hoàn thành</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="erh-table-body">
+                                    @{
+                                        var count1 = 1;
+                                    }
+                                    @foreach (var item in Model)
+                                    {
+                                        string rowClass = "";
+                                        string confirmDateStr = item.ConfirmCompletionDate.HasValue ? item.ConfirmCompletionDate.Value.ToString("yyyy-MM-dd") : "";
+                                        string dateMonthStr = item.DateMonth != null ? item.DateMonth.ToString("yyyy-MM-dd") : "";
+
+                                        if (!item.CompletionDate.HasValue)
+                                        {
+                                            if (item.ConfirmCompletionDate.HasValue && item.ConfirmCompletionDate.Value < todayOnly)
+                                            {
+                                                rowClass = "table-danger";
+                                            }
+                                            else if (item.DateMonth < todayOnly)
+                                            {
+                                                rowClass = "table-warning";
+                                            }
+                                        }
+                                        else
+                                        {
+                                            rowClass = "table-success";
+                                        }
+
+                                        <tr class="context-menu-row @rowClass"
+                                            data-id="@item.Id"
+                                            data-department="@item.Department"
+                                            data-equipment-name="@item.EquipmentName"
+                                            data-equipment-code="@item.EquipmentCode"
+                                            data-qty="@item.Qty"
+                                            data-error-condition="@item.ErrorCondition"
+                                            data-reason="@item.Reason"
+                                            data-processing-method="@item.ProcessingMethod"
+                                            data-date-month="@(item.DateMonth.ToString("yyyy-MM-dd"))"
+                                            data-completion-date="@(item.CompletionDate.HasValue? item.CompletionDate.Value.ToString("yyyy-MM-dd") : "")"
+                                            data-confirm-completion-date="@confirmDateStr"
+                                            data-remedial-staff="@item.RemedialStaff"
+                                            data-recipient="@item.RecipientOfRepairedDevice"
+                                            data-repair-costs="@item.RepairCosts"
+                                            data-note="@item.Note">
+                                            <td>@(count1++)</td>
+                                            <td>@item.Department</td>
+                                            <td>@item.EquipmentName</td>
+                                            <td>@item.EquipmentCode</td>
+                                            <td>@item.Qty</td>
+                                            <td class="text-wrap">@item.ErrorCondition</td>
+                                            <td class="text-wrap">@item.Reason</td>
+                                            <td class="text-wrap">@item.ProcessingMethod</td>
+                                            <td>@item.DateMonth.ToString("dd/MM/yyyy")</td>
+                                            <td>@(item.ConfirmCompletionDate.HasValue? item.ConfirmCompletionDate.Value.ToString("dd/MM/yyyy") : "")</td>
+                                            <td>@(item.CompletionDate.HasValue? item.CompletionDate.Value.ToString("dd/MM/yyyy") : "")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="contextMenu" class="dropdown-menu" style="position: absolute; display: none;">
+    <a class="dropdown-item" href="#" id="deatailLink">Xem chi tiết</a>
+    <a class="dropdown-item" href="#" id="equipmentandsupplies">Thiết bị, vật tư thay thế</a>
+    <a class="dropdown-item" href="#" id="editLink">Sửa</a>
+    <a class="dropdown-item" href="#" id="deleteLink">Xóa</a>
+</div>
+
+<div class="modal fade" id="EquipmentRepairDetailModal" tabindex="-1" aria-labelledby="EquipmentRepairDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="EquipmentRepairDetailModalLabel">Chi tiết Lịch sử sửa chữa</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered table-sm table-striped mb-4">
+                    <colgroup>
+                        <col style="width: 20%;">
+                        <col style="width: 30%;">
+                        <col style="width: 20%;">
+                        <col style="width: 30%;">
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <td class="bg-light"><strong>Bộ phận:</strong></td>
+                            <td colspan="3"><span class="text-primary fw-bold" id="detail-Department"></span></td>
+                        </tr>
+                        <tr>
+                            <td class="bg-light"><strong>Tên thiết bị:</strong></td>
+                            <td colspan="3"><span class="text-primary fw-bold" id="detail-EquipmentName"></span></td>
+                        </tr>
+                        <tr>
+                            <td class="bg-light"><strong>Mã thiết bị:</strong></td>
+                            <td colspan="3"><span class="text-primary fw-bold" id="detail-EquipmentCode"></span></td>
+                        </tr>
+                        <tr>
+                            <td class="bg-light"><strong>Số lượng:</strong></td>
+                            <td colspan="3"><span class="text-primary fw-bold" id="detail-Qty"></span></td>
+                        </tr>
+                        <tr>
+                            <td class="bg-light"><strong>Tình trạng lỗi hỏng:</strong></td>
+                            <td colspan="3"><span id="detail-ErrorCondition"></span></td>
+                        </tr>
+                        <tr>
+                            <td class="bg-light"><strong>Nguyên nhân:</strong></td>
+                            <td colspan="3"><span id="detail-Reason"></span></td>
+                        </tr>
+                        <tr>
+                            <td class="bg-light"><strong>Phương pháp xử lý:</strong></td>
+                            <td colspan="3"><span id="detail-ProcessingMethod"></span></td>
+                        </tr>
+
+                        <tr>
+                            <td class="bg-light"><strong>Ngày tiếp nhận:</strong></td>
+                            <td><span class="text-info" id="detail-DateMonth"></span></td>
+                            <td class="bg-light"><strong>Ngày hoàn thành:</strong></td>
+                            <td><span class="text-success" id="detail-CompletionDate"></span></td>
+                        </tr>
+                        <tr>
+                            <td class="bg-light"><strong>BPBT xác nhận ngày hoàn thành:</strong></td>
+                            <td><span id="detail-ConfirmCompletionDate"></span></td>
+                            <td class="bg-light"><strong>Chi phí sửa chữa:</strong></td>
+                            <td><span class="text-danger fw-bold" id="detail-RepairCosts"></span></td>
+                        </tr>
+
+                        <tr>
+                            <td class="bg-light"><strong>Nhân viên khắc phục:</strong></td>
+                            <td><span id="detail-RemedialStaff"></span></td>
+                            <td class="bg-light"><strong>Người nhận lại thiết bị:</strong></td>
+                            <td><span id="detail-RecipientOfRepairedDevice"></span></td>
+                        </tr>
+                        <tr>
+                            <td class="bg-light"><strong>Ghi chú:</strong></td>
+                            <td colspan="3"><span id="detail-Note"></span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <production class="my-3" />
+
+                <h6 class="mt-4 mb-3 text-primary">Danh sách Thiết bị/Vật tư Thay thế:</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-striped">
+                        <thead class="bg-light">
+                            <tr>
+                                <th style="width: 50px;">STT</th>
+                                <th>Thiết bị/Vật tư</th>
+                                <th style="width: 250px;">File PDF</th>
+                                <th>Tác vụ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detail-equipment-list">
+                            <tr><td colspan="4" class="text-center">Đang tải dữ liệu...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="EquipmentAndSuppliesModal" tabindex="-1" aria-labelledby="EquipmentAndSuppliesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="EquipmentAndSuppliesModalLabel"><i class="mdi mdi-basket-fill me-2"></i> Thiết bị, Vật tư thay thế (<span id="eq-equipemt-name"></span>)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="current-EquipmentRepairId" value="" />
+
+                <div class="card mb-3 border-primary">
+                    <div class="card-header bg-primary text-white">Thêm mới Thiết bị/Vật tư</div>
+                    <div class="card-body">
+                        <form id="addEquipmentForm">
+                            <div class="row align-items-end">
+                                <div class="col-md-5 mb-3">
+                                    <label for="EquipmentAndlSupplies" class="form-label">Tên Thiết bị/Vật tư</label>
+                                    <input type="text" class="form-control" id="EquipmentAndlSupplies" name="EquipmentAndlSupplies" required>
+                                </div>
+                                <div class="col-md-5 mb-3">
+                                    <label for="FilePdf" class="form-label">Tải File PDF (tùy chọn)</label>
+                                    <input type="file" class="form-control" id="FilePdf" name="FilePdf" accept="application/pdf">
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <button type="submit" class="btn btn-primary w-100">Thêm</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card border-info">
+                    <div class="card-header bg-info text-white">Danh sách Thiết bị/Vật tư đã thay thế</div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered table-hover">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th style="width: 50px;">STT</th>
+                                        <th>Thiết bị/Vật tư</th>
+                                        <th style="width: 150px;">File PDF</th>
+                                        <th style="width: 80px;">Tác vụ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="equipment-list-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="pdfEmbedModal" tabindex="-1" aria-labelledby="pdfEmbedModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="pdfEmbedModalLabel">Xem File PDF: <span id="pdf-file-name-embed"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="height: 80vh;">
+                <div id="pdfEmbedContainer" style="width: 100%; height: 100%;">
+                    <p class="text-center p-3 text-muted">Đang tải tài liệu...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+
+            function formatDate(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                if (isNaN(date)) return '';
+                if (date.getFullYear() <= 1) return '';
+                return date.toLocaleDateString('vi-VN');
+            }
+
+            function getOriginalFileName(uniqueFileName) {
+                if (!uniqueFileName || uniqueFileName.indexOf('_') === -1) return uniqueFileName;
+                return uniqueFileName.substring(uniqueFileName.indexOf('_') + 1);
+            }
+
+            const contextMenu = document.getElementById('contextMenu');
+            let erhId = null;
+            let equipmentName = null;
+            let currentRow = null;
+
+            $('.erh-table-body').on('contextmenu', '.context-menu-row', function (event) {
+                event.preventDefault();
+
+                currentRow = $(this);
+                erhId = currentRow.data('id');
+                equipmentName = currentRow.data('equipment-name');
+
+                $('#current-EquimentRepairId').val(erhId);
+
+                contextMenu.style.display = 'block';
+                contextMenu.style.left = event.pageX + 'px';
+                contextMenu.style.top = event.pageY + 'px';
+            });
+
+            $(document).on('click', function (e) {
+                if (!contextMenu.contains(e.target)) {
+                    contextMenu.style.display = 'none';
+                }
+            });
+
+            function loadEquipmentList(equipmentRepairId, targetBodyId, includeActions = true) {
+                const targetBody = $(`#${targetBodyId}`);
+                targetBody.html('<tr><td colspan="' + (includeActions ? 4 : 3) + '" class="text-center"><div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div> Đang tải dữ liệu...</td></tr>');
+                const baseUrl = '/files/equipments/';
+
+                $.ajax({
+                    url: '/production/equipmentrepairhistory/getequipmentandsupplies',
+                    type: 'GET',
+                    data: { equipmentRepairId: equipmentRepairId },
+                    success: function (data) {
+                        let html = '';
+                        if (data && data.length > 0) {
+                            $.each(data, function (index, item) {
+                                let fileDisplay;
+                                let uniqueFileName = item.filePdf;
+                                let originalFileName = getOriginalFileName(uniqueFileName);
+
+                                if (uniqueFileName) {
+                                    const fileUrl = baseUrl + uniqueFileName;
+                                    fileDisplay = `<a href="#" class="view-pdf-embed text-info" data-pdf-url="${fileUrl}" data-pdf-name="${originalFileName}"> ${originalFileName}</a>`;
+                                } else {
+                                    fileDisplay = 'N/A';
+                                }
+
+                                html += `
+                                    <tr data-id="${item.id}">
+                                        <td>${index + 1}</td>
+                                        <td>${item.equipmentAndlSupplies}</td>
+                                        <td>${fileDisplay}</td>
+                                        ${includeActions ? `
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-danger delete-equipment-btn" data-id="${item.id}" data-filename="${uniqueFileName || ''}"> Xóa</button>
+                                            </td>` : ''}
+                                    </tr>`;
+                            });
+                        } else {
+                            html = '<tr><td colspan="' + (includeActions ? 4 : 3) + '" class="text-center text-muted">Chưa có thiết bị/vật tư thay thế.</td></tr>';
+                        }
+                        targetBody.html(html);
+                    },
+                    error: function () {
+                        targetBody.html('<tr><td colspan="' + (includeActions ? 4 : 3) + '" class="text-danger"> Lỗi khi tải danh sách vật tư.</td></tr>');
+                    }
+                });
+            }
+
+            $('#deatailLink').on('click', function (event) {
+                event.preventDefault();
+                contextMenu.style.display = 'none';
+
+                if (!currentRow) return;
+
+                const data = {
+                    Department: currentRow.data('department'),
+                    EquipmentName: currentRow.data('equipment-name'),
+                    EquipmentCode: currentRow.data('equipment-code'),
+                    Qty: currentRow.data('qty'),
+                    ErrorCondition: currentRow.data('error-condition'),
+                    Reason: currentRow.data('reason'),
+                    ProcessingMethod: currentRow.data('processing-method'),
+                    DateMonth: currentRow.data('date-month'),
+                    CompletionDate: currentRow.data('completion-date'),
+                    ConfirmCompletionDate: currentRow.data('confirm-completion-date'),
+                    RemedialStaff: currentRow.data('remedial-staff'),
+                    RecipientOfRepairedDevice: currentRow.data('recipient'),
+                    RepairCosts: (currentRow.data('repair-costs')),
+                    Note: currentRow.data('note'),
+                };
+
+                const dateMonthFormatted = formatDate(data.DateMonth);
+                const completionDateFormatted = formatDate(data.CompletionDate);
+                const confirmCompletionDateFormatted = formatDate(data.ConfirmCompletionDate);
+
+                let confirmDateClass = 'text-info';
+                if (data.ConfirmCompletionDate) {
+                    const confirmDate = new Date(data.ConfirmCompletionDate);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    confirmDate.setHours(0, 0, 0, 0);
+
+                    if (confirmDate > today) {
+                        confirmDateClass = 'text-danger fw-bold';
+                    } else {
+                        confirmDateClass = 'text-info';
+                    }
+                } else {
+                     confirmDateClass = 'text-muted';
+                }
+
+                $('#detail-Department').text(data.Department);
+                $('#detail-EquipmentName').text(data.EquipmentName);
+                $('#detail-EquipmentCode').text(data.EquipmentCode);
+                $('#detail-Qty').text(data.Qty);
+                $('#detail-ErrorCondition').text(data.ErrorCondition);
+                $('#detail-Reason').text(data.Reason);
+                $('#detail-ProcessingMethod').text(data.ProcessingMethod);
+
+                $('#detail-DateMonth').text(dateMonthFormatted).removeClass('text-info text-success').addClass('text-info');
+                $('#detail-CompletionDate').text(completionDateFormatted).removeClass('text-info text-success').addClass('text-success');
+                $('#detail-ConfirmCompletionDate').text(confirmCompletionDateFormatted).removeClass('text-info text-danger fw-bold text-muted').addClass(confirmDateClass);
+
+                $('#detail-RemedialStaff').text(data.RemedialStaff);
+                $('#detail-RecipientOfRepairedDevice').text(data.RecipientOfRepairedDevice);
+                $('#detail-RepairCosts').text(data.RepairCosts);
+                $('#detail-Note').text(data.Note);
+
+                loadEquipmentList(erhId, 'detail-equipment-list', true);
+
+                const detailModal = new bootstrap.Modal(document.getElementById('EquipmentRepairDetailModal'));
+                detailModal.show();
+            });
+
+            $('#equipmentandsupplies').on('click', function (event) {
+                event.preventDefault();
+                contextMenu.style.display = 'none';
+
+                if (!erhId) return;
+
+                $('#current-EquipmentRepairId').val(erhId);
+                $('#eq-equipment-name').text(equipmentName);
+
+                loadEquipmentList(erhId, 'equipment-list-body', true);
+
+                const equipmentModal = new bootstrap.Modal(document.getElementById('EquipmentAndSuppliesModal'));
+                equipmentModal.show();
+            });
+
+            $('#editLink').on('click', function (event) {
+                event.preventDefault();
+                contextMenu.style.display = 'none';
+                if (erhId) {
+                    window.location.href = `/production/equipmentrepairhistory/edit?id=${erhId}`;
+                }
+            });
+
+            $('#deleteLink').on('click', function (event) {
+                event.preventDefault();
+                contextMenu.style.display = 'none';
+                if (erhId && confirm(`Bạn có chắc chắn muốn xóa lịch sử sửa chữa thiết bị: ${equipmentName}?`)) {
+                    window.location.href = `/production/equipmentrepairhistory/delete?id=${erhId}`;
+                }
+            });
+
+            $('#addEquipmentForm').on('submit', function (e) {
+                e.preventDefault();
+
+                const currentErhId = $('#current-EquipmentRepairId').val();
+                if (!currentErhId) {
+                    alert('Lỗi: Không tìm thấy ID lịch sử sửa chữa.');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('EquipmentRepairId', currentErhId);
+                formData.append('EquipmentAndlSupplies', $('#EquipmentAndlSupplies').val());
+
+                const fileInput = document.getElementById('FilePdf');
+                if (fileInput.files.length > 0) {
+                    formData.append('FilePdf', fileInput.files[0]);
+                }
+
+                $.ajax({
+                    url: '/production/equipmentrepairhistory/addequipmentandsupplies',
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function (response) {
+                        if (response.success) {
+                            loadEquipmentList(currentErhId, 'equipment-list-body', true);
+                            $('#EquipmentAndlSupplies').val('');
+                            $('#FilePdf').val('');
+                        } else {
+                            alert('Lỗi: ' + (response.message || 'Không thể thêm thiết bị/vật tư.'));
+                        }
+                    },
+                    error: function () {
+                        alert('Lỗi khi thêm mới.');
+                    }
+                });
+            });
+
+            $('#equipment-list-body').on('click', '.delete-equipment-btn', function () {
+                const equipId = $(this).data('id');
+                const uniqueFileName = $(this).data('filename');
+                const currentErhId = $('#current-EquipmentRepairId').val();
+
+                if (!currentErhId) {
+                    alert('Lỗi: Không tìm thấy ID lịch sử sửa chữa.');
+                    return;
+                }
+
+                if (confirm('Bạn có chắc chắn muốn xóa thiết bị/vật tư này?')) {
+                    $.ajax({
+                        url: '/production/equipmentrepairhistory/deleteequipmentandsupplies',
+                        type: 'POST',
+                        data: {
+                            id: equipId,
+                            uniqueFileName: uniqueFileName
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                loadEquipmentList(currentErhId, 'equipment-list-body', true);
+                            } else {
+                                alert('Lỗi: ' + (response.message || 'Không thể xóa thiết bị/vật tư.'));
+                            }
+                        },
+                        error: function () {
+                            alert('Lỗi khi xóa.');
+                        }
+                    });
+                }
+            });
+
+            $(document).on('click', '.view-pdf-embed', function (event) {
+                event.preventDefault();
+
+                const pdfUrl = $(this).data('pdf-url');
+                const pdfName = $(this).data('pdf-name');
+                const embedContainer = document.getElementById('pdfEmbedContainer');
+                const modalElement = document.getElementById('pdfEmbedModal');
+                const modal = new bootstrap.Modal(modalElement);
+
+                $('#pdf-file-name-embed').text(pdfName);
+
+                if (embedContainer && pdfUrl) {
+                    $(embedContainer).empty();
+
+                    const embedElement = document.createElement('embed');
+                    embedElement.src = pdfUrl;
+                    embedElement.type = 'application/pdf';
+                    embedElement.width = '100%';
+                    embedElement.height = '100%';
+
+                    embedContainer.appendChild(embedElement);
+
+                    modal.show();
+                }
+            });
+
+            $('#pdfEmbedModal').on('hidden.bs.modal', function () {
+                $('#pdfEmbedContainer').empty();
+            });
+        });
+    </script>
+}

@@ -11,7 +11,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Kho - @ViewData["Title"]</title>
+    <title>Sản xuất - @ViewData["Title"]</title>
     <link rel="stylesheet" href="~/admin/vendors/feather/feather.css">
     <link rel="stylesheet" href="~/admin/vendors/mdi/css/materialdesignicons.min.css">
     <link rel="stylesheet" href="~/admin/vendors/ti-icons/css/themify-icons.css">
@@ -114,7 +114,7 @@
                             </div>
                             <a class="dropdown-item" href="#"><i class="dropdown-item-icon mdi mdi-account-outline text-primary me-2"></i> Trang cá nhân <span class="badge badge-pill badge-danger">1</span></a>
                             <a class="dropdown-item"><i class="dropdown-item-icon mdi mdi-message-text-outline text-primary me-2"></i> Tin nhắn</a>
-                            <a class="dropdown-item js-skip-auth" href="~/warehouse/dashboard/logout"><i class="dropdown-item-icon mdi mdi-power text-primary me-2"></i>Đăng xuất</a>
+                            <a class="dropdown-item js-skip-auth" href="~/production/dashboard/logout"><i class="dropdown-item-icon mdi mdi-power text-primary me-2"></i>Đăng xuất</a>
                         </div>
                     </li>
                 </ul>
@@ -146,23 +146,31 @@
             <nav class="sidebar sidebar-offcanvas" id="sidebar">
                 <ul class="nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="~/warehouse">
+                        <a class="nav-link" href="~/production">
                             <i class="mdi mdi-view-dashboard menu-icon"></i>
                             <span class="menu-title">Tổng quan dữ liệu</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="collapse" href="#warehouse" aria-expanded="false" aria-controls="account">
-                            <i class="menu-icon mdi mdi-warehouse"></i>
-                            <span class="menu-title">Quản lý kho</span>
+                        <a class="nav-link" data-bs-toggle="collapse" href="#machine" aria-expanded="false" aria-controls="machine">
+                            <i class="menu-icon mdi mdi-wrench"></i>
+                            <span class="menu-title">Quản lý thiết bị</span>
                             <i class="menu-arrow"></i>
                         </a>
-                        <div class="collapse show" id="warehouse">
+                        <div class="collapse show" id="machine">
                             <ul class="nav flex-column sub-menu">
-                                <li class="nav-item"> <a class="nav-link" href="~/warehouse/material">Danh mục vật liệu</a></li>
-                                <li class="nav-item"> <a class="nav-link" href="~/warehouse/warehouselocation">Vị trí kho</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/production/machine" asp-policy="ViewMachine">Thông số máy</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/production/MachineGroup" asp-policy="ViewMachineGroup">Nhóm máy</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/production/equipmentrepairhistory" asp-policy="ViewMachineRepair">Báo lỗi sửa chữa</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/production/machinemaintenance" asp-policy="ViewMachineMaintenance">Kế hoạch bảo dưỡng</a></li>
                             </ul>
                         </div>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="~/production/errordata" asp-policy="ViewKaizen">
+                            <i class="mdi mdi-alert-circle-outline menu-icon"></i>
+                            <span class="menu-title">Lỗi sản xuất</span>
+                        </a>
                     </li>
                 </ul>
             </nav>
@@ -173,7 +181,7 @@
 
                 <footer class="footer">
                     <div class="d-sm-flex justify-content-center justify-content-sm-between">
-                        <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Warehouse premium by IT QUANG MINH</span>
+                        <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">HR premium by IT QUANG MINH</span>
                         <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">Copyright © 2025. All rights reserved.</span>
                     </div>
                 </footer>

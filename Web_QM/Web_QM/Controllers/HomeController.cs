@@ -39,13 +39,14 @@ namespace Web_QM.Controllers
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
-        public IActionResult Login()
+        public IActionResult Login(string returnUrl = null)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login(string username, string password, bool rememberMe)
+        public async Task<IActionResult> Login(string username, string password, bool rememberMe, string returnUrl = null)
         {
             string countKey = $"FailedLoginCount_{username}";
             string lockKey = $"LockoutTime_{username}";
@@ -155,6 +156,11 @@ namespace Web_QM.Controllers
             _cache.Remove(countKey);
             _cache.Remove(lockKey);
 
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return LocalRedirect(returnUrl);
+            }
+
             return RedirectToAction("index", "home");
         }
 
@@ -221,25 +227,108 @@ namespace Web_QM.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> SaveOpinion(Opinion model)
+        public async Task<IActionResult> SaveOpinion(string Type, string Title, string Content, IFormFile ImageFile)
         {
-            if (!ModelState.IsValid)
-            {
-                return Json(new { success = false, model = model });
-            }
             try
             {
-                model.Status = 0;
-                model.CreatedBy = long.Parse(User.Claims.FirstOrDefault(c => c.Type == "EmployeeId")?.Value ?? "0");
-                model.CreatedDate = DateOnly.FromDateTime(DateTime.Now);
-                _context.Opinions.Add(model);
+                if (ImageFile != null && ImageFile.Length > 0)
+                {
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                    var extension = Path.GetExtension(ImageFile.FileName).ToLower();
+
+                    if (!allowedExtensions.Contains(extension) || ImageFile.Length > 5 * 1024 * 1024)
+                    {
+                        return Ok(new { success = false, message = "File không hợp lệ hoặc quá lớn" });
+                    }
+                }
+
+                string fileName = null;
+                if (ImageFile != null && ImageFile.Length > 0)
+                {
+                    string path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/imgs/opinions");
+                    if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+
+                    fileName = Guid.NewGuid().ToString() + Path.GetExtension(ImageFile.FileName);
+                    string fullPath = Path.Combine(path, fileName);
+
+                    using (var stream = new FileStream(fullPath, FileMode.Create))
+                    {
+                        await ImageFile.CopyToAsync(stream);
+                    }
+                }
+
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "EmployeeId")?.Value;
+
+                var newOpinion = new Opinion
+                {
+                    Type = Type,
+                    Title = Title,
+                    Content = Content,
+                    Img = fileName,
+                    Status = 0,
+                    CreatedBy = long.Parse(userIdClaim ?? "0"),
+                    CreatedDate = DateOnly.FromDateTime(DateTime.Now)
+                };
+
+                _context.Opinions.Add(newOpinion);
                 await _context.SaveChangesAsync();
-                return Json(new { success = true, model = model });
+
+                return Ok(new { success = true });
             }
-            catch (Exception ex)
+            catch
             {
-                return Json(new { success = false, model = model });
+                return Ok(new { success = false });
             }
+        }
+
+        [Authorize]
+        public async Task<IActionResult> GetTopSeniors()
+        {
+            var today = DateOnly.FromDateTime(DateTime.Now);
+
+            var employees = _context.Employees
+                .OrderBy(e => e.HireDate)
+                .Take(10)
+                .ToList()
+                .Select(e => {
+                    var totalDays = today.DayNumber - e.HireDate.DayNumber;
+                    var years = totalDays / 365;
+                    var months = (totalDays % 365) / 30;
+                    var days = (totalDays % 365) % 30;
+
+                    return new
+                    {
+                        e.EmployeeCode,
+                        e.EmployeeName,
+                        Avatar = string.IsNullOrEmpty(e.Avatar) ? "imgs/avatars/default.png" : "imgs/avatars/" + e.Avatar,
+                        Tenure = $"{years} năm, {months} tháng, {days} ngày"
+                    };
+                });
+
+            return Json(employees);
+        }
+
+        [Authorize]
+        public async Task<IActionResult> GetMilestoneSeniors()
+        {
+            var today = DateOnly.FromDateTime(DateTime.Now);
+
+            var tenYearsAgo = today.AddYears(-10);
+            var elevenYearsAgo = today.AddYears(-11);
+
+            var milestoneEmployees = await _context.Employees
+                .Where(e => e.HireDate <= tenYearsAgo && e.HireDate > elevenYearsAgo)
+                .Select(e => new {
+                    e.EmployeeCode,
+                    e.EmployeeName,
+                    Avatar = string.IsNullOrEmpty(e.Avatar) ? "imgs/avatars/default.png" : "imgs/avatars/" + e.Avatar,
+                    HireDate = e.HireDate.ToString("dd/MM/yyyy"),
+                    TotalYears = today.Year - e.HireDate.Year,
+                    Tenure = "10 Năm Cống Hiến"
+                })
+                .ToListAsync();
+
+            return Ok(milestoneEmployees);
         }
 
         [Authorize]

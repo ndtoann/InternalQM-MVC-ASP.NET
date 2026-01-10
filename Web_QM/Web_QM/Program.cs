@@ -35,7 +35,7 @@ builder.Services.AddAuthentication("SecurityScheme")
         };
         options.ExpireTimeSpan = TimeSpan.FromMinutes(300);
         options.LoginPath = new PathString("/home/login");
-        options.ReturnUrlParameter = "";
+        options.ReturnUrlParameter = "ReturnUrl";
         options.SlidingExpiration = true;
         options.AccessDeniedPath = "/home/denied";
     });
@@ -48,6 +48,9 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy("ViewHr", policy =>
         policy.RequireClaim("Permission", "Hr.View"));
+
+    options.AddPolicy("ViewProduction", policy =>
+        policy.RequireClaim("Permission", "Production.View"));
 
     options.AddPolicy("ViewWareHouse", policy =>
         policy.RequireClaim("Permission", "WareHouse.View"));

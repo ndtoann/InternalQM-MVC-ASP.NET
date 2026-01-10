@@ -33,6 +33,7 @@
                                 <th>Nhân viên</th>
                                 <th>Tiêu đề</th>
                                 <th>Nội dung</th>
+                                <th>Ảnh đính kèm</th>
                                 <th>Ngày gửi</th>
                                 <th>Trạng thái</th>
                                 <th>Thao tác</th>
@@ -94,6 +95,7 @@
                                     <td>${item.employeeCode} - ${item.employeeName}</td>
                                     <td>${item.title}</td>
                                     <td class="text-wrap">${item.content}</td>
+                                    <td><img src="/imgs/opinions/${item.img}" style="width:100px; height:100px;" /></td>
                                     <td>${formattedDate}</td>
                                     <td>${statusBadge}</td>
                                     <td>

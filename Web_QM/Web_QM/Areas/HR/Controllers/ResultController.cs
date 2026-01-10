@@ -220,26 +220,30 @@ namespace Web_QM.Areas.HR.Controllers
                 worksheet.Range("A1:H1").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                 worksheet.Cell(2, 1).Value = "STT";
-                worksheet.Cell(2, 3).Value = "Mã nhân viên";
-                worksheet.Cell(2, 2).Value = "Tên nhân viên";
+                worksheet.Cell(2, 2).Value = "MNV";
+                worksheet.Cell(2, 3).Value = "Họ và tên";
                 worksheet.Cell(2, 4).Value = "Câu trả lời";
                 worksheet.Cell(2, 5).Value = "Điểm Trắc nghiệm";
                 worksheet.Cell(2, 6).Value = "Điểm Tự luận";
-                worksheet.Cell(2, 7).Value = "Ghi chú";
-                worksheet.Cell(2, 8).Value = "Ngày làm bài";
+                worksheet.Cell(2, 7).Value = "Tổng";
+                worksheet.Cell(2, 8).Value = "Ghi chú";
+                worksheet.Cell(2, 9).Value = "Ngày làm bài";
 
                 int row = 3;
                 int stt = 1;
                 foreach (var answer in employeeAnswers)
                 {
                     worksheet.Cell(row, 1).Value = stt++;
-                    worksheet.Cell(row, 3).Value = answer.EmployeeCode;
-                    worksheet.Cell(row, 2).Value = answer.EmployeeName;
+                    worksheet.Cell(row, 2).Value = answer.EmployeeCode;
+                    worksheet.Cell(row, 3).Value = answer.EmployeeName;
                     worksheet.Cell(row, 4).Value = answer.ListAnswer;
                     worksheet.Cell(row, 5).Value = answer.TnPoint + "/" + countQuestions;
                     worksheet.Cell(row, 6).Value = answer.TlPoint + "/" + exam.TlTotal;
-                    worksheet.Cell(row, 7).Value = answer.Note;
-                    worksheet.Cell(row, 8).Value = answer.CreatedDate;
+                    var answerTotal = (answer.TnPoint ?? 0) + (answer.TlPoint ?? 0);
+                    var questionTotal = countQuestions + exam.TlTotal;
+                    worksheet.Cell(row, 7).Value = answerTotal + "/" + questionTotal;
+                    worksheet.Cell(row, 8).Value = answer.Note;
+                    worksheet.Cell(row, 9).Value = answer.CreatedDate;
                     row++;
                 }
 

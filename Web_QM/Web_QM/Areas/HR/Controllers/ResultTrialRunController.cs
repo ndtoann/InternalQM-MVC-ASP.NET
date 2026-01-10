@@ -223,8 +223,8 @@ namespace Web_QM.Areas.HR.Controllers
                 worksheet.Range("A1:I1").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                 worksheet.Cell(2, 1).Value = "STT";
-                worksheet.Cell(2, 3).Value = "Mã nhân viên";
-                worksheet.Cell(2, 2).Value = "Tên nhân viên";
+                worksheet.Cell(2, 2).Value = "MNV";
+                worksheet.Cell(2, 3).Value = "Họ và tên";
                 worksheet.Cell(2, 4).Value = "Câu trả lời";
                 worksheet.Cell(2, 5).Value = "Đúng";
                 worksheet.Cell(2, 6).Value = "Sai";
@@ -237,8 +237,8 @@ namespace Web_QM.Areas.HR.Controllers
                 foreach (var answer in employeeAnswers)
                 {
                     worksheet.Cell(row, 1).Value = stt++;
-                    worksheet.Cell(row, 3).Value = answer.EmployeeCode;
-                    worksheet.Cell(row, 2).Value = answer.EmployeeName;
+                    worksheet.Cell(row, 2).Value = answer.EmployeeCode;
+                    worksheet.Cell(row, 3).Value = answer.EmployeeName;
                     worksheet.Cell(row, 4).Value = answer.ListAnswer;
                     worksheet.Cell(row, 5).Value = answer.MultipleChoiceCorrect + answer.EssayCorrect;
                     worksheet.Cell(row, 6).Value = answer.MultipleChoiceInCorrect + answer.EssayInCorrect;

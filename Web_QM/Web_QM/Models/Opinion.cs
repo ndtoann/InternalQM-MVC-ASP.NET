@@ -10,6 +10,8 @@
 
         public string Content { get; set; }
 
+        public string? Img { get; set; }
+
         public int? Status { get; set; } = 0;
 
         public long? CreatedBy { get; set; }

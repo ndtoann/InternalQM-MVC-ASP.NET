@@ -57,7 +57,7 @@
                                 }
 
 
-                                <form id="loginForm" class="space-y-6" method="post" asp-action="login">
+                                <form id="loginForm" class="space-y-6" method="post" asp-action="login" asp-route-returnurl="@Context.Request.Query["ReturnUrl"]">
                                     <div>
                                         <label for="username" class="sr-only">Tên đăng nhập</label>
                                         <div class="relative">

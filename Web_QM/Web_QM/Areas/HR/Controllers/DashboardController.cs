@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.InkML;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -29,10 +30,6 @@ namespace Web_QM.Areas.HR.Controllers
             ViewBag.CountKaizen = cKaizen;
             ViewBag.CountError = cError;
             ViewBag.Count5S = c5S;
-
-            var cMachine = await _context.Machines.CountAsync();
-
-            ViewBag.CountMachine = cMachine;
 
             var departmentData = await _context.Employees
                                   .GroupBy(e => e.Department)
@@ -91,6 +88,17 @@ namespace Web_QM.Areas.HR.Controllers
             ViewBag.DataBar = dataLine;
 
             return View();
+        }
+
+        [Authorize]
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(
+            scheme: "SecurityScheme");
+
+            HttpContext.Response.Cookies.Delete("email");
+
+            return Redirect(nameof(Index));
         }
 
         [Authorize(Policy = "ViewNotifi")]
