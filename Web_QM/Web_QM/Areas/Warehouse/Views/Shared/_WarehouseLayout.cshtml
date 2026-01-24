@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="~/admin/vendors/select2-bootstrap-theme/select2-bootstrap.min.css">
     <link rel="stylesheet" href="~/admin/css/vertical-layout-light/style.css">
     <link rel="stylesheet" href="~/admin/css/admin.css">
+    <link rel="stylesheet" href="~/warehouse/css/warehouse.css">
     <link rel="shortcut icon" href="/logo.ico" />
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css" />
 </head>
@@ -152,15 +153,29 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="collapse" href="#warehouse" aria-expanded="false" aria-controls="account">
+                        <a class="nav-link" data-bs-toggle="collapse" href="#warehouse" aria-expanded="false" aria-controls="warehouse">
                             <i class="menu-icon mdi mdi-warehouse"></i>
-                            <span class="menu-title">Quản lý kho</span>
+                            <span class="menu-title">Quản lý tồn kho</span>
                             <i class="menu-arrow"></i>
                         </a>
                         <div class="collapse show" id="warehouse">
                             <ul class="nav flex-column sub-menu">
                                 <li class="nav-item"> <a class="nav-link" href="~/warehouse/material">Danh mục vật liệu</a></li>
                                 <li class="nav-item"> <a class="nav-link" href="~/warehouse/warehouselocation">Vị trí kho</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="collapse" href="#tool" aria-expanded="false" aria-controls="tool">
+                            <i class="menu-icon mdi mdi-knife"></i>
+                            <span class="menu-title">Đồ gá - Dao cụ</span>
+                            <i class="menu-arrow"></i>
+                        </a>
+                        <div class="collapse show" id="tool">
+                            <ul class="nav flex-column sub-menu">
+                                <li class="nav-item"> <a class="nav-link" href="~/warehouse/tool" asp-policy="ViewTool">Danh mục dao cụ, đồ gá</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/warehouse/toolSupplyLog" asp-policy="ViewToolSupplyLog">Thống kê Nhập/Hủy</a></li>
+                                <li class="nav-item"> <a class="nav-link" href="~/warehouse/issueReturnLog" asp-policy="ViewIssueReturnLog">Xuất trả hàng ngày</a></li>
                             </ul>
                         </div>
                     </li>

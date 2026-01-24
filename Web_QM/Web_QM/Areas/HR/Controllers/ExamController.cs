@@ -633,6 +633,86 @@ namespace Web_QM.Areas.HR.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [Authorize(Policy = "AddExam")]
+        public async Task<IActionResult> DuplicateExamToTraining(long examId)
+        {
+            var originalExam = await _context.ExamPeriodics.FindAsync(examId);
+
+            if (originalExam == null)
+            {
+                return NotFound();
+            }
+
+            var originalQuestions = await _context.Questions
+                                                 .Where(q => q.ExamId == examId)
+                                                 .AsNoTracking()
+                                                 .ToListAsync();
+            string newEssayQuestionFileName = originalExam.EssayQuestion;
+            if (!string.IsNullOrEmpty(originalExam.EssayQuestion))
+            {
+                string essayQuestionsDirectory = Path.Combine(_env.WebRootPath, "files", "essay_questions");
+                string originalFilePath = Path.Combine(essayQuestionsDirectory, originalExam.EssayQuestion);
+                if (System.IO.File.Exists(originalFilePath))
+                {
+                    string originalFileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalExam.EssayQuestion);
+                    string extension = Path.GetExtension(originalExam.EssayQuestion);
+
+                    newEssayQuestionFileName = $"{Guid.NewGuid().ToString("N")}{extension}";
+
+                    string newFilePath = Path.Combine(essayQuestionsDirectory, newEssayQuestionFileName);
+
+                    try
+                    {
+                        System.IO.File.Copy(originalFilePath, newFilePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        TempData["ErrorMessage"] = "Lỗi khi copy file tự luận!";
+                        return RedirectToAction(nameof(Index));
+                    }
+                }
+                else
+                {
+                    newEssayQuestionFileName = null;
+                }
+            }
+            var newExam = new ExamTraining
+            {
+                ExamName = originalExam.ExamName + " - Copy",
+                DurationMinute = originalExam.DurationMinute,
+                EssayQuestion = newEssayQuestionFileName,
+                TlTotal = originalExam.TlTotal,
+                IsActive = originalExam.IsActive,
+                CreatedDate = DateOnly.FromDateTime(DateTime.Now)
+            };
+
+            _context.ExamTrainings.Add(newExam);
+            await _context.SaveChangesAsync();
+
+            var newQuestions = new List<QuestionTraining>();
+            foreach (var question in originalQuestions)
+            {
+                var newQuestion = new QuestionTraining
+                {
+                    QuestionText = DuplicateImages(question.QuestionText),
+                    OptionA = DuplicateImages(question.OptionA),
+                    OptionB = DuplicateImages(question.OptionB),
+                    OptionC = DuplicateImages(question.OptionC),
+                    OptionD = DuplicateImages(question.OptionD),
+                    ExamTrainingId = newExam.Id,
+                    CorrectOption = question.CorrectOption,
+                    CreatedDate = DateTime.Now.ToString("HH:mm:ss-dd/MM/yyyy")
+                };
+                newQuestions.Add(newQuestion);
+            }
+
+            _context.QuestionTrainings.AddRange(newQuestions);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Dữ liệu đã được lưu thành công!";
+            return RedirectToAction(nameof(Index));
+        }
+
         private string DuplicateImages(string content)
         {
             if (string.IsNullOrEmpty(content))

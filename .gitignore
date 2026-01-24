@@ -51,6 +51,7 @@ appsettings.json
 **/appsettings.Production.json
 **/appsettings.Staging.json
 **/wwwroot/files
+**/wwwroot/imgs/uploads
 # Visual Studio Code
 .vscode/
 

@@ -1,0 +1,210 @@
+﻿@{
+    ViewData["Title"] = "Thống kê Nhập/Hủy vật tư";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Thống kê Nhập/Hủy vật tư</h4>
+                    <form action="" class="form-sample" method="get">
+                        <div class="row align-items-center">
+                            <div class="col-lg-3">
+                                <div class="form-group mb-0">
+                                    <select class="form-control" name="type">
+                                        <option value="">-- Chọn loại --</option>
+                                        <option value="Nhập">Nhập mới</option>
+                                        <option value="Hủy">Hủy vật tư</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 d-flex align-items-center">
+                                <div class="form-group me-2 flex-grow-1 mb-0">
+                                    <input type="text"
+                                           class="form-control"
+                                           name="key_search"
+                                           placeholder="Nhập vào đây để tìm kiếm" />
+                                </div>
+                                <div class="form-group mb-0">
+                                    <button type="submit" class="btn btn-primary">
+                                        Tìm kiếm
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <a class="btn btn-success" id="export" href="~/warehouse/toolSupplyLog/ExportToExcel">Xuất excel</a>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Ngày thực hiện</th>
+                                    <th>Mã vật tư</th>
+                                    <th>Tên vật tư</th>
+                                    <th>Loại</th>
+                                    <th>Số lượng</th>
+                                    <th>NV Kho</th>
+                                    <th>NV nhận/trả</th>
+                                    <th>Mô tả</th>
+                                    <th>Mục đích sử dụng</th>
+                                    <th>Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody class="log-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="contextMenu" class="dropdown-menu" style="position: absolute; display: none;">
+    <a class="dropdown-item" href="#" id="editLogBtn">Sửa</a>
+    <a class="dropdown-item" href="#" id="deleteLogBtn">Xóa</a>
+</div>
+
+<div class="modal fade" id="logModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cập nhật thông tin Nhập/Hủy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="logForm">
+                <input type="hidden" name="Id" />
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Vật tư</label>
+                        <select class="form-control" name="ToolId" id="selectTool" style="width:100%" required></select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Loại</label>
+                                <select class="form-control" name="Type" required>
+                                    <option value="Nhập">Nhập mới</option>
+                                    <option value="Hủy">Hủy vật tư</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Số lượng</label>
+                                <input type="number" class="form-control" name="Qty" min="1" required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Ngày thực hiện</label>
+                        <input type="date" class="form-control" name="DateMonth" required />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group"><label>NV Kho</label><input type="text" class="form-control" name="WarehouseStaff" /></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group"><label>NV nhận/trả</label><input type="text" class="form-control" name="HandOverStaff" /></div>
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Mô tả</label><input type="text" class="form-control" name="Describe" /></div>
+                    <div class="form-group"><label>Mục đích</label><input type="text" class="form-control" name="IntendedUse" /></div>
+                    <div class="form-group"><label>Ghi chú</label><textarea class="form-control" name="Note"></textarea></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+        const tableBody = document.querySelector('.log-table-body');
+        const logModal = new bootstrap.Modal(document.getElementById('logModal'));
+        const logForm = document.getElementById('logForm');
+        const contextMenu = document.getElementById('contextMenu');
+        let selectedId = null;
+
+        loadLogData();
+
+        function loadLogData(params = {}) {
+            $.get('/warehouse/toolSupplyLog/GetToolSupplyLogs', params, function (data) {
+                let html = '';
+                if (data && data.length > 0) {
+                    data.forEach((item, index) => {
+                        html += `<tr data-id="${item.id}" style="cursor:context-menu">
+                            <td>${index + 1}</td>
+                            <td>${item.dateMonth}</td>
+                            <td><strong>${item.toolCode}</strong></td>
+                            <td class="text-wrap">${item.toolName}</td>
+                            <td class="${item.type === 'Nhập' ? 'text-success' : 'text-danger'}"><strong>${item.type}</strong></td>
+                            <td class="text-center"><strong>${item.qty}</strong></td>
+                            <td>${item.warehouseStaff || ''}</td>
+                            <td>${item.handOverStaff || ''}</td>
+                            <td>${item.describe || ''}</td>
+                            <td>${item.intendedUse || ''}</td>
+                            <td class="text-wrap">${item.note || ''}</td>
+                        </tr>`;
+                    });
+                } else {
+                    html = '<tr><td colspan="11" class="text-center">Không có dữ liệu</td></tr>';
+                }
+                tableBody.innerHTML = html;
+            });
+        }
+
+        tableBody.addEventListener('contextmenu', function (e) {
+            const row = e.target.closest('tr');
+            if (!row) return;
+            e.preventDefault();
+            selectedId = row.getAttribute('data-id');
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = e.pageX + 'px';
+            contextMenu.style.top = e.pageY + 'px';
+        });
+
+        document.addEventListener('click', () => contextMenu.style.display = 'none');
+
+        document.getElementById('editLogBtn').addEventListener('click', function () {
+            $.get('/warehouse/toolSupplyLog/GetLogById', { id: selectedId }, function (data) {
+                $.get('/warehouse/tool/GetTools', function (tools) {
+                    let options = '';
+                    tools.forEach(t => options += `<option value="${t.id}" ${t.id == data.toolId ? 'selected' : ''}>${t.toolCode} - ${t.toolName}</option>`);
+                    $('#selectTool').html(options).select2({ dropdownParent: $('#logModal') });
+                
+                    logForm.querySelector('[name="Id"]').value = data.id;
+                    logForm.querySelector('[name="Type"]').value = data.type;
+                    logForm.querySelector('[name="Qty"]').value = data.qty;
+                    logForm.querySelector('[name="DateMonth"]').value = data.dateMonth ? data.dateMonth.split('T')[0] : "";
+                    logForm.querySelector('[name="WarehouseStaff"]').value = data.warehouseStaff || "";
+                    logForm.querySelector('[name="HandOverStaff"]').value = data.handOverStaff || "";
+                    logForm.querySelector('[name="Describe"]').value = data.describe || "";
+                    logForm.querySelector('[name="IntendedUse"]').value = data.intendedUse || "";
+                    logForm.querySelector('[name="Note"]').value = data.note || "";
+                    logModal.show();
+                });
+            });
+        });
+
+        document.getElementById('deleteLogBtn').addEventListener('click', function () {
+            if (confirm("Xóa phiếu này sẽ hoàn lại số lượng kho?")) {
+                $.get('/warehouse/toolSupplyLog/DeleteLog', { id: selectedId }, (res) => { if (res.success) loadLogData(); });
+            }
+        });
+
+        logForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            $.post('/warehouse/toolSupplyLog/SaveLog', Object.fromEntries(new FormData(logForm).entries()), function (res) {
+                if (res.success) { logModal.hide(); loadLogData(); }
+            });
+        });
+    });
+    </script>
+}

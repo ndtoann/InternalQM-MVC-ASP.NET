@@ -296,6 +296,43 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("ViewAllTimeSheet", policy =>
        policy.RequireClaim("Permission", "TimeSheet.ViewAll"));
 
+    //đồ gá - dao cụ
+    options.AddPolicy("ViewTool", policy =>
+       policy.RequireClaim("Permission", "Tool.View"));
+
+    options.AddPolicy("AddTool", policy =>
+       policy.RequireClaim("Permission", "Tool.Add"));
+
+    options.AddPolicy("EditTool", policy =>
+       policy.RequireClaim("Permission", "Tool.Edit"));
+
+    options.AddPolicy("DeleteTool", policy =>
+       policy.RequireClaim("Permission", "Tool.Delete"));
+
+    options.AddPolicy("ViewToolSupplyLog", policy =>
+       policy.RequireClaim("Permission", "ToolSupplyLog.View"));
+
+    options.AddPolicy("AddToolSupplyLog", policy =>
+       policy.RequireClaim("Permission", "ToolSupplyLog.Add"));
+
+    options.AddPolicy("EditToolSupplyLog", policy =>
+       policy.RequireClaim("Permission", "ToolSupplyLog.Edit"));
+
+    options.AddPolicy("DeleteToolSupplyLog", policy =>
+       policy.RequireClaim("Permission", "ToolSupplyLog.Delete"));
+
+    options.AddPolicy("ViewIssueReturnLog", policy =>
+       policy.RequireClaim("Permission", "IssueReturnLog.View"));
+
+    options.AddPolicy("AddIssueReturnLog", policy =>
+       policy.RequireClaim("Permission", "IssueReturnLog.Add"));
+
+    options.AddPolicy("EditIssueReturnLog", policy =>
+       policy.RequireClaim("Permission", "IssueReturnLog.Edit"));
+
+    options.AddPolicy("DeleteIssueReturnLog", policy =>
+       policy.RequireClaim("Permission", "IssueReturnLog.Delete"));
+
     //client
     options.AddPolicy("ClientViewEmpl", policy =>
        policy.RequireClaim("Permission", "EmployeeOnlyDepartment.View"));

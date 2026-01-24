@@ -96,6 +96,7 @@
 
 <div id="contextMenu" class="dropdown-menu" style="position: absolute; display: none;">
     <a class="dropdown-item" href="#" id="duplicateLink">Sao chép</a>
+    <a class="dropdown-item" href="#" id="kqktLink">KQKT</a>
     <a class="dropdown-item" href="#" id="viewLink">Xem</a>
     <a class="dropdown-item" href="#" id="editLink">Sửa</a>
     <a class="dropdown-item" href="#" id="deleteLink">Xóa</a>
@@ -120,12 +121,14 @@
                         const examName = row.getAttribute('data-examname');
 
                         const duplicateLink = document.getElementById('duplicateLink');
+                        const kqktLink = document.getElementById('kqktLink');
                         const viewLink = document.getElementById('viewLink');
                         const editLink = document.getElementById('editLink');
                         const deleteLink = document.getElementById('deleteLink');
 
                         viewLink.href = `/hr/examtraining/detail?id=${id}`;
                         editLink.href = `/hr/examtraining/edit?id=${id}`;
+                        kqktLink.href = `/hr/resulttraining/detail?examid=${id}`;
 
                         contextMenu.style.top = `${e.pageY}px`;
                         contextMenu.style.left = `${e.pageX}px`;

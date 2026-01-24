@@ -101,6 +101,8 @@
 
 <div id="contextMenu" class="dropdown-menu" style="position: absolute; display: none;">
     <a class="dropdown-item" href="#" id="duplicateLink">Sao chép</a>
+    <a class="dropdown-item" href="#" id="duplicateToTrainingLink">Sao chép qua KT sau đào tạo</a>
+    <a class="dropdown-item" href="#" id="kqktLink">KQKT</a>
     <a class="dropdown-item" href="#" id="viewLink">Xem</a>
     <a class="dropdown-item" href="#" id="editLink">Sửa</a>
     <a class="dropdown-item" href="#" id="deleteLink">Xóa</a>
@@ -125,12 +127,15 @@
                         const examName = row.getAttribute('data-examname');
 
                         const duplicateLink = document.getElementById('duplicateLink');
+                        const duplicateToTrainingLink = document.getElementById('duplicateToTrainingLink');
+                        const kqktLink = document.getElementById('kqktLink');
                         const viewLink = document.getElementById('viewLink');
                         const editLink = document.getElementById('editLink');
                         const deleteLink = document.getElementById('deleteLink');
 
                         viewLink.href = `/hr/exam/detail?id=${id}`;
                         editLink.href = `/hr/exam/edit?id=${id}`;
+                        kqktLink.href = `/hr/result/detail?examid=${id}`;
 
                         contextMenu.style.top = `${e.pageY}px`;
                         contextMenu.style.left = `${e.pageX}px`;
@@ -140,6 +145,13 @@
                             event.preventDefault();
                             if (window.confirm('Xác nhận sao chép ' + examName + '?')) {
                                 window.location.href = `/hr/exam/duplicateexam?examId=${id}`;
+                            }
+                        };
+
+                        duplicateToTrainingLink.onclick = function(event) {
+                            event.preventDefault();
+                            if (window.confirm('Xác nhận sao chép ' + examName + 'sang phần KT sau đào tạo?')) {
+                                window.location.href = `/hr/exam/DuplicateExamToTraining?examId=${id}`;
                             }
                         };
 

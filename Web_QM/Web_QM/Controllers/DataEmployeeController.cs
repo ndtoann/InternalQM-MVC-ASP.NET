@@ -754,6 +754,45 @@ namespace Web_QM.Controllers
         }
 
         [Authorize(Policy = "ClientViewEmpl")]
+        public async Task<IActionResult> GetExamPeriodicDetail(long id)
+        {
+            var answerRecord = await _context.ExamPeriodicAnswers.FindAsync(id);
+            if (answerRecord == null) return NotFound();
+
+            var questions = await _context.Questions
+                .Where(q => q.ExamId == answerRecord.ExamId)
+                .OrderBy(q => q.DisplayOrder)
+                .ToListAsync();
+
+            var dictAnswers = (answerRecord.ListAnswer ?? "")
+                .Split('-', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Split('.'))
+                .Where(x => x.Length == 2)
+                .ToDictionary(x => x[0].Trim(), x => x[1].Trim());
+
+            var questionList = questions.Select((q, index) => {
+                var stt = (index + 1).ToString();
+                return new
+                {
+                    stt = index + 1,
+                    questionText = q.QuestionText,
+                    optionA = q.OptionA,
+                    optionB = q.OptionB,
+                    optionC = q.OptionC,
+                    optionD = q.OptionD,
+                    correctOption = q.CorrectOption,
+                    employeeChoice = dictAnswers.ContainsKey(stt) ? dictAnswers[stt] : ""
+                };
+            }).ToList();
+
+            return Json(new
+            {
+                details = questionList,
+                pdfPath = answerRecord.EssayResultPDF
+            });
+        }
+
+        [Authorize(Policy = "ClientViewEmpl")]
         public async Task<IActionResult> ExportToExcel(long id)
         {
             if (id == null)

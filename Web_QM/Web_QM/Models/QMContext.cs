@@ -83,6 +83,10 @@ public partial class QMContext : DbContext
 
     public virtual DbSet<Opinion> Opinions { get; set; }
 
+    public virtual DbSet<Tool> Tools { get; set; }
+    public virtual DbSet<ToolSupplyLog> ToolSupplyLogs { get; set; }
+    public virtual DbSet<IssueReturnLog> IssueReturnLogs { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer("Server=192.168.10.251,1433;Database=QM_DaoTao;User Id=daotao01;Password=12341234;Trusted_Connection=False;MultipleActiveResultSets=true;Encrypt=False;");
 
@@ -427,6 +431,31 @@ public partial class QMContext : DbContext
             entity.Property(e => e.Title).HasMaxLength(255);
             entity.Property(e => e.Type).HasMaxLength(50);
             entity.Property(e => e.Img).HasMaxLength(255);
+        });
+
+        modelBuilder.Entity<Tool>(entity => {
+            entity.Property(e => e.ToolCode).HasMaxLength(50);
+            entity.Property(e => e.ToolName).HasMaxLength(100);
+            entity.Property(e => e.Type).HasMaxLength(20);
+            entity.Property(e => e.Unit).HasMaxLength(10);
+            entity.Property(e => e.Location).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<ToolSupplyLog>(entity => {
+            entity.Property(e => e.Type).HasMaxLength(20);
+            entity.Property(e => e.IntendedUse).HasMaxLength(50);
+            entity.Property(e => e.Describe).HasMaxLength(20);
+            entity.Property(e => e.WarehouseStaff).HasMaxLength(50);
+            entity.Property(e => e.HandOverStaff).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<IssueReturnLog>(entity => {
+            entity.Property(e => e.Machine).HasMaxLength(50);
+            entity.Property(e => e.IntendedUse).HasMaxLength(50);
+            entity.Property(e => e.IssuedStaff).HasMaxLength(50);
+            entity.Property(e => e.IssuedWarehouseStaff).HasMaxLength(50);
+            entity.Property(e => e.ReturnStaff).HasMaxLength(50);
+            entity.Property(e => e.ReturnWarehouseStaff).HasMaxLength(50);
         });
 
         OnModelCreatingPartial(modelBuilder);

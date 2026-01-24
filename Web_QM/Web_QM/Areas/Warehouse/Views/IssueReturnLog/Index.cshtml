@@ -1,0 +1,313 @@
+﻿@{
+    ViewData["Title"] = "Xuất trả hàng ngày";
+}
+
+<div class="content-wrapper">
+    <div class="row">
+        <div class="col-lg-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Xuất trả hàng ngày</h4>
+                    <form class="form-sample" id="searchForm">
+                        <div class="row align-items-center">
+                            <div class="col-lg-6 d-flex align-items-center">
+                                <div class="form-group me-2 flex-grow-1 mb-0">
+                                    <input type="text" class="form-control" name="key_search" placeholder="Nhập vào đây để tìm kiếm" />
+                                </div>
+                                <div class="form-group mb-0">
+                                    <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <a class="btn btn-success" id="btn-add-log" href="#" asp-policy="AddIssueReturnLog">Thêm phiếu Xuất/Trả</a>
+                    <a class="btn btn-success" id="export" href="~/warehouse/IssueReturnLog/ExportToExcel">Xuất excel</a>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Vật tư</th>
+                                    <th>Thông tin chung</th>
+                                    <th>Chi tiết Xuất</th>
+                                    <th>Chi tiết Trả</th>
+                                    <th>Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="contextMenu" class="dropdown-menu" style="position: absolute; display: none; z-index: 1100;">
+    <a class="dropdown-item" href="#" id="editLog">Sửa</a>
+    <a class="dropdown-item" href="#" id="deleteLog">Xóa</a>
+</div>
+
+<div class="modal fade" id="issueReturnModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ghi nhận Xuất/Trả</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="issueReturnForm">
+                <input type="hidden" name="Id" id="formLogId" value="0" />
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Vật tư</label>
+                                <select class="form-control" name="ToolId" id="selectToolId" style="width: 100%" required></select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Máy</label>
+                                <input type="text" class="form-control" name="Machine" id="inputMachine" list="machineList" required />
+                                <datalist id="machineList"></datalist>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Mục đích sử dụng</label>
+                                <input type="text" class="form-control" name="IntendedUse" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="holdingArea" class="mt-2 mb-3" style="display:none;">
+                        <label class="text-danger fw-bold">Đang mượn:</label>
+                        <div class="table-responsive" style="max-height: 200px; border: 2px solid #ffc107;">
+                            <table class="table table-sm table-warning mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Ngày mượn</th>
+                                        <th>SL mượn</th>
+                                        <th>SL còn</th>
+                                        <th>NV mượn</th>
+                                        <th>NV Kho xuất</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="holdingTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="row p-2">
+                        <div class="col-md-12"><h6>PHẦN XUẤT VẬT TƯ</h6></div>
+                        <div class="col-md-3"><label>Ngày xuất</label><input type="date" class="form-control" name="IssuedDate" id="issuedDateDefault" required /></div>
+                        <div class="col-md-3"><label>SL xuất</label><input type="number" class="form-control" name="IssuedQty" min="1" value="0" /></div>
+                        <div class="col-md-3"><label>NV mượn</label><input type="text" class="form-control" name="IssuedStaff" /></div>
+                        <div class="col-md-3"><label>NV kho xuất</label><input type="text" class="form-control" name="IssuedWarehouseStaff" /></div>
+                    </div>
+
+                    <div class="row p-2 mt-2">
+                        <div class="col-md-12"><h6>PHẦN TRẢ VẬT TƯ</h6></div>
+                        <div class="col-md-3"><label>Ngày trả</label><input type="date" class="form-control" name="ReturnDate" id="returnDateInput" /></div>
+                        <div class="col-md-3"><label>SL trả</label><input type="number" class="form-control" name="ReturnQty" id="returnQtyInput" min="0" value="0" /></div>
+                        <div class="col-md-3"><label>NV trả</label><input type="text" class="form-control" name="ReturnStaff" id="returnStaffInput" /></div>
+                        <div class="col-md-3"><label>NV kho nhận</label><input type="text" class="form-control" name="ReturnWarehouseStaff" /></div>
+                    </div>
+
+                    <div class="form-group mt-3"><label>Ghi chú</label><input type="text" class="form-control" name="Note" /></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary">Lưu phiếu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            const logModal = new bootstrap.Modal(document.getElementById('issueReturnModal'));
+            const logForm = document.getElementById('issueReturnForm');
+            const contextMenu = document.getElementById('contextMenu');
+            let selectedId = null;
+            let isEditing = false;
+
+            function formatDate(dateStr) {
+                if (!dateStr) return "-";
+                const d = new Date(dateStr);
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const year = d.getFullYear();
+                return `${day}/${month}/${year}`;
+            }
+
+            loadLogs();
+            loadMachines();
+
+            function loadLogs(params = {}) {
+                $.get('/warehouse/IssueReturnLog/GetIssueReturnLogs', params, function (data) {
+                    let html = '';
+                    data.forEach((item, index) => {
+                        html += `
+                        <tr data-id="${item.id}" style="border-bottom: 2px solid #eee; cursor: context-menu;">
+                            <td class="text-center align-middle" style="font-weight: bold;">${index + 1}</td>
+                            <td class="align-middle">
+                                <div style="font-size: 1.1rem; font-weight: 800; color: #000;">${item.toolCode}</div>
+                                <div style="font-size: 0.85rem; color: #444;">${item.toolName}</div>
+                            </td>
+                            <td class="align-middle">
+                                Máy: <b>${item.machine || '-'}</b><br/>
+                                Mục đích: ${item.intendedUse || '-'}
+                            </td>
+                            <td class="align-middle" style="background-color: #fdfdfd;">
+                                <div style="font-size: 1.1rem; font-weight: 900; color: #d9534f;">SL xuất: ${item.issuedQty}</div>
+                                <div style="font-size: 0.8rem;font-weight: 900;"> ${item.issuedDate} </div>
+                                <div style="font-size: 0.8rem;font-weight: 900;">NV: ${item.issuedStaff} - NV kho: ${item.issuedWarehouseStaff}</div>
+                            </td>
+                            <td class="align-middle">
+                                ${item.returnDate ? `
+                                    <div style="font-size: 1.1rem; font-weight: 900; color: #28a745;">SL trả: ${item.returnQty}</div>
+                                    <div style="font-size: 0.8rem;font-weight: 900;"> ${item.returnDate} </div>
+                                    <div style="font-size: 0.8rem;font-weight: 900;">NV: ${item.issuedStaff || ''} - NV kho: ${item.returnWarehouseStaff || ''}</div>
+                                ` : `<div style="color: #999; border: 1px dashed #ccc; padding: 2px; text-align: center; font-weight: bold;">CHƯA TRẢ</div>`}
+                            </td>
+                            <td class="align-middle">${item.note || '-'}</td>
+                        </tr>`;
+                    });
+                    $('#logTableBody').html(html || '<tr><td colspan="6" class="text-center">Không có dữ liệu</td></tr>');
+                });
+            }
+
+            function loadMachines() {
+                $.get('/warehouse/IssueReturnLog/GetMachines', function(data) {
+                    let h = '';
+                    data.forEach(m => h += `<option value="${m}">`);
+                    $('#machineList').html(h);
+                });
+            }
+
+            function loadTools(selectedId = null) {
+                return $.get('/warehouse/tool/GetTools', function (data) {
+                    let options = '<option value="">-- Chọn vật tư --</option>';
+                    data.forEach(t => options += `<option value="${t.id}" ${t.id == selectedId ? 'selected' : ''}>${t.toolCode} - ${t.toolName} (Tồn: ${t.availableQty})</option>`);
+                    $('#selectToolId').html(options).select2({ dropdownParent: $('#issueReturnModal') });
+                });
+            }
+
+            $('#selectToolId, #inputMachine').on('change input', function() {
+                if(isEditing) return;
+                const toolId = $('#selectToolId').val();
+                const machine = $('#inputMachine').val();
+                if(toolId && machine) {
+                    $.get('/warehouse/IssueReturnLog/GetHoldingLogs', { toolId, machine }, function(res) {
+                        if(res.length > 0) {
+                            let h = '';
+                            res.forEach(item => {
+                                h += `<tr>
+                                    <td>${formatDate(item.issuedDate)}</td>
+                                    <td>${item.issuedQty}</td>
+                                    <td class="text-danger fw-bold">${item.debt}</td>
+                                    <td>${item.issuedStaff}</td>
+                                    <td>${item.issuedWarehouseStaff}</td>
+                                    <td><button type="button" class="btn btn-xs btn-primary btn-quick-return" data-id="${item.id}">Trả</button></td>
+                                </tr>`;
+                            });
+                            $('#holdingTableBody').html(h);
+                            $('#holdingArea').show();
+                        } else { $('#holdingArea').hide(); }
+                    });
+                }
+            });
+
+            $(document).on('click', '.btn-quick-return', function() {
+                const id = $(this).data('id');
+                $('#formLogId').val(id);
+                $.get('/warehouse/IssueReturnLog/GetLogById', { id: id }, function(data) {
+                    $('[name="Machine"]').val(data.machine);
+                    $('[name="IntendedUse"]').val(data.intendedUse);
+                    $('[name="IssuedDate"]').val(data.issuedDate.split('T')[0]);
+                    $('[name="IssuedQty"]').val(data.issuedQty);
+                    $('[name="IssuedStaff"]').val(data.issuedStaff);
+                    $('[name="IssuedWarehouseStaff"]').val(data.issuedWarehouseStaff);
+
+                    $('#returnDateInput').val(new Date().toISOString().split('T')[0]);
+                    $('#returnQtyInput').val(0);
+                    $('#returnStaffInput').val('');
+
+                    $('#holdingArea').hide();
+                });
+            });
+
+            $('#btn-add-log').click(function () {
+                isEditing = false;
+                logForm.reset();
+                $('#formLogId').val(0);
+                $('#issuedDateDefault').val(new Date().toISOString().split('T')[0]);
+                $('#holdingArea').hide();
+                loadTools();
+                logModal.show();
+            });
+
+            $('#logTableBody').on('contextmenu', 'tr', function (e) {
+                e.preventDefault();
+                selectedId = $(this).data('id');
+                $(contextMenu).css({ display: 'block', left: e.pageX, top: e.pageY });
+            });
+
+            $(document).click(() => $(contextMenu).hide());
+
+            $('#editLog').click(function () {
+                isEditing = true;
+                $('#holdingArea').hide();
+                $.get('/warehouse/IssueReturnLog/GetLogById', { id: selectedId }, function (data) {
+                    $('#formLogId').val(data.id);
+                    loadTools(data.toolId).done(() => {
+                        $('[name="Machine"]').val(data.machine);
+                        $('[name="IntendedUse"]').val(data.intendedUse);
+                        $('[name="IssuedDate"]').val(data.issuedDate.split('T')[0]);
+                        $('[name="IssuedQty"]').val(data.issuedQty);
+                        $('[name="IssuedStaff"]').val(data.issuedStaff);
+                        $('[name="IssuedWarehouseStaff"]').val(data.issuedWarehouseStaff);
+                        if(data.returnDate) $('[name="ReturnDate"]').val(data.returnDate.split('T')[0]);
+                        $('[name="ReturnQty"]').val(data.returnQty || 0);
+                        $('[name="ReturnStaff"]').val(data.returnStaff || '');
+                        $('[name="ReturnWarehouseStaff"]').val(data.returnWarehouseStaff || '');
+                        $('[name="Note"]').val(data.note || '');
+                        logModal.show();
+                    });
+                });
+            });
+
+            $('#deleteLog').click(function () {
+                if(confirm("Xóa phiếu này và hoàn lại số lượng kho?")) {
+                    $.post('/warehouse/IssueReturnLog/DeleteLog', { id: selectedId }, function(res) {
+                        if(res.success) loadLogs();
+                        else alert(res.message);
+                    });
+                }
+            });
+
+            $('#issueReturnForm').submit(function (e) {
+                e.preventDefault();
+                $.post('/warehouse/IssueReturnLog/SaveIssueReturnLog', $(this).serialize(), function (res) {
+                    if (res.success) {
+                        logModal.hide();
+                        loadLogs();
+                    } else {
+                        alert(res.message);
+                    }
+                }).fail(function(xhr) {
+                    alert("Lỗi hệ thống: " + xhr.responseText);
+                });
+            });
+
+            $('#searchForm').submit(function (e) {
+                e.preventDefault();
+                loadLogs({ key_search: $('input[name="key_search"]').val() });
+            });
+        });
+    </script>
+}

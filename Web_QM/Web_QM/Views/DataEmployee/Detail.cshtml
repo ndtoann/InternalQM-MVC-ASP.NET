@@ -325,7 +325,13 @@
                             {
                                 <tr>
                                     <td>@(count4++)</td>
-                                    <td>@item.QuizName</td>
+                                    <td>
+                                        <a href="javascript:void(0)"
+                                           class="list-group-item list-group-item-action"
+                                           onclick="loadExamDetail(@item.Id)">
+                                            <span class="badge bg-primary">@item.QuizName</span>
+                                        </a>
+                                    </td>
                                     <td>
                                         @{
                                             double percentageTn = (double)item.PointTn / item.CountQuestion * 100;
@@ -601,6 +607,25 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* model xem chi tiết bài kiểm tra định kỳ *@
+<div class="modal fade" id="modalExamDetail" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Chi tiết bài kiểm tra</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="detailBody" style="max-height: 70vh; overflow-y: auto;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">Đóng</button>
             </div>
         </div>
     </div>
@@ -1268,7 +1293,7 @@
                 tableBody.html('<tr><td colspan="2">Đang tải...</td></tr>');
 
                 $.ajax({
-                    url: '@Url.Action("GetTrainingResults", "Employee", new { area = "Admin" })',
+                    url: '@Url.Action("GetTrainingResults", "Employee", new { area = "Hr" })',
                     type: 'GET',
                     data: {
                         employeeId: employeeId,
@@ -1375,7 +1400,7 @@
                 detailsBody.html('<tr><td colspan="6" class="text-center">Đang tải...</td></tr>');
 
                 $.ajax({
-                    url: `/Admin/Employee/GetTestPracticeDetails?id=${testId}`,
+                    url: `/Hr/Employee/GetTestPracticeDetails?id=${testId}`,
                     type: 'GET',
                     success: function (data) {
                         modal.find('#modalTestName').text(data.testName || 'N/A');
@@ -1595,6 +1620,72 @@
                     Swal.fire('Lỗi', 'Có lỗi xảy ra khi cập nhật: ' + error, 'error');
                 }
             });
+        }
+
+        async function loadExamDetail(id) {
+            try {
+                var url = "/DataEmployee/GetExamPeriodicDetail?id=" + id;
+                var response = await fetch(url);
+                var data = await response.json();
+        
+                var questions = data.details;
+                var pdfPath = data.pdfPath;
+
+                var html = "";
+                for (var i = 0; i < questions.length; i++) {
+                    var q = questions[i];
+                    html += "<div class='mb-4 p-2 border-bottom'>";
+                    html += "<div class='question-content'>";
+                    html += "<strong>Câu " + q.stt + ": </strong>" + q.questionText;
+                    html += "</div>";
+                    html += "<div class='pl-3 mt-2'>";
+                    html += renderOptionLine("A", q.optionA, q.correctOption, q.employeeChoice);
+                    html += renderOptionLine("B", q.optionB, q.correctOption, q.employeeChoice);
+                    html += renderOptionLine("C", q.optionC, q.correctOption, q.employeeChoice);
+                    html += renderOptionLine("D", q.optionD, q.correctOption, q.employeeChoice);
+                    html += "</div></div>";
+                }
+
+                html += "<div class='mt-4 p-3 bg-light border rounded'>";
+                html += "<h5>Kết quả bài kiểm tra tự luận:</h5>";
+        
+                if (pdfPath && pdfPath.trim() !== "") {
+                    html += "<a href='" + pdfPath + "' target='_blank' class='btn btn-success btn-sm'>";
+                    html += "<i class='fa fa-file-pdf-o'></i> Tải file PDF bài làm tự luận";
+                    html += "</a>";
+                } else {
+                    html += "<span class='text-muted italic'>Không có dữ liệu bài làm tự luận.</span>";
+                }
+                html += "</div>";
+
+                var container = document.getElementById("detailBody");
+                if (container) {
+                    container.innerHTML = html;
+                    $("#modalExamDetail").modal("show");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Không thể tải chi tiết bài thi.");
+            }
+        }
+
+        function renderOptionLine(label, text, correct, mine) {
+            if (!text) return "";
+    
+            var cssClass = "answer-item";
+    
+            if (label === correct) {
+                if (mine === label) {
+                    cssClass += " ans-correct-user";
+                } else {
+                    cssClass += " ans-correct-system";
+                }
+            } 
+            else if (label === mine) {
+                cssClass += " ans-wrong-user";
+            }
+
+            return "<div class='" + cssClass + "'>" + label + ". " + text + "</div>";
         }
     </script>
 }
