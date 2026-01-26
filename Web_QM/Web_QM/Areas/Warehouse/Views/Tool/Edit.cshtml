@@ -32,8 +32,11 @@
                             <div class="form-group col-lg-3">
                                 <label asp-for="Type">Loại</label>
                                 <select asp-for="Type" class="form-control">
+                                    <option value="">--- Chọn ---</option>
                                     <option value="Dao cụ">Dao cụ</option>
                                     <option value="Đồ gá">Đồ gá</option>
+                                    <option value="Căn kê">Căn kê</option>
+                                    <option value="Dụng cụ">Dụng cụ</option>
                                 </select>
                                 <span asp-validation-for="Type" class="text-danger"></span>
                             </div>

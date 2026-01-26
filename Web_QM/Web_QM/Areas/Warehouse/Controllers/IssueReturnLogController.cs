@@ -1,4 +1,5 @@
 ﻿using ClosedXML.Excel;
+using ExcelDataReader.Log;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +25,7 @@ namespace Web_QM.Areas.Warehouse.Controllers
         }
 
         [Authorize(Policy = "ViewIssueReturnLog")]
-        public async Task<IActionResult> GetIssueReturnLogs(string? key_search)
+        public async Task<IActionResult> GetIssueReturnLogs(string? key_search, string? status, string? fromDate, string? toDate)
         {
             var query = from log in _context.IssueReturnLogs
                         join tool in _context.Tools on log.ToolId equals tool.Id into toolJoin
@@ -36,13 +37,42 @@ namespace Web_QM.Areas.Warehouse.Controllers
                 string s = key_search.ToLower();
                 query = query.Where(x => (x.t != null && x.t.ToolCode.ToLower().Contains(s)) ||
                                          (x.t != null && x.t.ToolName.ToLower().Contains(s)) ||
-                                         (x.log.Machine.ToLower().Contains(s)) ||
-                                         (x.log.IssuedStaff.ToLower().Contains(s)));
+                                         (x.log.Machine.ToLower().Contains(s)));
+            }
+
+            if (!string.IsNullOrEmpty(status))
+            {
+                if (status == "pending")
+                {
+                    query = query.Where(x => x.log.ReturnDate == null);
+                }
+                else if (status == "completed")
+                {
+                    query = query.Where(x => x.log.ReturnDate != null);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(fromDate))
+            {
+                if (DateOnly.TryParse(fromDate, out DateOnly start))
+                {
+                    query = query.Where(x => x.log.IssuedDate >= start);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(toDate))
+            {
+                if (DateOnly.TryParse(toDate, out DateOnly end))
+                {
+                    query = query.Where(x => x.log.IssuedDate <= end);
+                }
             }
 
             var data = await query.OrderByDescending(x => x.log.Id).ToListAsync();
+
             var result = data.Select(x => new {
                 x.log.Id,
+                x.log.ToolId,
                 ToolCode = x.t?.ToolCode ?? "N/A",
                 ToolName = x.t?.ToolName ?? "N/A",
                 x.log.Machine,
@@ -61,28 +91,90 @@ namespace Web_QM.Areas.Warehouse.Controllers
             return Json(result);
         }
 
-        [Authorize(Policy = "ViewIssueReturnLog")]
+        [Authorize(Policy = "AddIssueReturnLog")]
         public async Task<IActionResult> GetHoldingLogs(long toolId, string machine)
         {
             var logs = await _context.IssueReturnLogs
                 .Where(x => x.ToolId == toolId && x.Machine == machine && x.IssuedQty > x.ReturnQty)
                 .Select(x => new {
                     x.Id,
-                    x.IssuedDate,
+                    sortDate = x.IssuedDate,
+                    IssuedDate = x.IssuedDate.ToString("dd/MM/yyyy"),
                     x.IssuedQty,
                     x.ReturnQty,
                     Debt = x.IssuedQty - x.ReturnQty,
                     x.IssuedStaff,
                     x.IssuedWarehouseStaff
-                }).ToListAsync();
+                })
+                .OrderByDescending(x => x.sortDate)
+                .ToListAsync();
             return Json(logs);
         }
 
-        [Authorize(Policy = "ViewIssueReturnLog")]
+        [Authorize(Policy = "AddIssueReturnLog")]
         public async Task<IActionResult> GetMachines() => Json(await _context.Machines.Select(x => x.MachineCode).ToListAsync());
 
         [Authorize(Policy = "ViewIssueReturnLog")]
         public async Task<IActionResult> GetLogById(long id) => Json(await _context.IssueReturnLogs.FindAsync(id));
+
+        [Authorize(Policy = "AddIssueReturnLog")]
+        [HttpGet]
+        public async Task<IActionResult> GetEmployeeSuggestions(string term)
+        {
+            var query = _context.Employees.AsQueryable();
+
+            if (!string.IsNullOrEmpty(term))
+            {
+                query = query.Where(e => e.EmployeeCode.Contains(term) || e.EmployeeName.Contains(term));
+            }
+
+            var employees = await query
+                .Select(e => new {
+                    id = e.EmployeeCode,
+                    text = e.EmployeeCode + " - " + e.EmployeeName
+                })
+                .ToListAsync();
+
+            return Json(employees);
+        }
+
+        [Authorize(Policy = "AddIssueReturnLog")]
+        [HttpPost]
+        public async Task<IActionResult> SaveMultiIssue([FromBody] List<IssueReturnLog> models)
+        {
+            if (models == null || !models.Any())
+            {
+                return Json(new { success = false, message = "Không có dữ liệu" });
+            }
+
+            try
+            {
+                foreach (var log in models)
+                {
+                    var tool = await _context.Tools.FindAsync(log.ToolId);
+                    if (tool == null) throw new Exception($"Vật tư không hợp lệ");
+
+                    if (log.IssuedQty > tool.AvailableQty)
+                        throw new Exception($"Vật tư {tool.ToolName} không đủ tồn (Còn: {tool.AvailableQty})");
+
+                    tool.TotalIssued += log.IssuedQty;
+                    tool.AvailableQty = (tool.InitialQty + tool.TotalImported - tool.TotalScrapped) - tool.TotalIssued + tool.TotalReturned;
+
+                    log.CreatedDate = DateOnly.FromDateTime(DateTime.Now);
+                    log.ReturnQty = 0;
+                    log.ReturnDate = null;
+
+                    _context.IssueReturnLogs.Add(log);
+                }
+
+                await _context.SaveChangesAsync();
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
 
         [Authorize(Policy = "AddIssueReturnLog")]
         [HttpPost]
@@ -97,64 +189,45 @@ namespace Web_QM.Areas.Warehouse.Controllers
 
                 if (log.ReturnDate == null) log.ReturnQty = 0;
 
-                if (log.Id > 0)
+                var existing = await _context.IssueReturnLogs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == log.Id);
+                if (existing == null) return Json(new { success = false, message = "Phiếu không tồn tại" });
+
+                if (existing.ToolId != log.ToolId)
                 {
-                    var existing = await _context.IssueReturnLogs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == log.Id);
-                    if (existing == null) return Json(new { success = false, message = "Phiếu không tồn tại" });
-
-                    if (existing.ToolId != log.ToolId)
+                    var oldTool = await _context.Tools.FindAsync(existing.ToolId);
+                    if (oldTool != null)
                     {
-                        var oldTool = await _context.Tools.FindAsync(existing.ToolId);
-                        if (oldTool != null)
-                        {
-                            oldTool.TotalIssued -= existing.IssuedQty;
-                            oldTool.TotalReturned -= existing.ReturnQty;
-                            oldTool.AvailableQty = (oldTool.InitialQty + oldTool.TotalImported - oldTool.TotalScrapped) - oldTool.TotalIssued + oldTool.TotalReturned;
-                        }
-
-                        var newTool = await _context.Tools.FindAsync(log.ToolId);
-                        if (newTool == null) return Json(new { success = false, message = "Vật tư mới không tồn tại" });
-
-                        if (log.IssuedQty > newTool.AvailableQty)
-                            return Json(new { success = false, message = "Số lượng xuất vượt quá tồn kho của vật tư mới" });
-
-                        newTool.TotalIssued += log.IssuedQty;
-                        newTool.TotalReturned += log.ReturnQty;
-                        newTool.AvailableQty = (newTool.InitialQty + newTool.TotalImported - newTool.TotalScrapped) - newTool.TotalIssued + newTool.TotalReturned;
-                    }
-                    else
-                    {
-                        var tool = await _context.Tools.FindAsync(log.ToolId);
-                        if (tool == null) return Json(new { success = false, message = "Vật tư không tồn tại" });
-
-                        decimal qtyDifference = log.IssuedQty - existing.IssuedQty;
-                        if (qtyDifference > tool.AvailableQty)
-                            return Json(new { success = false, message = "Số lượng xuất sửa đổi vượt quá tồn kho" });
-
-                        tool.TotalIssued = tool.TotalIssued - existing.IssuedQty + log.IssuedQty;
-                        tool.TotalReturned = tool.TotalReturned - existing.ReturnQty + log.ReturnQty;
-                        tool.AvailableQty = (tool.InitialQty + tool.TotalImported - tool.TotalScrapped) - tool.TotalIssued + tool.TotalReturned;
+                        oldTool.TotalIssued -= existing.IssuedQty;
+                        oldTool.TotalReturned -= existing.ReturnQty;
+                        oldTool.AvailableQty = (oldTool.InitialQty + oldTool.TotalImported - oldTool.TotalScrapped) - oldTool.TotalIssued + oldTool.TotalReturned;
                     }
 
-                    log.UpdatedDate = DateOnly.FromDateTime(DateTime.Now);
-                    _context.IssueReturnLogs.Update(log);
+                    var newTool = await _context.Tools.FindAsync(log.ToolId);
+                    if (newTool == null) return Json(new { success = false, message = "Vật tư không hợp lệ" });
+
+                    if (log.IssuedQty > newTool.AvailableQty)
+                        return Json(new { success = false, message = "Số lượng xuất vượt quá tồn kho" });
+
+                    newTool.TotalIssued += log.IssuedQty;
+                    newTool.TotalReturned += log.ReturnQty;
+                    newTool.AvailableQty = (newTool.InitialQty + newTool.TotalImported - newTool.TotalScrapped) - newTool.TotalIssued + newTool.TotalReturned;
                 }
                 else
                 {
                     var tool = await _context.Tools.FindAsync(log.ToolId);
-                    if (tool == null) return Json(new { success = false, message = "Vật tư không tồn tại" });
+                    if (tool == null) return Json(new { success = false, message = "Vật tư không hợp lệ" });
 
-                    if (log.IssuedQty > tool.AvailableQty)
+                    decimal qtyDifference = log.IssuedQty - existing.IssuedQty;
+                    if (qtyDifference > tool.AvailableQty)
                         return Json(new { success = false, message = "Số lượng xuất vượt quá tồn kho" });
 
-                    tool.TotalIssued += log.IssuedQty;
-                    tool.TotalReturned += log.ReturnQty;
+                    tool.TotalIssued = tool.TotalIssued - existing.IssuedQty + log.IssuedQty;
+                    tool.TotalReturned = tool.TotalReturned - existing.ReturnQty + log.ReturnQty;
                     tool.AvailableQty = (tool.InitialQty + tool.TotalImported - tool.TotalScrapped) - tool.TotalIssued + tool.TotalReturned;
-
-                    log.CreatedDate = DateOnly.FromDateTime(DateTime.Now);
-                    _context.IssueReturnLogs.Add(log);
                 }
 
+                log.UpdatedDate = DateOnly.FromDateTime(DateTime.Now);
+                _context.IssueReturnLogs.Update(log);
                 await _context.SaveChangesAsync();
                 return Json(new { success = true });
             }
