@@ -1,0 +1,433 @@
+﻿
+<style>
+    @@media (min-width: 1200px) {
+        .modal-xl {
+            max-width: 95%;
+        }
+    }
+</style>
+
+<div class="content-wrapper">
+    <div class="card">
+        <div class="card-body">
+            <h4 class="card-title">Quy trình sản xuất</h4>
+            <div class="filter-section mb-3">
+                <form id="searchForm" class="row g-2">
+                    <div class="col-md-3">
+                        <label class="small fw-bold">Tìm kiếm</label>
+                        <input type="text" class="form-control" name="key_search" placeholder="Nhập vào đây để tìm kiếm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="small fw-bold">Phiên bản</label>
+                        <select class="form-control" name="status">
+                            <option value="new">Mới nhất</option>
+                            <option value="all">Toàn bộ</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-1">Tìm kiếm</button>
+                    </div>
+                </form>
+            </div>
+            <a href# class="btn btn-success" onclick="openModal(0)">Thêm mới</a>
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle" id="mainTable">
+                    <thead class="table-dark text-center">
+                        <tr>
+                            <th>STT</th>
+                            <th>Ảnh</th>
+                            <th>Tên chi tiết</th>
+                            <th>Kích thước phôi</th>
+                            <th>Vật liệu</th>
+                            <th>Phiên bản</th>
+                            <th>Người tạo</th>
+                            <th>Người sửa</th>
+                        </tr>
+                    </thead>
+                    <tbody id="processList"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="contextMenu" class="dropdown-menu shadow">
+    <a class="dropdown-item" href="javascript:void(0)" onclick="viewDetail(selectedId)">Xem chi tiết</a>
+    <a class="dropdown-item" href="javascript:void(0)" onclick="openModal(selectedId)">Cập nhật</a>
+    <a class="dropdown-item" href="javascript:void(0)" onclick="exportExcel(selectedId)">Xuất excel</a>
+    <a class="dropdown-item" href="javascript:void(0)" onclick="printProcess(selectedId)">In quy trình</a>
+    <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="deleteProcess(selectedId)">Xóa</a>
+</div>
+
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">QUY TRÌNH: <span id="v_PartNameHeader"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-4">
+                    <div class="col-md-4 text-center" id="v_PicContainer"></div>
+                    <div class="col-md-8">
+                        <div class="row g-3">
+                            <div class="col-md-6"><p><span class="info-label">Tên chi tiết:</span> <span id="v_PartName" class="copy-cursor"></span></p></div>
+                            <div class="col-md-6"><p><span class="info-label">Kích thước phôi:</span> <span id="v_Size" class="copy-cursor"></span></p></div>
+                            <div class="col-md-6"><p><span class="info-label">Vật liệu:</span> <span id="v_Material" class="copy-cursor"></span></p></div>
+                            <div class="col-md-6"><p><span class="info-label">Phiên bản:</span> <span id="v_Version" class="badge bg-info text-dark"></span></p></div>
+                            <div class="col-md-12"><p><span class="info-label">Ghi chú:</span> <span id="v_Note" class="copy-cursor"></span></p></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped align-middle">
+                        <thead class="table-secondary text-center">
+                            <tr>
+                                <th style="width:50px">Nguyên công</th>
+                                <th style="width:150px">Ảnh mô tả</th>
+                                <th>Bộ phận</th>
+                                <th>Nội dung gia công</th>
+                                <th>Đồ gá</th>
+                                <th style="width:100px">SL/1 lần gá</th>
+                                <th style="width:100px">TGGC</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody id="v_StepTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="footer-info mt-3">
+                    <div class="row">
+                        <div class="col-6">Người tạo: <b id="v_CreatedBy"></b> - <span id="v_CreatedDate"></span></div>
+                        <div class="col-6 text-end">Người sửa: <b id="v_UpdatedBy"></b> - <span id="v_UpdatedDate"></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="processModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">CẬP NHẬT QUY TRÌNH</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="processForm">
+                    <input type="hidden" id="processId" value="0">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Ảnh chi tiết</label>
+                            <img id="headerPreview" src="" class="img-thumbnail d-block mb-2" style="height:120px; width:100%; object-fit:contain; cursor:pointer; display:none" onclick="$('#headerFile').click()">
+                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="btnUploadHeader" onclick="$('#headerFile').click()">Chọn ảnh</button>
+                            <input type="file" class="d-none" id="headerFile" accept="image/*" onchange="previewImg(this, '#headerPreview')">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="row g-3">
+                                <div class="col-md-4"><label class="form-label">Tên chi tiết *</label><input type="text" class="form-control" id="partName"></div>
+                                <div class="col-md-4"><label class="form-label">Kích thước phôi *</label><input type="text" class="form-control" id="workpieceSize"></div>
+                                <div class="col-md-4"><label class="form-label">Vật liệu *</label><input type="text" class="form-control" id="material"></div>
+                                <div class="col-md-12"><label class="form-label">Ghi chú</label><input type="text" class="form-control" id="note"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-light text-center">
+                                <tr>
+                                    <th style="width:30px"></th>
+                                    <th style="width:40px">Nguyên công</th>
+                                    <th style="width:100px">Ảnh mô tả</th>
+                                    <th style="width:200px">Bộ phận *</th>
+                                    <th>Nội dung gia công</th>
+                                    <th style="width:150px">Đồ gá</th>
+                                    <th style="width:150px">SL/1 lần gá</th>
+                                    <th style="width:150px">TGGC</th>
+                                    <th style="width:250px">Ghi chú</th>
+                                    <th style="width:30px"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="stepBody"></tbody>
+                        </table>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <div class="form-check d-none" id="versionOption">
+                    <input class="form-check-input" type="checkbox" id="chkNewVersion">
+                    <label class="text-danger fw-bold" for="chkNewVersion">Lưu phiên bản mới</label>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="saveProcess()">Lưu dữ liệu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="printArea" style="display: none;">
+</div>
+
+@section Scripts {
+    <script>
+        let selectedId = 0;
+        new Sortable(document.getElementById('stepBody'), { handle: '.drag-handle', animation: 150, onEnd: reorderSteps });
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+    
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+    
+            return `${day}/${month}/${year}`;
+        }
+
+        function formatWorkpieceSize(size) {
+            if (!size) return '';
+            const parts = size.split('+').map(p => p.trim()).filter(p => p !== '');
+            return parts.join('<br/>');
+        }
+
+        $(document).ready(function() {
+            loadData();
+
+            $('#searchForm').on('submit', function (e) {
+                e.preventDefault();
+                const formData = $(this).serialize();
+                loadData(formData);
+            });
+
+            $(document).on('contextmenu', '#processList tr', function(e) {
+                e.preventDefault();
+                selectedId = $(this).data('id');
+                $('#contextMenu').css({ top: e.pageY, left: e.pageX, display: 'block' });
+                $(this).addClass('table-active').siblings().removeClass('table-active');
+            });
+            $(document).click(() => $('#contextMenu').hide());
+            $(document).on('click', '.copy-cursor', function() {
+                navigator.clipboard.writeText($(this).text());
+            });
+            $('#stepBody').on('keydown', 'input', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const row = addStepRow({ department: '', qtyPerSet: '1', content: '', fixture: '', estimatedTime: 0, picture: '' });
+                    $(this).closest('tr').after(row);
+                    reorderSteps();
+                    row.find('.dep').focus();
+                }
+            });
+        });
+
+        async function loadData(searchParams = '') {
+            const res = await $.get('/Production/ProductionProcessess/GetList?' + searchParams);
+            let html = '';
+            res.forEach((i, index) => {
+                const createdDate = formatDate(i.createdDate);
+                const updatedDate = formatDate(i.updatedDate);
+                const updatedBy = i.updatedBy || '---';
+                const workpieceSizeHtml = formatWorkpieceSize(i.workpieceSize);
+
+                html += `<tr data-id="${i.id}" style="cursor:context-menu">
+                    <td class="text-center">${index + 1}</td>
+                    <td class="text-center">
+                        ${i.picture ? `<img src="${i.picture}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">` : ''}
+                    </td>
+                    <td class="fw-bold">${i.partName}</td>
+                    <td>${workpieceSizeHtml || ''}</td>
+                    <td>${i.material || ''}</td>
+                    <td class="text-center"><span class="badge bg-primary">V${i.version}</span></td>
+                    <td>
+                        <div class="small fw-bold">${i.createdBy}</div>
+                        <div class="small text-muted">${createdDate}</div>
+                    </td>
+                    <td>
+                        <div class="small fw-bold">${updatedBy}</div>
+                        <div class="small text-muted">${updatedDate}</div>
+                    </td>
+                </tr>`;
+            });
+            $('#processList').html(html);
+        }
+
+        async function viewDetail(id) {
+            const res = await $.get('/Production/ProductionProcessess/GetDetails?id=' + id);
+            const h = res.header;
+            $('#v_PartNameHeader, #v_PartName').text(h.partName);
+            $('#v_Version').text('V' + h.version);
+            $('#v_Size').html(formatWorkpieceSize(h.workpieceSize));
+            $('#v_Material').text(h.material || '');
+            $('#v_Note').text(h.note || '');
+            $('#v_PicContainer').html(h.picture ? `<img src="${h.picture}" class="img-detail-large shadow-sm">` : '');
+            $('#v_CreatedBy').text(h.createdBy);
+            $('#v_CreatedDate').text(h.createdDate);
+            $('#v_UpdatedBy').text(h.updatedBy || '---');
+            $('#v_UpdatedDate').text(h.updatedDate || '---');
+
+            let stepsHtml = '';
+            res.steps.forEach(s => {
+                stepsHtml += `<tr>
+                    <td class="text-center fw-bold">${s.stepNumber}</td>
+                    <td class="text-center">${s.picture ? `<img src="${s.picture}" class="img-in-table shadow-sm" onclick="window.open(this.src)">` : ''}</td>
+                    <td class="copy-cursor">${s.department}</td>
+                    <td class="text-center copy-cursor">${s.qtyPerSet || '1'}</td>
+                    <td class="copy-cursor">${s.content || ''}</td>
+                    <td class="copy-cursor">${s.fixture || ''}</td>
+                    <td class="text-center fw-bold text-danger copy-cursor">${s.estimatedTime}</td>
+                    <td>${s.note}</td>
+                </tr>`;
+            });
+            $('#v_StepTableBody').html(stepsHtml);
+            $('#viewModal').modal('show');
+        }
+
+        async function openModal(id) {
+            $('#processForm')[0].reset();
+            $('#stepBody').empty();
+            $('#headerPreview').hide().attr('src', '');
+            $('#processId').val(id);
+            $('#versionOption').toggleClass('d-none', id === 0);
+            if (id > 0) {
+                const res = await $.get('/Production/ProductionProcessess/GetDetails?id=' + id);
+                $('#partName').val(res.header.partName);
+                $('#workpieceSize').val(res.header.workpieceSize);
+                $('#material').val(res.header.material);
+                $('#note').val(res.header.note);
+                if(res.header.picture) $('#headerPreview').show().attr('src', res.header.picture);
+                res.steps.forEach(s => $('#stepBody').append(addStepRow(s)));
+            } else {
+                $('#stepBody').append(addStepRow({ department: '', qtyPerSet: '1', content: '', fixture: '', estimatedTime: 0, picture: '' }));
+            }
+            reorderSteps();
+            $('#processModal').modal('show');
+        }
+
+        function addStepRow(data) {
+            const imgHtml = data.picture ? `<img src="${data.picture}" class="img-step-edit" onclick="$(this).prev().click()">` : `<button type="button" class="btn btn-sm btn-outline-secondary" onclick="$(this).prev().click()"><i class="fa fa-image"></i></button>`;
+            return $(`<tr>
+                <td class="drag-handle text-center">☰</td>
+                <td class="step-num text-center fw-bold"></td>
+                <td class="text-center">
+                    <input type="file" class="d-none step-file" accept="image/*" onchange="previewStepImg(this)">
+                    ${imgHtml}<input type="hidden" class="old-path" value="${data.picture || ''}">
+                </td>
+                <td><input type="text" class="form-control form-control-sm dep" value="${data.department || ''}"></td>
+                <td><input type="text" class="form-control form-control-sm content" value="${data.content || ''}"></td>
+                <td><input type="text" class="form-control form-control-sm fix" value="${data.fixture || ''}"></td>
+                <td><input type="text" class="form-control form-control-sm qty" value="${data.qtyPerSet || '1'}"></td>
+                <td><input type="number" step="0.1" class="form-control form-control-sm time text-center" value="${data.estimatedTime || 0}"></td>
+                <td><input type="text" class="form-control form-control-sm note" value="${data.note || ''}"></td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-link text-danger p-0" onclick="$(this).closest('tr').remove();reorderSteps();">
+                        X
+                    </button>
+                </td>
+            </tr>`);
+        }
+
+        function reorderSteps() { $('#stepBody tr').each(function(i) { $(this).find('.step-num').text(i + 1); }); }
+        function previewImg(i, t) { if (i.files && i.files[0]) $(t).show().attr('src', URL.createObjectURL(i.files[0])); }
+        function previewStepImg(i) {
+            if (i.files && i.files[0]) {
+                const url = URL.createObjectURL(i.files[0]);
+                const parent = $(i).parent();
+                parent.find('img, button').not('.step-file').remove();
+                $(i).after(`<img src="${url}" class="img-step-edit" onclick="$(this).prev().click()">`);
+            }
+        }
+
+        async function saveProcess() {
+            const formData = new FormData();
+            formData.append('header.Id', $('#processId').val());
+            formData.append('header.PartName', $('#partName').val().trim());
+            formData.append('header.WorkpieceSize', $('#workpieceSize').val());
+            formData.append('header.Material', $('#material').val());
+            formData.append('header.Note', $('#note').val());
+            formData.append('createNewVersion', $('#chkNewVersion').is(':checked'));
+            if ($('#headerFile')[0].files[0]) formData.append('HeaderFile', $('#headerFile')[0].files[0]);
+
+            let isValid = true;
+            $('#stepBody tr').each(function(i) {
+                const dep = $(this).find('.dep').val().trim();
+                const timeVal = $(this).find('.time').val();
+                const time = parseFloat(timeVal);
+
+                if(!dep) { 
+                    alert(`Dòng ${i+1} thiếu bộ phận!`); 
+                    isValid = false; 
+                    return false; 
+                }
+
+                if(isNaN(time) || time < 0) { 
+                    alert(`Dòng ${i+1}: Thời gian gia công không được âm!`); 
+                    isValid = false; 
+                    return false; 
+                }
+
+                formData.append(`steps[${i}].Department`, dep);
+                formData.append(`steps[${i}].QtyPerSet`, $(this).find('.qty').val());
+                formData.append(`steps[${i}].Content`, $(this).find('.content').val());
+                formData.append(`steps[${i}].Fixture`, $(this).find('.fix').val());
+                formData.append(`steps[${i}].Note`, $(this).find('.note').val());
+                formData.append(`steps[${i}].EstimatedTime`, time);
+                formData.append(`steps[${i}].Picture`, $(this).find('.old-path').val());
+                if ($(this).find('.step-file')[0].files[0]) formData.append(`StepFile_${i}`, $(this).find('.step-file')[0].files[0]);
+            });
+
+            if(!isValid) return;
+    
+            const res = await fetch('/Production/ProductionProcessess/Save', { method: 'POST', body: formData });
+            const result = await res.json();
+            if (result.success) { 
+                $('#processModal').modal('hide'); 
+                loadData(); 
+            } else {
+                alert(result.message);
+            }
+        }
+
+        async function deleteProcess(id) {
+            if (confirm('Xóa quy trình này?')) {
+                const res = await $.post('/Production/ProductionProcessess/Delete?id=' + id);
+                if (res.success) loadData(); else alert(res.message);
+            }
+        }
+
+        async function exportExcel(id) {
+            try {
+                const response = await fetch('/Production/ProductionProcessess/ExportExcel?id=' + id);
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.message || "Lỗi xuất file");
+                }
+        
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let fileName = `QuyTrinh_${id}.xlsx`;
+                if (contentDisposition) {
+                    const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                    if (fileNameMatch && fileNameMatch[1]) {
+                        fileName = fileNameMatch[1].replace(/['"]/g, '');
+                    }
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = decodeURIComponent(fileName);
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function printProcess(id) {
+            window.open('/Production/ProductionProcessess/Print?id=' + id, '_blank');
+        }
+    </script>
+}

@@ -1,0 +1,135 @@
+﻿@model ProductionProcessess
+@{
+    Layout = null;
+    var steps = ViewBag.Steps as List<ProcessStep>;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>In quy trình - @Model.PartName</title>
+    <style>
+        body {
+            font-family: "Times New Roman", serif;
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        td, th {
+            border: 1px solid black;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        .bg-gray {
+            background-color: #f2f2f2 !important;
+            font-weight: bold;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .img-step {
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+        }
+
+        @@media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="margin-bottom: 20px;">
+        <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 4px;">XÁC NHẬN IN</button>
+        <button onclick="window.close()" style="padding: 10px 20px; cursor: pointer;">ĐÓNG</button>
+    </div>
+
+    <div style="text-align:center; font-weight:bold; font-size:20px; border:1px solid black; padding:10px;">QUY TRÌNH GIA CÔNG</div>
+    <table>
+        <tr>
+            <td class="bg-gray" style="width:15%">Tên chi tiết:</td>
+            <td style="width:35%">@Model.PartName</td>
+            <td class="bg-gray" style="width:15%">Ngày lập:</td>
+            <td>@Model.CreatedDate.ToString("dd/MM/yyyy") / @Model.CreatedBy</td>
+        </tr>
+        <tr>
+            <td class="bg-gray">Kích thước phôi:</td>
+            <td>
+                @if (!string.IsNullOrEmpty(Model.WorkpieceSize))
+                {
+                    var sizeParts = Model.WorkpieceSize.Split('+')
+                    .Select(s => s.Trim())
+                    .Where(s => !string.IsNullOrEmpty(s));
+
+                    @Html.Raw(string.Join("<br />", sizeParts))
+                }
+            </td>
+            <td class="bg-gray">Phiên bản:</td>
+            <td>@("V" + Model.Version)</td>
+        </tr>
+        <tr>
+            <td class="bg-gray">Vật liệu:</td>
+            <td>@Model.Material</td>
+            <td class="bg-gray">Ngày sửa:</td>
+            <td>@Model.UpdatedDate?.ToString("dd/MM/yyyy") / @Model.UpdatedBy</td>
+        </tr>
+        <tr>
+            <td class="bg-gray">Ghi chú:</td>
+            <td>@Model.Note</td>
+        </tr>
+    </table>
+
+    <div style="text-align:center; border: 1px solid black; border-top: none; padding: 10px;">
+        @if (!string.IsNullOrEmpty(Model.Picture))
+        {
+            <img src="@Model.Picture" style="max-height:150px;">
+        }
+    </div>
+
+    <table style="border-top: none;">
+        <tr class="bg-gray text-center">
+            <td style="width:60px">Nguyên công</td>
+            <td style="width:160px">Ảnh mô tả</td>
+            <td style="width:60px">Nơi GC</td>
+            <td>Nội dung gia công</td>
+            <td>Đồ gá</td>
+            <td>SL/1 lần gá</td>
+            <td style="width:100px">TGGC</td>
+            <td>Ghi chú</td>
+        </tr>
+        @foreach (var s in steps)
+        {
+            <tr>
+                <td class="text-center">@s.StepNumber/@steps.Count</td>
+                <td class="text-center">
+                    @if (!string.IsNullOrEmpty(s.Picture))
+                    {
+                        <img src="@s.Picture" class="img-step">
+                    }
+                </td>
+                <td>@s.Department</td>
+                <td>@s.Content</td>
+                <td class="text-center">@s.Fixture</td>
+                <td class="text-center">@s.QtyPerSet</td>
+                <td class="text-center">@s.EstimatedTime phút</td>
+                <td>@s.Note</td>
+            </tr>
+        }
+    </table>
+
+    <script>
+        window.onload = function() {
+            // window.print();
+        };
+    </script>
+</body>
+</html>
