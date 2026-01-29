@@ -34,12 +34,14 @@
     <Folder Include="Areas\Production\Models\" />
     <Folder Include="Areas\Warehouse\Data\" />
     <Folder Include="Areas\Warehouse\Models\" />
+    <Folder Include="Logger\" />
     <Folder Include="wwwroot\files\answers\" />
     <Folder Include="wwwroot\files\equipments\" />
     <Folder Include="wwwroot\files\essay_questions\" />
     <Folder Include="wwwroot\imgs\avatars\" />
     <Folder Include="wwwroot\imgs\kaizens\" />
     <Folder Include="wwwroot\imgs\machines\" />
+    <Folder Include="wwwroot\imgs\production_processess\" />
     <Folder Include="wwwroot\imgs\opinions\" />
     <Folder Include="wwwroot\imgs\uploads\questions\" />
   </ItemGroup>

@@ -175,6 +175,11 @@ namespace Web_QM.Areas.Warehouse.Controllers
         [HttpPost]
         public async Task<IActionResult> SaveSupplyLog(ToolSupplyLog log)
         {
+            var employeeCodeIsLogin = User.FindFirst("EmployeeCode")?.Value;
+            if (employeeCodeIsLogin == null)
+            {
+                return Json(new { success = false, message = "Vui lòng đăng nhập" });
+            }
             try
             {
                 var tool = await _context.Tools.FirstOrDefaultAsync(t => t.Id == log.ToolId);
@@ -190,6 +195,7 @@ namespace Web_QM.Areas.Warehouse.Controllers
                 }
                 tool.AvailableQty = tool.InitialQty + tool.TotalImported - tool.TotalScrapped - tool.TotalIssued + tool.TotalReturned;
                 tool.UpdatedDate = DateOnly.FromDateTime(DateTime.Now);
+                log.WarehouseStaff = employeeCodeIsLogin;
                 log.CreatedDate = DateOnly.FromDateTime(DateTime.Now);
                 _context.ToolSupplyLogs.Add(log);
                 await _context.SaveChangesAsync();
@@ -346,14 +352,14 @@ namespace Web_QM.Areas.Warehouse.Controllers
                 var worksheet = workbook.Worksheets.Add("Data");
 
                 worksheet.Cell(1, 1).Value = "DANH SÁCH VẬT TƯ VÀ TỒN KHO";
-                worksheet.Range("A1:M1").Merge().Style.Font.Bold = true;
-                worksheet.Range("A1:M1").Style.Font.FontSize = 16;
-                worksheet.Range("A1:M1").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                worksheet.Range("A1:N1").Merge().Style.Font.Bold = true;
+                worksheet.Range("A1:N1").Style.Font.FontSize = 16;
+                worksheet.Range("A1:N1").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                 var headers = new string[]
                 {
                 "STT", "Mã vật tư", "Tên vật tư", "Loại", "ĐVT", "Vị trí",
-                "Số lượng", "SL nhập", "SL hủy", "SL tồn", "SL xuất", "SL trả", "SL khả dụng"
+                "Số lượng", "SL nhập", "SL hủy", "SL tồn", "SL xuất", "SL trả", "SL khả dụng", "ID"
                 };
 
                 for (int i = 0; i < headers.Length; i++)
@@ -383,14 +389,15 @@ namespace Web_QM.Areas.Warehouse.Controllers
                     worksheet.Cell(row, 11).Value = item.TotalIssued;
                     worksheet.Cell(row, 12).Value = item.TotalReturned;
                     worksheet.Cell(row, 13).Value = item.AvailableQty;
+                    worksheet.Cell(row, 14).Value = item.Id;
 
                     if (item.AvailableQty <= 0)
                     {
-                        worksheet.Cell(row, 13).Style.Font.FontColor = XLColor.Red;
-                        worksheet.Cell(row, 13).Style.Font.Bold = true;
+                        worksheet.Cell(row, 14).Style.Font.FontColor = XLColor.Red;
+                        worksheet.Cell(row, 14).Style.Font.Bold = true;
                     }
 
-                    worksheet.Range(row, 1, row, 13).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                    worksheet.Range(row, 1, row, 14).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
                     row++;
                 }
 

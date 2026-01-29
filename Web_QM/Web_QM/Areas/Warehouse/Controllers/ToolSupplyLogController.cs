@@ -1,7 +1,9 @@
 ﻿using ClosedXML.Excel;
+using ExcelDataReader;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using Web_QM.Models;
 
 namespace Web_QM.Areas.Warehouse.Controllers
@@ -11,10 +13,12 @@ namespace Web_QM.Areas.Warehouse.Controllers
     public class ToolSupplyLogController : Controller
     {
         private readonly QMContext _context;
+        private readonly IWebHostEnvironment _env;
 
-        public ToolSupplyLogController(QMContext context)
+        public ToolSupplyLogController(QMContext context, IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
         [Authorize(Policy = "ViewToolSupplyLog")]
@@ -79,26 +83,142 @@ namespace Web_QM.Areas.Warehouse.Controllers
         [Authorize(Policy = "ViewToolSupplyLog")]
         public async Task<IActionResult> GetLogById(long id) => Json(await _context.ToolSupplyLogs.FindAsync(id));
 
-        [Authorize(Policy = "AddIssueReturnLog")]
+        [Authorize(Policy = "EditToolSupplyLog")]
         [HttpPost]
-        public async Task<IActionResult> SaveLog(ToolSupplyLog log)
+        public async Task<IActionResult> SaveSupplyLog(ToolSupplyLog log)
         {
-            var tool = await _context.Tools.FindAsync(log.ToolId);
-            var old = await _context.ToolSupplyLogs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == log.Id);
-
-            if (old != null)
+            var oldLog = await _context.ToolSupplyLogs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == log.Id);
+            if (oldLog == null)
             {
-                if (old.Type == "Nhập") tool.TotalImported -= old.Qty;
-                else tool.TotalScrapped -= old.Qty;
-
-                if (log.Type == "Nhập") tool.TotalImported += log.Qty;
-                else tool.TotalScrapped += log.Qty;
-
-                _context.ToolSupplyLogs.Update(log);
-                tool.AvailableQty = (tool.InitialQty + tool.TotalImported - tool.TotalScrapped) - tool.TotalIssued + tool.TotalReturned;
-                await _context.SaveChangesAsync();
+                return Json(new { success = false, message = "Không tìm thấy dữ liệu" });
             }
+
+            var oldTool = await _context.Tools.FindAsync(oldLog.ToolId);
+            if (oldTool != null)
+            {
+                if (oldLog.Type == "Nhập") oldTool.TotalImported -= oldLog.Qty;
+                else if (oldLog.Type == "Hủy") oldTool.TotalScrapped -= oldLog.Qty;
+
+                oldTool.AvailableQty = (oldTool.InitialQty + oldTool.TotalImported - oldTool.TotalScrapped) - oldTool.TotalIssued + oldTool.TotalReturned;
+                oldTool.UpdatedDate = DateOnly.FromDateTime(DateTime.Now);
+            }
+
+            var newTool = await _context.Tools.FindAsync(log.ToolId);
+            if (newTool == null)
+            {
+                return Json(new { success = false, message = "Vật tư không hợp lệ" });
+            }
+
+            if (log.Type == "Nhập") newTool.TotalImported += log.Qty;
+            else if (log.Type == "Hủy") newTool.TotalScrapped += log.Qty;
+
+            newTool.AvailableQty = (newTool.InitialQty + newTool.TotalImported - newTool.TotalScrapped) - newTool.TotalIssued + newTool.TotalReturned;
+            newTool.UpdatedDate = DateOnly.FromDateTime(DateTime.Now);
+            log.WarehouseStaff = oldLog.WarehouseStaff;
+            log.UpdatedDate = DateOnly.FromDateTime(DateTime.Now);
+            log.CreatedDate = oldLog.CreatedDate;
+
+            _context.ToolSupplyLogs.Update(log);
+            await _context.SaveChangesAsync();
+
             return Json(new { success = true });
+        }
+
+        [Authorize(Policy = "AddToolSupplyLog")]
+        [HttpPost]
+        public async Task<IActionResult> Import(IFormFile excelFile)
+        {
+            if (excelFile == null || excelFile.Length == 0)
+                return BadRequest(new { Message = "Vui lòng chọn một file Excel." });
+
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
+            var logList = new List<ToolSupplyLog>();
+            var requiredFields = new[] { "Mã vật tư", "TNXT", "Số lượng", "Ngày" };
+
+            try
+            {
+                using (var stream = excelFile.OpenReadStream())
+                using (var reader = ExcelDataReader.ExcelReaderFactory.CreateReader(stream))
+                {
+                    var dataSet = reader.AsDataSet(new ExcelDataSetConfiguration()
+                    {
+                        ConfigureDataTable = (_) => new ExcelDataTableConfiguration() { UseHeaderRow = true }
+                    });
+
+                    if (dataSet.Tables.Count == 0 || dataSet.Tables[0].Rows.Count == 0)
+                        return BadRequest(new { Message = "File Excel không có dữ liệu." });
+
+                    DataTable table = dataSet.Tables[0];
+                    var missingColumns = requiredFields.Where(field => !table.Columns.Contains(field)).ToList();
+                    if (missingColumns.Any())
+                        return BadRequest(new { Message = $"Thiếu cột bắt buộc: {string.Join(", ", missingColumns)}" });
+
+                    var toolsDict = await _context.Tools.ToDictionaryAsync(t => t.ToolCode.Trim(), t => t.Id);
+
+                    for (int i = 0; i < table.Rows.Count; i++)
+                    {
+                        var row = table.Rows[i];
+                        var rowIndex = i + 2;
+
+                        var toolCode = row["Mã vật tư"]?.ToString()?.Trim();
+                        var type = row["TNXT"]?.ToString()?.Trim();
+                        var qtyStr = row["Số lượng"]?.ToString();
+                        var dateStr = row["Ngày"]?.ToString();
+
+                        if (string.IsNullOrEmpty(toolCode) || !toolsDict.ContainsKey(toolCode))
+                            return BadRequest(new { Message = $"Lỗi dòng {rowIndex}: Mã vật tư '{toolCode}' không hợp lệ hoặc không tồn tại." });
+
+                        if (string.IsNullOrEmpty(type))
+                            return BadRequest(new { Message = $"Lỗi dòng {rowIndex}: Loại vật tư không được để trống." });
+
+                        if (!int.TryParse(qtyStr, out int qty) || qty < 0)
+                            return BadRequest(new { Message = $"Lỗi dòng {rowIndex}: Số lượng '{qtyStr}' phải là số nguyên dương." });
+
+                        if (!DateTime.TryParse(dateStr, out DateTime parsedDate))
+                            return BadRequest(new { Message = $"Lỗi dòng {rowIndex}: Định dạng ngày '{dateStr}' không hợp lệ." });
+
+                        logList.Add(new ToolSupplyLog
+                        {
+                            ToolId = toolsDict[toolCode],
+                            Type = type,
+                            Qty = qty,
+                            IntendedUse = table.Columns.Contains("Mục đích") ? row["Mục đích"]?.ToString() : null,
+                            Describe = table.Columns.Contains("Mô tả") ? row["Mô tả"]?.ToString() : null,
+                            WarehouseStaff = table.Columns.Contains("NV Kho") ? row["NV Kho"]?.ToString() : null,
+                            HandOverStaff = table.Columns.Contains("NV bàn giao") ? row["NV bàn giao"]?.ToString() : null,
+                            DateMonth = DateOnly.FromDateTime(parsedDate),
+                            Note = table.Columns.Contains("Ghi chú") ? row["Ghi chú"]?.ToString() : null,
+                            CreatedDate = DateOnly.FromDateTime(DateTime.Now)
+                        });
+                    }
+                }
+
+                if (logList.Any())
+                {
+                    await _context.ToolSupplyLogs.AddRangeAsync(logList);
+                    await _context.SaveChangesAsync();
+                }
+
+                return Ok(new { Message = $"Import thành công {logList.Count} dòng dữ liệu." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Lỗi hệ thống: " + ex.Message });
+            }
+        }
+
+        [Authorize(Policy = "AddIssueReturnLog")]
+        public async Task<IActionResult> DownloadTemplate()
+        {
+            var filePath = Path.Combine(_env.WebRootPath, "templates", "import_nhập/hủy vật tư.xlsx");
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound("Không tìm thấy file mẫu.");
+            }
+            var fileBytes = System.IO.File.ReadAllBytes(filePath);
+            string fileName = "import_vật tư.xlsx";
+            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
 
         [Authorize(Policy = "ViewToolSupplyLog")]

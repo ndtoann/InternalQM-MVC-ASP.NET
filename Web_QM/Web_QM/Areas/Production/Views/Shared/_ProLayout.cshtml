@@ -24,10 +24,12 @@
     <link rel="stylesheet" href="~/admin/vendors/select2-bootstrap-theme/select2-bootstrap.min.css">
     <link rel="stylesheet" href="~/admin/css/vertical-layout-light/style.css">
     <link rel="stylesheet" href="~/admin/css/admin.css">
+    <link rel="stylesheet" href="~/production/css/app.css">
     <link rel="shortcut icon" href="/logo.ico" />
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css" />
+    <link rel="stylesheet" href="https://printjs-401ed.kxcdn.com/print.min.css">
 </head>
-<body class="sidebar-light">
+<body class="sidebar-dark">
     <div class="container-scroller">
         <nav class="navbar default-layout col-lg-12 col-12 p-0 fixed-top d-flex align-items-top flex-row">
             <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
@@ -167,7 +169,19 @@
                         </div>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="~/production/errordata" asp-policy="ViewKaizen">
+                        <a class="nav-link" data-bs-toggle="collapse" href="#processes" aria-expanded="false" aria-controls="processes">
+                            <i class="menu-icon mdi mdi-cogs"></i>
+                            <span class="menu-title">Quy trình công nghệ</span>
+                            <i class="menu-arrow"></i>
+                        </a>
+                        <div class="collapse show" id="processes">
+                            <ul class="nav flex-column sub-menu">
+                                <li class="nav-item"> <a class="nav-link" href="~/production/productionProcessess">Quy trình</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="~/production/errordata" asp-policy="ViewProductionDefect">
                             <i class="mdi mdi-alert-circle-outline menu-icon"></i>
                             <span class="menu-title">Lỗi sản xuất</span>
                         </a>
@@ -181,7 +195,7 @@
 
                 <footer class="footer">
                     <div class="d-sm-flex justify-content-center justify-content-sm-between">
-                        <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">HR premium by IT QUANG MINH</span>
+                        <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Production premium by IT QUANG MINH</span>
                         <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">Copyright © 2025. All rights reserved.</span>
                     </div>
                 </footer>
@@ -191,6 +205,8 @@
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/print-js/1.6.0/print.js"></script>
 
     <script src="~/admin/vendors/js/vendor.bundle.base.js"></script>
     <script src="~/admin/vendors/chart.js/Chart.min.js"></script>

@@ -30,25 +30,33 @@ namespace Web_QM.Controllers
         {
             var permissions = User.Claims.Where(c => c.Type == "Permission").Select(c => c.Value).ToList();
             var canViewAll = permissions.Any(p => p.Equals("EmployeeAll.View", StringComparison.OrdinalIgnoreCase));
+            var canViewDept = permissions.Any(p => p.Equals("EmployeeAllDepartment.View", StringComparison.OrdinalIgnoreCase));
             var userDepartment = User.FindFirst("Department")?.Value;
+
             var query = _context.Employees.AsNoTracking();
 
             if (!canViewAll)
             {
                 if (string.IsNullOrEmpty(userDepartment))
                 {
-                    return Json(new { data = new List<object>(), message = "Không có quyền truy cập dữ liệu nhân viên!" });
+                    return Json(new { data = new List<object>(), message = "Không có quyền truy cập!" });
                 }
-                query = query.Where(e => e.Department == userDepartment);
+
+                if (canViewDept)
+                {
+                    var allChildDepts = await GetChildDepartments(userDepartment);
+                    query = query.Where(e => allChildDepts.Contains(e.Department));
+                }
+                else
+                {
+                    query = query.Where(e => e.Department == userDepartment);
+                }
             }
 
             if (!string.IsNullOrEmpty(search))
             {
                 var lowerSearch = search.Trim().ToLower();
-                query = query.Where(e =>
-                    e.EmployeeName.ToLower().Contains(lowerSearch) ||
-                    e.EmployeeCode.ToLower().Contains(lowerSearch)
-                );
+                query = query.Where(e => e.EmployeeName.ToLower().Contains(lowerSearch) || e.EmployeeCode.ToLower().Contains(lowerSearch));
             }
 
             if (canViewAll && !string.IsNullOrEmpty(department))
@@ -56,11 +64,29 @@ namespace Web_QM.Controllers
                 query = query.Where(e => e.Department == department);
             }
 
-            query = query.OrderBy(o => o.EmployeeCode);
-
-            var employees = await query.ToListAsync();
-
+            var employees = await query.OrderBy(o => o.EmployeeCode).ToListAsync();
             return Json(new { data = employees });
+        }
+
+        private async Task<List<string>> GetChildDepartments(string deptName)
+        {
+            var result = new List<string> { deptName };
+            var allDepts = await _context.Departments.AsNoTracking().ToListAsync();
+            FindChildren(deptName, allDepts, result);
+            return result;
+        }
+
+        private void FindChildren(string parentName, List<Department> allDepts, List<string> result)
+        {
+            var children = allDepts.Where(d => d.DpParent == parentName).Select(d => d.DepartmentName).ToList();
+            foreach (var child in children)
+            {
+                if (!result.Contains(child))
+                {
+                    result.Add(child);
+                    FindChildren(child, allDepts, result);
+                }
+            }
         }
 
         [Authorize(Policy = "ClientViewEmpl")]

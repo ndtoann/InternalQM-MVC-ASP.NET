@@ -1,8 +1,10 @@
 ﻿using ClosedXML.Excel;
+using ExcelDataReader;
 using ExcelDataReader.Log;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using Web_QM.Models;
 
 namespace Web_QM.Areas.Warehouse.Controllers
@@ -12,10 +14,12 @@ namespace Web_QM.Areas.Warehouse.Controllers
     public class IssueReturnLogController : Controller
     {
         private readonly QMContext _context;
+        private readonly IWebHostEnvironment _env;
 
-        public IssueReturnLogController(QMContext context)
+        public IssueReturnLogController(QMContext context, IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
         [Authorize(Policy = "ViewIssueReturnLog")]
@@ -117,7 +121,7 @@ namespace Web_QM.Areas.Warehouse.Controllers
         [Authorize(Policy = "ViewIssueReturnLog")]
         public async Task<IActionResult> GetLogById(long id) => Json(await _context.IssueReturnLogs.FindAsync(id));
 
-        [Authorize(Policy = "AddIssueReturnLog")]
+        [Authorize(Policy = "ViewEmployee")]
         [HttpGet]
         public async Task<IActionResult> GetEmployeeSuggestions(string term)
         {
@@ -133,6 +137,7 @@ namespace Web_QM.Areas.Warehouse.Controllers
                     id = e.EmployeeCode,
                     text = e.EmployeeCode + " - " + e.EmployeeName
                 })
+                .OrderByDescending(e => e.id)
                 .ToListAsync();
 
             return Json(employees);
@@ -145,6 +150,11 @@ namespace Web_QM.Areas.Warehouse.Controllers
             if (models == null || !models.Any())
             {
                 return Json(new { success = false, message = "Không có dữ liệu" });
+            }
+            var employeeCodeIsLogin = User.FindFirst("EmployeeCode")?.Value;
+            if(employeeCodeIsLogin == null)
+            {
+                return Json(new { success = false, message = "Vui lòng đăng nhập" });
             }
 
             try
@@ -159,7 +169,7 @@ namespace Web_QM.Areas.Warehouse.Controllers
 
                     tool.TotalIssued += log.IssuedQty;
                     tool.AvailableQty = (tool.InitialQty + tool.TotalImported - tool.TotalScrapped) - tool.TotalIssued + tool.TotalReturned;
-
+                    log.IssuedWarehouseStaff = employeeCodeIsLogin;
                     log.CreatedDate = DateOnly.FromDateTime(DateTime.Now);
                     log.ReturnQty = 0;
                     log.ReturnDate = null;
@@ -180,6 +190,11 @@ namespace Web_QM.Areas.Warehouse.Controllers
         [HttpPost]
         public async Task<IActionResult> SaveIssueReturnLog(IssueReturnLog log)
         {
+            var employeeCodeIsLogin = User.FindFirst("EmployeeCode")?.Value;
+            if (employeeCodeIsLogin == null)
+            {
+                return Json(new { success = false, message = "Vui lòng đăng nhập" });
+            }
             try
             {
                 if (log.IssuedQty < 0 || log.ReturnQty < 0)
@@ -225,7 +240,8 @@ namespace Web_QM.Areas.Warehouse.Controllers
                     tool.TotalReturned = tool.TotalReturned - existing.ReturnQty + log.ReturnQty;
                     tool.AvailableQty = (tool.InitialQty + tool.TotalImported - tool.TotalScrapped) - tool.TotalIssued + tool.TotalReturned;
                 }
-
+                log.IssuedWarehouseStaff = existing.IssuedWarehouseStaff;
+                log.ReturnWarehouseStaff = employeeCodeIsLogin;
                 log.UpdatedDate = DateOnly.FromDateTime(DateTime.Now);
                 _context.IssueReturnLogs.Update(log);
                 await _context.SaveChangesAsync();
@@ -235,6 +251,121 @@ namespace Web_QM.Areas.Warehouse.Controllers
             {
                 return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
             }
+        }
+
+        [Authorize(Policy = "AddIssueReturnLog")]
+        [HttpPost]
+        public async Task<IActionResult> Import(IFormFile excelFile)
+        {
+            if (excelFile == null || excelFile.Length == 0)
+                return BadRequest(new { Message = "Vui lòng chọn một file Excel." });
+
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
+            var logList = new List<IssueReturnLog>();
+            var requiredFields = new[] { "Mã vật tư", "Ngày", "SL xuất", "NV mượn", "NV kho xuất" };
+
+            try
+            {
+                using (var stream = excelFile.OpenReadStream())
+                using (var reader = ExcelDataReader.ExcelReaderFactory.CreateReader(stream))
+                {
+                    var dataSet = reader.AsDataSet(new ExcelDataSetConfiguration()
+                    {
+                        ConfigureDataTable = (_) => new ExcelDataTableConfiguration() { UseHeaderRow = true }
+                    });
+
+                    if (dataSet.Tables.Count == 0 || dataSet.Tables[0].Rows.Count == 0)
+                        return BadRequest(new { Message = "File Excel không có dữ liệu." });
+
+                    DataTable table = dataSet.Tables[0];
+                    var missingColumns = requiredFields.Where(field => !table.Columns.Contains(field)).ToList();
+                    if (missingColumns.Any())
+                        return BadRequest(new { Message = $"Thiếu cột bắt buộc: {string.Join(", ", missingColumns)}" });
+
+                    var toolsDict = await _context.Tools.ToDictionaryAsync(t => t.ToolCode.Trim(), t => t.Id);
+
+                    for (int i = 0; i < table.Rows.Count; i++)
+                    {
+                        var row = table.Rows[i];
+                        var rowIndex = i + 2;
+                        var toolCode = row["Mã vật tư"]?.ToString()?.Trim();
+
+                        if (string.IsNullOrEmpty(toolCode) || !toolsDict.ContainsKey(toolCode))
+                            return BadRequest(new { Message = $"Lỗi dòng {rowIndex}: Mã vật tư '{toolCode}' không tồn tại." });
+
+                        if (!int.TryParse(row["SL xuất"]?.ToString(), out int issuedQty) || issuedQty < 0)
+                            return BadRequest(new { Message = $"Lỗi dòng {rowIndex}: SL cấp không hợp lệ." });
+
+                        if (!DateTime.TryParse(row["Ngày"]?.ToString(), out DateTime issuedDate))
+                            return BadRequest(new { Message = $"Lỗi dòng {rowIndex}: Ngày cấp không hợp lệ." });
+
+                        var issuedStaff = row["NV mượn"]?.ToString()?.Trim();
+                        var issuedWHStaff = row["NV kho xuất"]?.ToString()?.Trim();
+
+                        if (string.IsNullOrEmpty(issuedStaff) || string.IsNullOrEmpty(issuedWHStaff))
+                            return BadRequest(new { Message = $"Lỗi dòng {rowIndex}: Thiếu thông tin nhân viên." });
+
+                        DateOnly? returnDate = null;
+                        if (table.Columns.Contains("Ngày trả") && !string.IsNullOrEmpty(row["Ngày trả"]?.ToString()))
+                        {
+                            if (DateTime.TryParse(row["Ngày trả"]?.ToString(), out DateTime rd))
+                                returnDate = DateOnly.FromDateTime(rd);
+                            else
+                                return BadRequest(new { Message = $"Lỗi dòng {rowIndex}: Ngày trả không hợp lệ." });
+                        }
+
+                        int returnQty = 0;
+                        if (table.Columns.Contains("SL trả") && !string.IsNullOrEmpty(row["SL trả"]?.ToString()))
+                        {
+                            if (!int.TryParse(row["SL trả"]?.ToString(), out returnQty) || returnQty < 0)
+                                return BadRequest(new { Message = $"Lỗi dòng {rowIndex}: SL trả không hợp lệ." });
+                        }
+
+                        logList.Add(new IssueReturnLog
+                        {
+                            ToolId = toolsDict[toolCode],
+                            Machine = table.Columns.Contains("Máy") ? row["Máy"]?.ToString() : null,
+                            IntendedUse = table.Columns.Contains("Mục đích") ? row["Mục đích"]?.ToString() : null,
+                            IssuedDate = DateOnly.FromDateTime(issuedDate),
+                            IssuedQty = issuedQty,
+                            IssuedStaff = issuedStaff,
+                            IssuedWarehouseStaff = issuedWHStaff,
+                            ReturnDate = returnDate,
+                            ReturnQty = returnQty,
+                            ReturnStaff = table.Columns.Contains("NV trả") ? row["NV trả"]?.ToString() : null,
+                            ReturnWarehouseStaff = table.Columns.Contains("NV kho nhận") ? row["NV kho nhận"]?.ToString() : null,
+                            Note = table.Columns.Contains("Ghi chú") ? row["Ghi chú"]?.ToString() : null,
+                            CreatedDate = DateOnly.FromDateTime(DateTime.Now)
+                        });
+                    }
+                }
+
+                if (logList.Any())
+                {
+                    await _context.IssueReturnLogs.AddRangeAsync(logList);
+                    await _context.SaveChangesAsync();
+                }
+
+                return Ok(new { Message = $"Import thành công {logList.Count} dòng." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
+            }
+        }
+
+        [Authorize(Policy = "AddTool")]
+        public async Task<IActionResult> DownloadTemplate()
+        {
+            var filePath = Path.Combine(_env.WebRootPath, "templates", "import_xuất/trả vật tư.xlsx");
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound("Không tìm thấy file mẫu.");
+            }
+            var fileBytes = System.IO.File.ReadAllBytes(filePath);
+            string fileName = "import_vật tư.xlsx";
+            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
 
         [Authorize(Policy = "ViewIssueReturnLog")]

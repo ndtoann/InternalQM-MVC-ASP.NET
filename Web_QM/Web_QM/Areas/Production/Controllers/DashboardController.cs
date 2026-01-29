@@ -21,8 +21,8 @@ namespace Web_QM.Areas.Production.Controllers
         [Authorize(Policy = "ViewProduction")]
         public async Task<IActionResult> Index()
         {
-            var cMachine = await _context.Machines.CountAsync();
-            ViewBag.CountMachine = cMachine;
+            var machines = await _context.Machines.ToListAsync();
+            ViewBag.Machines = machines;
 
             return View();
         }

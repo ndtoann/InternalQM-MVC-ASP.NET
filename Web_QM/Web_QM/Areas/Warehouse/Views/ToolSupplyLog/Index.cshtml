@@ -47,7 +47,7 @@
                                     <th>Loại</th>
                                     <th>Số lượng</th>
                                     <th>NV Kho</th>
-                                    <th>NV nhận/trả</th>
+                                    <th>NV bàn giao</th>
                                     <th>Mô tả</th>
                                     <th>Mục đích sử dụng</th>
                                     <th>Ghi chú</th>
@@ -104,7 +104,7 @@
 </div>
 
 <div class="modal fade" id="logModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Cập nhật thông tin Nhập/Hủy</h5>
@@ -118,35 +118,46 @@
                         <select class="form-control" name="ToolId" id="selectTool" style="width:100%" required></select>
                     </div>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
-                                <label>Loại</label>
+                                <label>Trạng thái</label>
                                 <select class="form-control" name="Type" required>
                                     <option value="Nhập">Nhập mới</option>
                                     <option value="Hủy">Hủy vật tư</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label>Số lượng</label>
                                 <input type="number" class="form-control" name="Qty" min="1" required />
                             </div>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Ngày thực hiện</label>
-                        <input type="date" class="form-control" name="DateMonth" required />
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Ngày thực hiện</label>
+                                <input type="date" class="form-control" name="DateMonth" required />
+                            </div>
+                        </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group"><label>NV Kho</label><input type="text" class="form-control" name="WarehouseStaff" /></div>
+                        <div class="col-md-4">
+                            <div class="form-group"><label>NV Kho</label><input type="text" class="form-control" name="WarehouseStaff" disabled/></div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group"><label>NV nhận/trả</label><input type="text" class="form-control" name="HandOverStaff" /></div>
+                        <div class="col-md-4">
+                            <div class="form-group"><label>NV bàn giao</label><input type="text" class="form-control" name="HandOverStaff" list="employeeList" /></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Mô tả</label>
+                                <select class="form-control" name="Describe">
+                                    <option value="">---Chọn---</option>
+                                    <option value="Đồ mới">Đồ mới</option>
+                                    <option value="Đồ cũ">Đồ cũ</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <div class="form-group"><label>Mô tả</label><input type="text" class="form-control" name="Describe" /></div>
                     <div class="form-group"><label>Mục đích</label><input type="text" class="form-control" name="IntendedUse" /></div>
                     <div class="form-group"><label>Ghi chú</label><textarea class="form-control" name="Note"></textarea></div>
                 </div>
@@ -159,88 +170,165 @@
     </div>
 </div>
 
+<datalist id="employeeList"></datalist>
+
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-        const tableBody = document.querySelector('.log-table-body');
-        const logModal = new bootstrap.Modal(document.getElementById('logModal'));
-        const logForm = document.getElementById('logForm');
-        const contextMenu = document.getElementById('contextMenu');
-        let selectedId = null;
+            const tableBody = document.querySelector('.log-table-body');
+            const logModal = new bootstrap.Modal(document.getElementById('logModal'));
+            const logForm = document.getElementById('logForm');
+            const contextMenu = document.getElementById('contextMenu');
+            let selectedId = null;
 
-        loadLogData();
+            loadLogData();
+            loadEmployees();
 
-        function loadLogData(params = {}) {
-            $.get('/warehouse/toolSupplyLog/GetToolSupplyLogs', params, function (data) {
-                let html = '';
-                if (data && data.length > 0) {
-                    data.forEach((item, index) => {
-                        html += `<tr data-id="${item.id}" style="cursor:context-menu">
-                            <td>${index + 1}</td>
-                            <td>${item.dateMonth}</td>
-                            <td><strong>${item.toolCode}</strong></td>
-                            <td class="text-wrap">${item.toolName}</td>
-                            <td class="${item.type === 'Nhập' ? 'text-success' : 'text-danger'}"><strong>${item.type}</strong></td>
-                            <td class="text-center"><strong>${item.qty}</strong></td>
-                            <td>${item.warehouseStaff || ''}</td>
-                            <td>${item.handOverStaff || ''}</td>
-                            <td>${item.describe || ''}</td>
-                            <td>${item.intendedUse || ''}</td>
-                            <td class="text-wrap">${item.note || ''}</td>
-                        </tr>`;
-                    });
-                } else {
-                    html = '<tr><td colspan="11" class="text-center">Không có dữ liệu</td></tr>';
-                }
-                tableBody.innerHTML = html;
+            function loadLogData(params = {}) {
+                $.get('/warehouse/toolSupplyLog/GetToolSupplyLogs', params, function (data) {
+                    let html = '';
+                    if (data && data.length > 0) {
+                        data.forEach((item, index) => {
+                            html += `<tr data-id="${item.id}" style="cursor:context-menu">
+                                <td>${index + 1}</td>
+                                <td>${item.dateMonth}</td>
+                                <td><strong>${item.toolCode}</strong></td>
+                                <td class="text-wrap">${item.toolName}</td>
+                                <td class="${item.type === 'Nhập' ? 'text-success' : 'text-danger'}"><strong>${item.type}</strong></td>
+                                <td class="text-center"><strong>${item.qty}</strong></td>
+                                <td>${item.warehouseStaff || ''}</td>
+                                <td>${item.handOverStaff || ''}</td>
+                                <td>${item.describe || ''}</td>
+                                <td>${item.intendedUse || ''}</td>
+                                <td class="text-wrap">${item.note || ''}</td>
+                            </tr>`;
+                        });
+                    } else {
+                        html = '<tr><td colspan="11" class="text-center">Không có dữ liệu</td></tr>';
+                    }
+                    tableBody.innerHTML = html;
+                });
+            }
+
+            tableBody.addEventListener('contextmenu', function (e) {
+                const row = e.target.closest('tr');
+                if (!row) return;
+                e.preventDefault();
+                selectedId = row.getAttribute('data-id');
+                contextMenu.style.display = 'block';
+                contextMenu.style.left = e.pageX + 'px';
+                contextMenu.style.top = e.pageY + 'px';
             });
-        }
 
-        tableBody.addEventListener('contextmenu', function (e) {
-            const row = e.target.closest('tr');
-            if (!row) return;
-            e.preventDefault();
-            selectedId = row.getAttribute('data-id');
-            contextMenu.style.display = 'block';
-            contextMenu.style.left = e.pageX + 'px';
-            contextMenu.style.top = e.pageY + 'px';
-        });
+            document.addEventListener('click', () => contextMenu.style.display = 'none');
 
-        document.addEventListener('click', () => contextMenu.style.display = 'none');
-
-        document.getElementById('editLogBtn').addEventListener('click', function () {
-            $.get('/warehouse/toolSupplyLog/GetLogById', { id: selectedId }, function (data) {
-                $.get('/warehouse/tool/GetTools', function (tools) {
-                    let options = '';
-                    tools.forEach(t => options += `<option value="${t.id}" ${t.id == data.toolId ? 'selected' : ''}>${t.toolCode} - ${t.toolName}</option>`);
-                    $('#selectTool').html(options).select2({ dropdownParent: $('#logModal') });
+            document.getElementById('editLogBtn').addEventListener('click', function () {
+                $.get('/warehouse/toolSupplyLog/GetLogById', { id: selectedId }, function (data) {
+                    $.get('/warehouse/tool/GetTools', function (tools) {
+                        let options = '';
+                        tools.forEach(t => options += `<option value="${t.id}" ${t.id == data.toolId ? 'selected' : ''}>${t.toolCode} - ${t.toolName}</option>`);
+                        $('#selectTool').html(options).select2({ dropdownParent: $('#logModal') });
                 
-                    logForm.querySelector('[name="Id"]').value = data.id;
-                    logForm.querySelector('[name="Type"]').value = data.type;
-                    logForm.querySelector('[name="Qty"]').value = data.qty;
-                    logForm.querySelector('[name="DateMonth"]').value = data.dateMonth ? data.dateMonth.split('T')[0] : "";
-                    logForm.querySelector('[name="WarehouseStaff"]').value = data.warehouseStaff || "";
-                    logForm.querySelector('[name="HandOverStaff"]').value = data.handOverStaff || "";
-                    logForm.querySelector('[name="Describe"]').value = data.describe || "";
-                    logForm.querySelector('[name="IntendedUse"]').value = data.intendedUse || "";
-                    logForm.querySelector('[name="Note"]').value = data.note || "";
-                    logModal.show();
+                        logForm.querySelector('[name="Id"]').value = data.id;
+                        logForm.querySelector('[name="Type"]').value = data.type;
+                        logForm.querySelector('[name="Qty"]').value = data.qty;
+                        logForm.querySelector('[name="DateMonth"]').value = data.dateMonth ? data.dateMonth.split('T')[0] : "";
+                        logForm.querySelector('[name="WarehouseStaff"]').value = data.warehouseStaff || "";
+                        logForm.querySelector('[name="HandOverStaff"]').value = data.handOverStaff || "";
+                        logForm.querySelector('[name="Describe"]').value = data.describe || "";
+                        logForm.querySelector('[name="IntendedUse"]').value = data.intendedUse || "";
+                        logForm.querySelector('[name="Note"]').value = data.note || "";
+                        logModal.show();
+                    });
+                });
+            });
+
+            document.getElementById('deleteLogBtn').addEventListener('click', function () {
+                if (confirm("Xóa phiếu này sẽ hoàn lại số lượng kho?")) {
+                    $.get('/warehouse/toolSupplyLog/DeleteLog', { id: selectedId }, (res) => { if (res.success) loadLogData(); });
+                }
+            });
+
+            function loadEmployees() {
+                $.get('/warehouse/IssueReturnLog/GetEmployeeSuggestions', { term: '' }, function(data) {
+                    let h = '';
+                    data.forEach(e => h += `<option value="${e.id}">${e.text}</option>`);
+                    $('#employeeList').html(h);
+                });
+            }
+
+            logForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                $.post('/warehouse/toolSupplyLog/SaveSupplyLog', Object.fromEntries(new FormData(logForm).entries()), function (res) {
+                    if (res.success) { logModal.hide(); loadLogData(); }
+                });
+            });
+
+            const importForm = document.getElementById('importForm');
+            const btnImport = document.getElementById('btnImport');
+            const btnText = document.getElementById('btnText');
+            const spinner = document.getElementById('spinner');
+            const importModal = new bootstrap.Modal(document.getElementById('importExcelModal'));
+
+            importForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const file = document.getElementById('excelFile').files[0];
+                if (!file) {
+                    Swal.fire('Thao tác thất bại', 'Vui lòng chọn một file Excel để import.', 'warning');
+                    return;
+                }
+
+                btnImport.disabled = true;
+                btnText.textContent = 'Đang xử lý...';
+                spinner.classList.remove('d-none');
+
+                const formData = new FormData(importForm);
+
+                fetch('/warehouse/toolSupplyLog/import', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else if (response.status === 400 || response.status === 500) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.message);
+                        });
+                    }
+                    throw new Error('Lỗi không xác định: ' + response.statusText);
+                })
+                .then(data => {
+                    importModal.hide();
+                    Swal.fire({
+                        title: 'Import Thành công! 🎉',
+                        html: data.message,
+                        icon: 'success',
+                        confirmButtonText: 'Đã hiểu'
+                    }).then(() => {
+                        location.reload();
+                    });
+                })
+                .catch(error => {
+                    importModal.hide();
+                    console.error('Lỗi khi Import:', error);
+
+                    Swal.fire({
+                        title: 'Import Thất bại! ❌',
+                        html: error.message,
+                        icon: 'error',
+                        confirmButtonText: 'Đóng'
+                    }).then(() => {
+                         importModal.show();
+                    });
+                })
+                .finally(() => {
+                    btnImport.disabled = false;
+                    btnText.textContent = 'Thực hiện Import';
+                    spinner.classList.add('d-none');
                 });
             });
         });
-
-        document.getElementById('deleteLogBtn').addEventListener('click', function () {
-            if (confirm("Xóa phiếu này sẽ hoàn lại số lượng kho?")) {
-                $.get('/warehouse/toolSupplyLog/DeleteLog', { id: selectedId }, (res) => { if (res.success) loadLogData(); });
-            }
-        });
-
-        logForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            $.post('/warehouse/toolSupplyLog/SaveLog', Object.fromEntries(new FormData(logForm).entries()), function (res) {
-                if (res.success) { logModal.hide(); loadLogData(); }
-            });
-        });
-    });
     </script>
 }

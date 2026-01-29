@@ -4,59 +4,136 @@
 
 <div class="content-wrapper">
     <div class="row">
-        <div class="col-sm-12">
-            <div class="home-tab">
-                <div class="d-sm-flex align-items-center justify-content-between border-bottom">
-                    <ul class="nav nav-tabs" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link active ps-0" id="home-tab" data-bs-toggle="tab" href="#overview" role="tab" aria-controls="overview" aria-selected="true">Over view</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="profile-tab" data-bs-toggle="tab" href="#audiences" role="tab" aria-controls="audiences" aria-selected="false">Máy móc</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link border-0" id="more-tab" data-bs-toggle="tab" href="#more" role="tab" aria-selected="false">More</a>
-                        </li>
-                    </ul>
-                    <div>
-                        <div class="btn-wrapper">
-                            <a href="#" class="btn btn-otline-dark align-items-center" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.href), '_blank');"><i class="icon-share"></i> Share</a>
-                            <a href="javascript:window.print();" class="btn btn-otline-dark"><i class="icon-printer"></i> Print</a>
-                            <a href="#" class="btn btn-primary text-white me-0"><i class="icon-download"></i> Export</a>
-                        </div>
-                    </div>
+        <div class="container-fluid py-4" style="background: #f4f7f6; min-height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="fw-bold text-dark mb-0">Tổng quan dữ liệu</h4>
+                <div style="background: white; padding: 8px 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <small style="color: #666;">Trạng thái hệ thống:</small>
+                    <span style="color: #28a745; font-weight: bold;">● Đang ổn định</span>
                 </div>
-                <div class="tab-content tab-content-basic">
-                    <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview">
-                        <div class="row d-none d-lg-flex">
-                            Over view
-                        </div>
-                    </div>
-                    <div class="tab-pane fade" id="audiences" role="tabpanel" aria-labelledby="audiences">
-                        <div class="row d-none d-lg-flex">
-                            <div class="col-lg-3">
-                                <p class="statistics-title">Máy móc</p>
-                                <h3 class="rate-percentage">@ViewBag.CountMachine máy</h3>
-                                <p class="text-success d-flex"><a href="~/production/machine">Xem thêm</a></p>
+            </div>
+
+            @if (ViewBag.Machines != null)
+            {
+                var machines = (List<Machine>)ViewBag.Machines;
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm p-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            <small class="opacity-75">Tổng quy mô tài sản</small>
+                            <div class="d-flex justify-content-between align-items-end mt-2">
+                                <h2 class="fw-bold mb-0">@machines.Count()</h2>
+                                <span>Máy móc</span>
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade" id="more" role="tabpanel" aria-labelledby="more-tab">
-                        <div class="row d-none d-lg-flex">
-                            More tab
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm p-3">
+                            <small class="text-muted">Sẵn sàng vận hành</small>
+                            <div class="d-flex justify-content-between align-items-end mt-2">
+                                <h2 class="fw-bold mb-0 text-success">@machines.Count(m => m.Status == "Đang hoạt động")</h2>
+                                <span class="badge bg-success-subtle text-success">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm p-3">
+                            <small class="text-muted">Đang ngưng/Sự cố</small>
+                            <div class="d-flex justify-content-between align-items-end mt-2">
+                                <h2 class="fw-bold mb-0 text-danger">@machines.Count(m => m.Status == "Ngưng hoạt động")</h2>
+                                <span class="badge bg-danger-subtle text-danger">Down</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm p-3">
+                            <small class="text-muted">Tổng giá trị đầu tư</small>
+                            <div class="d-flex justify-content-between align-items-end mt-2">
+                                <h2 class="fw-bold mb-0 text-primary">@((machines.Sum(m => m.Price) ?? 0).ToString("N0"))</h2>
+                                <span class="text-muted small">VNĐ</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-white fw-bold">Phân bổ thiết bị theo phòng ban</div>
+                            <div class="card-body">
+                                @foreach (var group in machines.GroupBy(m => m.Department ?? "Chưa phân loại"))
+                                {
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <small>@group.Key</small>
+                                            <small class="fw-bold">@group.Count() máy</small>
+                                        </div>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-info" style="width: @(group.Count() * 100 / machines.Count())%"></div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-white fw-bold">Thông số năng lực xưởng</div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-around text-center mt-3">
+                                    <div>
+                                        <h4 class="mb-0 fw-bold">-</h4>
+                                        <small class="text-muted">Số trục Max</small>
+                                    </div>
+                                    <div class="vr"></div>
+                                    <div>
+                                        <h4 class="mb-0 fw-bold">-</h4>
+                                        <small class="text-muted">Công suất TB</small>
+                                    </div>
+                                </div>
+                                <hr>
+                                <small class="d-block mb-2 text-muted text-uppercase" style="font-size: 0.7em;">Nguồn gốc thiết bị</small>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach (var origin in machines.Select(m => m.MachineOrigin).Distinct())
+                                    {
+                                        <span class="badge bg-light text-dark border">@origin</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100 text-white" style="background: #212529;">
+                            <div class="card-header border-secondary fw-bold">Thiết bị giá trị nhất</div>
+                            <div class="card-body p-0">
+                                <ul class="list-group list-group-flush border-0">
+                                    @foreach (var topMachine in machines.OrderByDescending(m => m.Price).Take(3))
+                                    {
+                                        <li class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <small class="d-block text-secondary">@topMachine.MachineCode</small>
+                                                <span>@topMachine.MachineName</span>
+                                            </div>
+                                            <span class="text-warning fw-bold">@((topMachine.Price ?? 0).ToString("N0"))</span>
+                                        </li>
+                                    }
+                                </ul>
+                                <div class="p-3">
+                                    <button class="btn btn-outline-light w-100 btn-sm">Xem báo cáo chi tiết</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        var labelPie = @(ViewBag.LabelPie == null ? Html.Raw("[]") : Html.Raw(Json.Serialize(ViewBag.LabelPie)));
-        var dataPie = @(ViewBag.DataPie == null ? Html.Raw("[]") : Html.Raw(Json.Serialize(ViewBag.DataPie)));
-        var dataBar = @(ViewBag.DataBar == null ? Html.Raw("[]") : Html.Raw(Json.Serialize(ViewBag.DataBar)));
-        var dataLine = @(ViewBag.DataLine == null ? Html.Raw("[]") : Html.Raw(Json.Serialize(ViewBag.DataLine)));
     </script>
 }

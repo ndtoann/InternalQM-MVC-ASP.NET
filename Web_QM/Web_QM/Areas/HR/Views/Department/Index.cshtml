@@ -1,7 +1,7 @@
 ﻿@using Web_QM.Models
 @model IEnumerable<Department>;
 @{
-    ViewData["Title"] = "Bộ phận";
+    ViewData["Title"] = "Bộ phận - Phòng ban";
 }
 
 <div class="content-wrapper">
@@ -9,7 +9,7 @@
         <div class="col-lg-12 grid-margin stretch-card">
             <div class="card">
                 <div class="card-body">
-                    <h4 class="card-title">Danh sách bộ phận</h4>
+                    <h4 class="card-title">Danh sách bộ phận/phòng ban</h4>
                     @if (TempData["SuccessMessage"] != null)
                     {
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -31,6 +31,7 @@
                                 <tr>
                                     <th>STT</th>
                                     <th>Bộ phận</th>
+                                    <th>Bộ phận cha</th>
                                     <th>Ghi chú</th>
                                 </tr>
                             </thead>
@@ -43,6 +44,7 @@
                                     <tr class="context-menu-row" data-id="@item.Id" data-department-name="@item.DepartmentName">
                                         <td>@(count++)</td>
                                         <td>@item.DepartmentName</td>
+                                        <td>@(item.DpParent ?? "")</td>
                                         <td>@item.Note</td>
                                     </tr>
                                 }

@@ -36,7 +36,7 @@ namespace Web_QM.Areas.HR.Controllers
                 Text = d.DepartmentName,
                 Selected = d.DepartmentName == department
             }).ToList();
-            departmentsList.Insert(0, new SelectListItem { Value = "", Text = "Chọn bộ phận" });
+            departmentsList.Insert(0, new SelectListItem { Value = "", Text = "Chọn bộ phận/phòng ban" });
             ViewData["Departments"] = departmentsList;
             ViewBag.KeySearch = key_search;
             return View(res);

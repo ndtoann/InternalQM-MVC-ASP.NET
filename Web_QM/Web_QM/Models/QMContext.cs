@@ -87,8 +87,11 @@ public partial class QMContext : DbContext
     public virtual DbSet<ToolSupplyLog> ToolSupplyLogs { get; set; }
     public virtual DbSet<IssueReturnLog> IssueReturnLogs { get; set; }
 
+    public virtual DbSet<ProductionProcessess> ProductionProcessess { get; set; }
+    public virtual DbSet<ProcessStep> ProcessSteps { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("Server=192.168.10.251,1433;Database=QM_DaoTao;User Id=daotao01;Password=12341234;Trusted_Connection=False;MultipleActiveResultSets=true;Encrypt=False;");
+        => optionsBuilder.UseSqlServer("Server=192.168.10.251,1433;Database=QMNOIBO;User Id=daotao01;Password=12341234;Trusted_Connection=False;MultipleActiveResultSets=true;Encrypt=False;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -259,6 +262,7 @@ public partial class QMContext : DbContext
         modelBuilder.Entity<Department>(entity =>
         {
             entity.Property(e => e.DepartmentName).HasMaxLength(100);
+            entity.Property(e => e.DpParent).HasMaxLength(100);
             entity.Property(e => e.Note).HasMaxLength(500);
         });
 
@@ -456,6 +460,23 @@ public partial class QMContext : DbContext
             entity.Property(e => e.IssuedWarehouseStaff).HasMaxLength(50);
             entity.Property(e => e.ReturnStaff).HasMaxLength(50);
             entity.Property(e => e.ReturnWarehouseStaff).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<ProductionProcessess>(entity => {
+            entity.Property(e => e.PartName).HasMaxLength(255);
+            entity.Property(e => e.WorkpieceSize).HasMaxLength(255);
+            entity.Property(e => e.Material).HasMaxLength(255);
+            entity.Property(e => e.CreatedBy).HasMaxLength(255);
+            entity.Property(e => e.UpdatedBy).HasMaxLength(255);
+            entity.Property(e => e.Picture).HasMaxLength(255);
+        });
+
+        modelBuilder.Entity<ProcessStep>(entity => {
+            entity.Property(e => e.Department).HasMaxLength(50);
+            entity.Property(e => e.Fixture).HasMaxLength(50);
+            entity.Property(e => e.EstimatedTime).HasColumnType("decimal(5, 1)");
+            entity.Property(e => e.QtyPerSet).HasMaxLength(50);
+            entity.Property(e => e.Picture).HasMaxLength(255);
         });
 
         OnModelCreatingPartial(modelBuilder);

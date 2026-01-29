@@ -18,7 +18,7 @@ namespace Web_QM.Areas.Admin.Controllers
         [Authorize(Policy = "ViewPermission")]
         public async Task<IActionResult> Index()
         {
-            var res = await _context.Permissions.AsNoTracking().ToListAsync();
+            var res = await _context.Permissions.AsNoTracking().OrderBy(x => x.Module).ToListAsync();
 
             return View(res);
         }

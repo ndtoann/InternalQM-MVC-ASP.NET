@@ -63,7 +63,7 @@
                                     <th>Tên vật tư</th>
                                     <th>Loại</th>
                                     <th>Đơn vị</th>
-                                    <th>Số lượng</th>
+                                    <th>SL gốc</th>
                                     <th>SL nhập</th>
                                     <th>SL hủy</th>
                                     <th>SL tồn</th>
@@ -124,7 +124,7 @@
 </div>
 
 <div class="modal fade" id="supplyLogModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Nhập/Hủy vật tư</h5>
@@ -138,7 +138,7 @@
                         </select>
                     </div>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label>Loại</label>
                                 <select class="form-control" name="Type" required>
@@ -148,39 +148,44 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label>Số lượng</label>
                                 <input type="number" class="form-control" name="Qty" min="1" value="0" required />
                             </div>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Ngày thực hiện</label>
-                        <input type="date" class="form-control" name="DateMonth" id="currentDate" required />
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Ngày thực hiện</label>
+                                <input type="date" class="form-control" name="DateMonth" id="currentDate" required />
+                            </div>
+                        </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label>Nhân viên kho</label>
-                                <input type="text" class="form-control" name="WarehouseStaff" />
+                                <input type="text" class="form-control" name="WarehouseStaff" disabled/>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label>Nhân viên bàn giao</label>
-                                <input type="text" class="form-control" name="HandOverStaff" />
+                                <input type="text" class="form-control" name="HandOverStaff" list="employeeList" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Mô tả</label>
+                                <select class="form-control" name="Describe">
+                                    <option value="">---Chọn---</option>
+                                    <option value="Đồ mới">Đồ mới</option>
+                                    <option value="Đồ cũ">Đồ cũ</option>
+                                </select>
                             </div>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>Mô tả</label>
-                        <select class="form-control" name="Describe">
-                            <option value="">---Chọn---</option>
-                            <option value="Đồ mới">Đồ mới</option>
-                            <option value="Đồ cũ">Đồ cũ</option>
-                        </select>
-                    </div>
+                    
                     <div class="form-group">
                         <label>Mục đích sử dụng</label>
                         <input type="text" class="form-control" name="IntendedUse" />
@@ -199,6 +204,8 @@
     </div>
 </div>
 
+<datalist id="employeeList"></datalist>
+
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -213,6 +220,7 @@
             let selectedCode = null;
 
             loadToolData();
+            loadEmployees();
 
             function loadToolData(params = {}) {
                 $.ajax({
@@ -258,6 +266,14 @@
                     key_search: formData.get('key_search')
                 });
             });
+
+            function loadEmployees() {
+                $.get('/warehouse/IssueReturnLog/GetEmployeeSuggestions', { term: '' }, function(data) {
+                    let h = '';
+                    data.forEach(e => h += `<option value="${e.id}">${e.text}</option>`);
+                    $('#employeeList').html(h);
+                });
+            }
 
             document.getElementById('tool-supply-log').addEventListener('click', function (e) {
                 e.preventDefault();

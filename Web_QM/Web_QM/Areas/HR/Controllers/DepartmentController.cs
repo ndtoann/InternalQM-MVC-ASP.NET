@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Web_QM.Models;
 
@@ -25,6 +26,14 @@ namespace Web_QM.Areas.HR.Controllers
         [Authorize(Policy = "AddDepartment")]
         public async Task<IActionResult> Add()
         {
+            var departments = await _context.Departments.AsNoTracking().Where(x => x.DpParent == null).ToListAsync();
+            var departmentsList = departments.Select(d => new SelectListItem
+            {
+                Value = d.DepartmentName,
+                Text = d.DepartmentName,
+            }).ToList();
+            departmentsList.Insert(0, new SelectListItem { Value = "", Text = "Chọn bộ phận" });
+            ViewData["Departments"] = departmentsList;
             return View();
         }
 
@@ -32,6 +41,14 @@ namespace Web_QM.Areas.HR.Controllers
         [HttpPost]
         public async Task<IActionResult> Add(Department department)
         {
+            var departments = await _context.Departments.AsNoTracking().Where(x => x.DpParent == null).ToListAsync();
+            var departmentsList = departments.Select(d => new SelectListItem
+            {
+                Value = d.DepartmentName,
+                Text = d.DepartmentName,
+            }).ToList();
+            departmentsList.Insert(0, new SelectListItem { Value = "", Text = "Chọn bộ phận" });
+            ViewData["Departments"] = departmentsList;
             if (!ModelState.IsValid)
             {
                 return View(department);
@@ -64,7 +81,14 @@ namespace Web_QM.Areas.HR.Controllers
             {
                 return NotFound();
             }
-
+            var departments = await _context.Departments.AsNoTracking().Where(x => x.DpParent == null).ToListAsync();
+            var departmentsList = departments.Select(d => new SelectListItem
+            {
+                Value = d.DepartmentName,
+                Text = d.DepartmentName,
+            }).ToList();
+            departmentsList.Insert(0, new SelectListItem { Value = "", Text = "Chọn bộ phận" });
+            ViewData["Departments"] = departmentsList;
             return View(departmentToEdit);
         }
 
@@ -76,6 +100,14 @@ namespace Web_QM.Areas.HR.Controllers
             {
                 return NotFound();
             }
+            var departments = await _context.Departments.AsNoTracking().Where(x => x.DpParent == null).ToListAsync();
+            var departmentsList = departments.Select(d => new SelectListItem
+            {
+                Value = d.DepartmentName,
+                Text = d.DepartmentName,
+            }).ToList();
+            departmentsList.Insert(0, new SelectListItem { Value = "", Text = "Chọn bộ phận" });
+            ViewData["Departments"] = departmentsList;
             if (!ModelState.IsValid)
             {
                 return View(department);

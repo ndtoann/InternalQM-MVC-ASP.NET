@@ -333,9 +333,22 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("DeleteIssueReturnLog", policy =>
        policy.RequireClaim("Permission", "IssueReturnLog.Delete"));
 
+    //đồ gá - dao cụ
+    options.AddPolicy("ViewProductionProcessess", policy =>
+       policy.RequireClaim("Permission", "ProductionProcessess.View"));
+
+    options.AddPolicy("AddProductionProcessess", policy =>
+       policy.RequireClaim("Permission", "ProductionProcessess.Add"));
+
+    options.AddPolicy("EditProductionProcessess", policy =>
+       policy.RequireClaim("Permission", "ProductionProcessess.Edit"));
+
+    options.AddPolicy("DeleteProductionProcessess", policy =>
+       policy.RequireClaim("Permission", "ProductionProcessess.Delete"));
+
     //client
     options.AddPolicy("ClientViewEmpl", policy =>
-       policy.RequireClaim("Permission", "EmployeeOnlyDepartment.View"));
+       policy.RequireClaim("Permission", "EmployeeSameDepartment.View"));
 
     options.AddPolicy("ClientAddFeedbackEmpl", policy =>
        policy.RequireClaim("Permission", "Employee.AddFeedbackEmpl"));
@@ -374,6 +387,36 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.Use(async (context, next) =>
+{
+    await next();
+
+    var now = DateTime.Now;
+    var path = context.Request.Path;
+
+    string[] extensionsToIgnore = { ".js", ".css", ".png", ".jpg", "jpeg",".gif", ".svg", ".ico", ".woff", ".woff2" };
+    if (extensionsToIgnore.Any(ext => path.Value.EndsWith(ext, StringComparison.OrdinalIgnoreCase))) return;
+
+    var statusCode = context.Response.StatusCode;
+    var userName = context.User.FindFirst("EmployeeCode")?.Value
+                   ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                   ?? "Anonymous";
+    var method = context.Request.Method;
+    var ip = context.Connection.RemoteIpAddress?.ToString();
+
+    var logDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Logger");
+    if (!Directory.Exists(logDirectory)) Directory.CreateDirectory(logDirectory);
+
+    var filePath = Path.Combine(logDirectory, $"{now:yyyyMMdd}.txt");
+    var logEntry = $"[{now:HH:mm:ss}] | {statusCode} | {ip} | {userName} | {method}: {path}{context.Request.QueryString}{Environment.NewLine}";
+
+    try
+    {
+        await File.AppendAllTextAsync(filePath, logEntry);
+    }
+    catch { }
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1,5 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Xuất trả hàng ngày";
+    string startDate = DateTime.Today.AddYears(-1).ToString("yyyy-MM-dd");
     string currDate = DateTime.Today.ToString("yyyy-MM-dd");
 }
 
@@ -58,7 +59,7 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="small fw-bold">Từ ngày</label>
-                                <input type="date" class="form-control" name="fromDate" value="@currDate" />
+                                <input type="date" class="form-control" name="fromDate" value="@startDate" />
                             </div>
                             <div class="col-md-2">
                                 <label class="small fw-bold">Đến ngày</label>
@@ -177,13 +178,11 @@
                             <div class="col-md-3"><label>Ngày xuất</label><input type="date" class="form-control" name="IssuedDate" /></div>
                             <div class="col-md-3"><label>SL xuất</label><input type="number" class="form-control" name="IssuedQty" min="1" /></div>
                             <div class="col-md-3"><label>NV mượn</label><input type="text" class="form-control" name="IssuedStaff" list="employeeList" /></div>
-                            <div class="col-md-3"><label>NV kho xuất</label><input type="text" class="form-control" name="IssuedWarehouseStaff" list="employeeList" /></div>
                         </div>
                         <div class="row mt-2 p-2" style="background-color: #f0fff0; border-radius: 5px;">
                             <div class="col-md-3"><label class="text-success fw-bold">Ngày trả</label><input type="date" class="form-control border-success" name="ReturnDate" id="inputReturnDateEdit" /></div>
                             <div class="col-md-3"><label class="text-success fw-bold">SL trả</label><input type="number" class="form-control border-success" name="ReturnQty" min="0" /></div>
                             <div class="col-md-3"><label>NV trả</label><input type="text" class="form-control" name="ReturnStaff" list="employeeList" /></div>
-                            <div class="col-md-3"><label>NV kho nhận</label><input type="text" class="form-control" name="ReturnWarehouseStaff" list="employeeList" /></div>
                         </div>
                         <div class="form-group mt-2"><label>Ghi chú</label><input type="text" class="form-control" name="Note" /></div>
                     </div>
@@ -204,7 +203,6 @@
                                         <th style="width:12%">Ngày xuất</th>
                                         <th style="width:8%">SL</th>
                                         <th style="width:12%">NV mượn</th>
-                                        <th style="width:12%">NV Kho</th>
                                         <th>Ghi chú</th>
                                         <th style="width:40px"></th>
                                     </tr>
@@ -229,7 +227,6 @@
 
 @section Scripts {
     <script>
-
         $(document).ready(function () {
             const logModal = new bootstrap.Modal(document.getElementById('issueReturnModal'));
             const logForm = document.getElementById('issueReturnForm');
@@ -264,7 +261,7 @@
                                 <div style="font-size: 1.1rem; font-weight: 800; color: #000;">${item.toolName}</div>
                                 <div style="font-size: 0.85rem; color: #444;">${item.toolCode}</div>
                             </td>
-                            <td class="align-middle" style="font-size: 0.8rem; font-weight: 800;">
+                            <td class="align-middle" style="font-size: 0.9rem; font-weight: 800;">
                                 Máy: <b>${item.machine || '-'}</b><br/>
                                 Vật liệu: ${item.intendedUse || '-'}
                             </td>
@@ -281,7 +278,7 @@
                                         <span style="color: #28a745;">SL trả: ${item.returnQty}</span>
                                         <span>Ngày trả: ${item.returnDate}</span>
                                     </div>
-                                    <div style="font-size: 0.8rem;font-weight: 900;margin-top:5px;">NV trả: ${item.returnStaff} - NV Kho: ${item.returnWarehouseStaff}</div>
+                                    <div style="font-size: 0.8rem;font-weight: 900;margin-top:5px;">NV trả: ${item.returnStaff || ''} - NV Kho: ${item.returnWarehouseStaff || ''}</div>
                                 ` : `<div style="color: #999; border: 1px dashed #ccc; padding: 2px; text-align: center; font-weight: bold;">CHƯA TRẢ</div>`}
                             </td>
                             <td class="align-middle">${item.note || '-'}</td>
@@ -317,7 +314,6 @@
                     <td><input type="date" class="form-control" name="IssuedDate" value="${today}" required /></td>
                     <td><input type="number" class="form-control" name="IssuedQty" min="1" value="1" required /></td>
                     <td><input type="text" class="form-control" name="IssuedStaff" list="employeeList" required /></td>
-                    <td><input type="text" class="form-control" name="IssuedWarehouseStaff" list="employeeList" required /></td>
                     <td><input type="text" class="form-control" name="Note" /></td>
                     <td class="text-center"><button type="button" class="btn btn-danger btn-sm btn-remove-row">×</button></td>
                 </tr>
@@ -454,6 +450,72 @@
             $('#searchForm').submit(function (e) {
                 e.preventDefault();
                 loadLogs();
+            });
+
+            const importForm = document.getElementById('importForm');
+            const btnImport = document.getElementById('btnImport');
+            const btnText = document.getElementById('btnText');
+            const spinner = document.getElementById('spinner');
+            const importModal = new bootstrap.Modal(document.getElementById('importExcelModal'));
+
+            importForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const file = document.getElementById('excelFile').files[0];
+                if (!file) {
+                    Swal.fire('Thao tác thất bại', 'Vui lòng chọn một file Excel để import.', 'warning');
+                    return;
+                }
+
+                btnImport.disabled = true;
+                btnText.textContent = 'Đang xử lý...';
+                spinner.classList.remove('d-none');
+
+                const formData = new FormData(importForm);
+
+                fetch('/warehouse/IssueReturnLog/import', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else if (response.status === 400 || response.status === 500) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.message);
+                        });
+                    }
+                    throw new Error('Lỗi không xác định: ' + response.statusText);
+                })
+                .then(data => {
+                    importModal.hide();
+                    Swal.fire({
+                        title: 'Import Thành công! 🎉',
+                        html: data.message,
+                        icon: 'success',
+                        confirmButtonText: 'Đã hiểu'
+                    }).then(() => {
+                        location.reload();
+                    });
+                })
+                .catch(error => {
+                    importModal.hide();
+                    console.error('Lỗi khi Import:', error);
+
+                    Swal.fire({
+                        title: 'Import Thất bại! ❌',
+                        html: error.message,
+                        icon: 'error',
+                        confirmButtonText: 'Đóng'
+                    }).then(() => {
+                         importModal.show();
+                    });
+                })
+                .finally(() => {
+                    btnImport.disabled = false;
+                    btnText.textContent = 'Thực hiện Import';
+                    spinner.classList.add('d-none');
+                });
             });
         });
     </script>
