@@ -333,7 +333,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("DeleteIssueReturnLog", policy =>
        policy.RequireClaim("Permission", "IssueReturnLog.Delete"));
 
-    //đồ gá - dao cụ
+    //quy trình sản xuất
     options.AddPolicy("ViewProductionProcessess", policy =>
        policy.RequireClaim("Permission", "ProductionProcessess.View"));
 

@@ -268,6 +268,7 @@
                             <td class="align-middle">
                                 <div style="font-size: 1.1rem; font-weight: 900;">
                                     <span style="color: #d9534f;">SL xuất: ${item.issuedQty}</span>
+                                    &nbsp
                                     <span>Ngày xuất: ${item.issuedDate}</span>
                                 </div>
                                 <div style="font-size: 0.8rem;font-weight: 900;margin-top:5px;">NV mượn: ${item.issuedStaff} - NV Kho: ${item.issuedWarehouseStaff}</div>
@@ -276,6 +277,7 @@
                                 ${item.returnDate ? `
                                     <div style="font-size: 1.1rem; font-weight: 900;">
                                         <span style="color: #28a745;">SL trả: ${item.returnQty}</span>
+                                        &nbsp
                                         <span>Ngày trả: ${item.returnDate}</span>
                                     </div>
                                     <div style="font-size: 0.8rem;font-weight: 900;margin-top:5px;">NV trả: ${item.returnStaff || ''} - NV Kho: ${item.returnWarehouseStaff || ''}</div>

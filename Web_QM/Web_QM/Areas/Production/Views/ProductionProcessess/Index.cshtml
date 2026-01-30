@@ -1,4 +1,7 @@
-﻿
+﻿@{
+    ViewData["Title"] = "Quy trình sản xuất";
+}
+
 <style>
     @@media (min-width: 1200px) {
         .modal-xl {
@@ -29,7 +32,8 @@
                     </div>
                 </form>
             </div>
-            <a href# class="btn btn-success" onclick="openModal(0)">Thêm mới</a>
+            <a href="#" class="btn btn-success" onclick="openModal(0)" asp-policy="AddProductionProcessess">Thêm mới</a>
+            <a class="btn btn-success" id="import" href="#" data-bs-toggle="modal" data-bs-target="#importExcelModal" asp-policy="AddProductionProcessess">Nhập excel</a>
             <div class="table-responsive">
                 <table class="table table-hover table-bordered align-middle" id="mainTable">
                     <thead class="table-dark text-center">
@@ -70,12 +74,47 @@
                 <div class="row mb-4">
                     <div class="col-md-4 text-center" id="v_PicContainer"></div>
                     <div class="col-md-8">
-                        <div class="row g-3">
-                            <div class="col-md-6"><p><span class="info-label">Tên chi tiết:</span> <span id="v_PartName" class="copy-cursor"></span></p></div>
-                            <div class="col-md-6"><p><span class="info-label">Kích thước phôi:</span> <span id="v_Size" class="copy-cursor"></span></p></div>
-                            <div class="col-md-6"><p><span class="info-label">Vật liệu:</span> <span id="v_Material" class="copy-cursor"></span></p></div>
-                            <div class="col-md-6"><p><span class="info-label">Phiên bản:</span> <span id="v_Version" class="badge bg-info text-dark"></span></p></div>
-                            <div class="col-md-12"><p><span class="info-label">Ghi chú:</span> <span id="v_Note" class="copy-cursor"></span></p></div>
+                        <div class="card border-0 shadow-sm bg-light">
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="p-2 border-bottom">
+                                            <small class="text-muted d-block fw-bold mb-1 text-uppercase" style="font-size: 0.75rem;">Tên chi tiết</small>
+                                            <span id="v_PartName" class="copy-cursor fw-bold text-primary"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-2 border-bottom">
+                                            <small class="text-muted d-block fw-bold mb-1 text-uppercase" style="font-size: 0.75rem;">Kích thước phôi</small>
+                                            <span id="v_Size" class="copy-cursor" style="white-space: pre-line;"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-2 border-bottom">
+                                            <small class="text-muted d-block fw-bold mb-1 text-uppercase" style="font-size: 0.75rem;">Vật liệu</small>
+                                            <span id="v_Material" class="copy-cursor"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-2 border-bottom text-center">
+                                            <small class="text-muted d-block fw-bold mb-1 text-uppercase text-start" style="font-size: 0.75rem;">Phiên bản</small>
+                                            <span id="v_Version" class="badge rounded-pill bg-info text-dark px-3"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-2 bg-white rounded shadow-xs mt-1 border">
+                                            <small class="text-muted d-block fw-bold mb-1 text-uppercase" style="font-size: 0.75rem;">Ghi chú</small>
+                                            <span id="v_Note" class="copy-cursor italic"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-2 bg-white rounded shadow-xs mt-1 border">
+                                            <small class="text-muted d-block fw-bold mb-1 text-uppercase" style="font-size: 0.75rem;">Nội dung sửa đổi</small>
+                                            <span id="v_ModifiedContent" class="copy-cursor text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -103,6 +142,10 @@
                     </div>
                 </div>
             </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-success" onclick="printProcess(selectedId)">In quy trình</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
         </div>
     </div>
 </div>
@@ -127,9 +170,10 @@
                         <div class="col-md-9">
                             <div class="row g-3">
                                 <div class="col-md-4"><label class="form-label">Tên chi tiết *</label><input type="text" class="form-control" id="partName"></div>
-                                <div class="col-md-4"><label class="form-label">Kích thước phôi *</label><input type="text" class="form-control" id="workpieceSize"></div>
+                                <div class="col-md-4"><label class="form-label">Kích thước phôi *</label><textarea class="form-control" id="workpieceSize" style="height: auto; min-height: 50px;"></textarea></div>
                                 <div class="col-md-4"><label class="form-label">Vật liệu *</label><input type="text" class="form-control" id="material"></div>
-                                <div class="col-md-12"><label class="form-label">Ghi chú</label><input type="text" class="form-control" id="note"></div>
+                                <div class="col-md-6"><label class="form-label">Ghi chú</label><input type="text" class="form-control" id="note"></div>
+                                <div class="col-md-6"><label class="form-label">Nội dung sửa đổi</label><input type="text" class="form-control" id="modifiedContent"></div>
                             </div>
                         </div>
                     </div>
@@ -165,7 +209,39 @@
     </div>
 </div>
 
-<div id="printArea" style="display: none;">
+<div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importExcelModalLabel">Import Dữ liệu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="importForm" method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div id="import-alert" class="alert d-none" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label for="excelFile" class="form-label">Chọn File Excel (.xlsx, .xls)</label>
+                        <input class="form-control" type="file" id="excelFile" name="excelFile" accept=".xlsx, .xls" required>
+                    </div>
+
+                    <p>
+                        Vui lòng đảm bảo dùng đúng file excel mẫu.
+                    </p>
+                    <a href="~/production/ProductionProcessess/DownloadTemplate" class="btn btn-sm btn-info" download>
+                        <i class="mdi mdi-download"></i> Tải file mẫu Import
+                    </a>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary" id="btnImport">
+                        <span id="spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        <span id="btnText">Thực hiện Import</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
@@ -183,12 +259,6 @@
             const year = d.getFullYear();
     
             return `${day}/${month}/${year}`;
-        }
-
-        function formatWorkpieceSize(size) {
-            if (!size) return '';
-            const parts = size.split('+').map(p => p.trim()).filter(p => p !== '');
-            return parts.join('<br/>');
         }
 
         $(document).ready(function() {
@@ -228,23 +298,22 @@
                 const createdDate = formatDate(i.createdDate);
                 const updatedDate = formatDate(i.updatedDate);
                 const updatedBy = i.updatedBy || '---';
-                const workpieceSizeHtml = formatWorkpieceSize(i.workpieceSize);
 
                 html += `<tr data-id="${i.id}" style="cursor:context-menu">
                     <td class="text-center">${index + 1}</td>
                     <td class="text-center">
                         ${i.picture ? `<img src="${i.picture}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">` : ''}
                     </td>
-                    <td class="fw-bold">${i.partName}</td>
-                    <td>${workpieceSizeHtml || ''}</td>
+                    <td class="fw-bold" onclick="viewDetail(${i.id})">${i.partName}</td>
+                    <td>${i.workpieceSize || ''}</td>
                     <td>${i.material || ''}</td>
-                    <td class="text-center"><span class="badge bg-primary">V${i.version}</span></td>
+                    <td class="text-center"><span class="badge bg-info">V${i.version}</span></td>
                     <td>
-                        <div class="small fw-bold">${i.createdBy}</div>
+                        <div class="fw-bold">${i.createdBy}</div>
                         <div class="small text-muted">${createdDate}</div>
                     </td>
                     <td>
-                        <div class="small fw-bold">${updatedBy}</div>
+                        <div class="fw-bold">${updatedBy}</div>
                         <div class="small text-muted">${updatedDate}</div>
                     </td>
                 </tr>`;
@@ -253,13 +322,15 @@
         }
 
         async function viewDetail(id) {
+            selectedId = id;
             const res = await $.get('/Production/ProductionProcessess/GetDetails?id=' + id);
             const h = res.header;
             $('#v_PartNameHeader, #v_PartName').text(h.partName);
             $('#v_Version').text('V' + h.version);
-            $('#v_Size').html(formatWorkpieceSize(h.workpieceSize));
+            $('#v_Size').html(h.workpieceSize);
             $('#v_Material').text(h.material || '');
             $('#v_Note').text(h.note || '');
+            $('#v_ModifiedContent').text(h.modifiedContent || '');
             $('#v_PicContainer').html(h.picture ? `<img src="${h.picture}" class="img-detail-large shadow-sm">` : '');
             $('#v_CreatedBy').text(h.createdBy);
             $('#v_CreatedDate').text(h.createdDate);
@@ -272,11 +343,11 @@
                     <td class="text-center fw-bold">${s.stepNumber}</td>
                     <td class="text-center">${s.picture ? `<img src="${s.picture}" class="img-in-table shadow-sm" onclick="window.open(this.src)">` : ''}</td>
                     <td class="copy-cursor">${s.department}</td>
-                    <td class="text-center copy-cursor">${s.qtyPerSet || '1'}</td>
                     <td class="copy-cursor">${s.content || ''}</td>
                     <td class="copy-cursor">${s.fixture || ''}</td>
+                    <td class="text-center copy-cursor">${s.qtyPerSet || '1'}</td>
                     <td class="text-center fw-bold text-danger copy-cursor">${s.estimatedTime}</td>
-                    <td>${s.note}</td>
+                    <td>${s.note || ''}</td>
                 </tr>`;
             });
             $('#v_StepTableBody').html(stepsHtml);
@@ -295,6 +366,7 @@
                 $('#workpieceSize').val(res.header.workpieceSize);
                 $('#material').val(res.header.material);
                 $('#note').val(res.header.note);
+                $('#modifiedContent').val(res.header.modifiedContent);
                 if(res.header.picture) $('#headerPreview').show().attr('src', res.header.picture);
                 res.steps.forEach(s => $('#stepBody').append(addStepRow(s)));
             } else {
@@ -314,13 +386,17 @@
                     ${imgHtml}<input type="hidden" class="old-path" value="${data.picture || ''}">
                 </td>
                 <td><input type="text" class="form-control form-control-sm dep" value="${data.department || ''}"></td>
-                <td><input type="text" class="form-control form-control-sm content" value="${data.content || ''}"></td>
+                <td>
+                    <textarea class="form-control content" style="height: auto; min-height: 50px;">${data.content || ''}</textarea>
+                </td>
                 <td><input type="text" class="form-control form-control-sm fix" value="${data.fixture || ''}"></td>
                 <td><input type="text" class="form-control form-control-sm qty" value="${data.qtyPerSet || '1'}"></td>
-                <td><input type="number" step="0.1" class="form-control form-control-sm time text-center" value="${data.estimatedTime || 0}"></td>
-                <td><input type="text" class="form-control form-control-sm note" value="${data.note || ''}"></td>
+                <td><input type="number" step="0.1" class="form-control form-control-sm time text-center" value="${data.estimatedTime}"></td>
+                <td>
+                    <textarea class="form-control note" style="height: auto; min-height: 50px;">${data.note || ''}</textarea>
+                </td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-link text-danger p-0" onclick="$(this).closest('tr').remove();reorderSteps();">
+                    <button type="button" class="btn text-danger p-0" onclick="$(this).closest('tr').remove();reorderSteps();">
                         X
                     </button>
                 </td>
@@ -345,6 +421,7 @@
             formData.append('header.WorkpieceSize', $('#workpieceSize').val());
             formData.append('header.Material', $('#material').val());
             formData.append('header.Note', $('#note').val());
+            formData.append('header.ModifiedContent', $('#modifiedContent').val());
             formData.append('createNewVersion', $('#chkNewVersion').is(':checked'));
             if ($('#headerFile')[0].files[0]) formData.append('HeaderFile', $('#headerFile')[0].files[0]);
 
@@ -429,5 +506,71 @@
         function printProcess(id) {
             window.open('/Production/ProductionProcessess/Print?id=' + id, '_blank');
         }
+
+            const importForm = document.getElementById('importForm');
+            const btnImport = document.getElementById('btnImport');
+            const btnText = document.getElementById('btnText');
+            const spinner = document.getElementById('spinner');
+            const importModal = new bootstrap.Modal(document.getElementById('importExcelModal'));
+
+            importForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const file = document.getElementById('excelFile').files[0];
+                if (!file) {
+                    Swal.fire('Thao tác thất bại', 'Vui lòng chọn một file Excel để import.', 'warning');
+                    return;
+                }
+
+                btnImport.disabled = true;
+                btnText.textContent = 'Đang xử lý...';
+                spinner.classList.remove('d-none');
+
+                const formData = new FormData(importForm);
+
+                fetch('/production/ProductionProcessess/Import', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else if (response.status === 400 || response.status === 500) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.message);
+                        });
+                    }
+                    throw new Error('Lỗi không xác định: ' + response.statusText);
+                })
+                .then(data => {
+                    importModal.hide();
+                    Swal.fire({
+                        title: 'Import Thành công! 🎉',
+                        html: data.message,
+                        icon: 'success',
+                        confirmButtonText: 'Đã hiểu'
+                    }).then(() => {
+                        location.reload();
+                    });
+                })
+                .catch(error => {
+                    importModal.hide();
+                    console.error('Lỗi khi Import:', error);
+
+                    Swal.fire({
+                        title: 'Import Thất bại! ❌',
+                        html: error.message,
+                        icon: 'error',
+                        confirmButtonText: 'Đóng'
+                    }).then(() => {
+                         importModal.show();
+                    });
+                })
+                .finally(() => {
+                    btnImport.disabled = false;
+                    btnText.textContent = 'Thực hiện Import';
+                    spinner.classList.add('d-none');
+                });
+            });
     </script>
 }

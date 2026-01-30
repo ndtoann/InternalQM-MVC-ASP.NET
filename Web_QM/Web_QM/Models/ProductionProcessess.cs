@@ -29,5 +29,7 @@ namespace Web_QM.Models
         public DateOnly? UpdatedDate { get; set; }
 
         public string? Note { get; set; }
+
+        public string? ModifiedContent { get; set; }
     }
 }

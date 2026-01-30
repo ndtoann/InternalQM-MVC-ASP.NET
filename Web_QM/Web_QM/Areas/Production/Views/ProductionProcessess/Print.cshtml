@@ -22,6 +22,7 @@
             border: 1px solid black;
             padding: 8px;
             font-size: 14px;
+            white-space: pre-line;
         }
 
         .bg-gray {
@@ -63,16 +64,7 @@
         </tr>
         <tr>
             <td class="bg-gray">Kích thước phôi:</td>
-            <td>
-                @if (!string.IsNullOrEmpty(Model.WorkpieceSize))
-                {
-                    var sizeParts = Model.WorkpieceSize.Split('+')
-                    .Select(s => s.Trim())
-                    .Where(s => !string.IsNullOrEmpty(s));
-
-                    @Html.Raw(string.Join("<br />", sizeParts))
-                }
-            </td>
+            <td>@Model.WorkpieceSize</td>
             <td class="bg-gray">Phiên bản:</td>
             <td>@("V" + Model.Version)</td>
         </tr>
@@ -85,6 +77,8 @@
         <tr>
             <td class="bg-gray">Ghi chú:</td>
             <td>@Model.Note</td>
+            <td class="bg-gray">Nội dung sửa đổi:</td>
+            <td>@Model.ModifiedContent</td>
         </tr>
     </table>
 
@@ -97,13 +91,13 @@
 
     <table style="border-top: none;">
         <tr class="bg-gray text-center">
-            <td style="width:60px">Nguyên công</td>
-            <td style="width:160px">Ảnh mô tả</td>
+            <td style="width:50px">Nguyên công</td>
+            <td style="width:150px">Ảnh mô tả</td>
             <td style="width:60px">Nơi GC</td>
             <td>Nội dung gia công</td>
             <td>Đồ gá</td>
             <td>SL/1 lần gá</td>
-            <td style="width:100px">TGGC</td>
+            <td style="width:50px">TGGC</td>
             <td>Ghi chú</td>
         </tr>
         @foreach (var s in steps)

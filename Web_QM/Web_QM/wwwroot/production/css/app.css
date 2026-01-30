@@ -71,3 +71,12 @@
     border-radius: 5px;
     border: 1px solid #dee2e6;
 }
+
+#v_StepTableBody td, #mainTable td, #v_Size {
+    line-height: 1.2;
+    white-space: pre-line;
+}
+
+#workpieceSize, .content {
+    line-height: 1.2;
+}

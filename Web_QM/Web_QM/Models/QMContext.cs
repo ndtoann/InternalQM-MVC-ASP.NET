@@ -469,6 +469,7 @@ public partial class QMContext : DbContext
             entity.Property(e => e.CreatedBy).HasMaxLength(255);
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);
             entity.Property(e => e.Picture).HasMaxLength(255);
+            entity.Property(e => e.ModifiedContent).HasMaxLength(255);
         });
 
         modelBuilder.Entity<ProcessStep>(entity => {
