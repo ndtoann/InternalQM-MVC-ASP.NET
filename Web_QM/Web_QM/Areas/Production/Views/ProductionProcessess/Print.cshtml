@@ -46,6 +46,10 @@
                 display: none;
             }
         }
+
+        .fw-bold{
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -54,46 +58,50 @@
         <button onclick="window.close()" style="padding: 10px 20px; cursor: pointer;">ĐÓNG</button>
     </div>
 
-    <div style="text-align:center; font-weight:bold; font-size:20px; border:1px solid black; padding:10px;">QUY TRÌNH GIA CÔNG</div>
+    <div style="text-align:center; font-weight:bold; font-size:20px; border:1px solid black; padding:10px;">QUY TRÌNH GIA CÔNG TẠM THỜI</div>
     <table>
         <tr>
             <td class="bg-gray" style="width:15%">Tên chi tiết:</td>
-            <td style="width:35%">@Model.PartName</td>
+            <td style="width:35%" class="fw-bold">@Model.PartName</td>
             <td class="bg-gray" style="width:15%">Ngày lập:</td>
             <td>@Model.CreatedDate.ToString("dd/MM/yyyy") / @Model.CreatedBy</td>
         </tr>
         <tr>
-            <td class="bg-gray">Kích thước phôi:</td>
-            <td>@Model.WorkpieceSize</td>
+            <td class="bg-gray">Tên bản vẽ:</td>
+            <td>@Model.DrawingName</td>
             <td class="bg-gray">Phiên bản:</td>
             <td>@("V" + Model.Version)</td>
         </tr>
         <tr>
-            <td class="bg-gray">Vật liệu:</td>
-            <td>@Model.Material</td>
+            <td class="bg-gray">Kích thước phôi:</td>
+            <td>@Model.WorkpieceSize</td>
             <td class="bg-gray">Ngày sửa:</td>
             <td>@Model.UpdatedDate?.ToString("dd/MM/yyyy") / @Model.UpdatedBy</td>
         </tr>
         <tr>
-            <td class="bg-gray">Ghi chú:</td>
-            <td>@Model.Note</td>
+            <td class="bg-gray">Vật liệu:</td>
+            <td>@Model.Material</td>
             <td class="bg-gray">Nội dung sửa đổi:</td>
             <td>@Model.ModifiedContent</td>
+        </tr>
+        <tr>
+            <td class="bg-gray">Ghi chú:</td>
+            <td>@Model.Note</td>
         </tr>
     </table>
 
     <div style="text-align:center; border: 1px solid black; border-top: none; padding: 10px;">
-        @if (!string.IsNullOrEmpty(Model.Picture))
+        @* @if (!string.IsNullOrEmpty(Model.Picture))
         {
             <img src="@Model.Picture" style="max-height:150px;">
-        }
+        } *@
     </div>
 
     <table style="border-top: none;">
         <tr class="bg-gray text-center">
             <td style="width:50px">Nguyên công</td>
-            <td style="width:150px">Ảnh mô tả</td>
-            <td style="width:60px">Nơi GC</td>
+            @* <td style="width:150px">Ảnh mô tả</td> *@
+            <td style="width:70px">Nơi GC</td>
             <td>Nội dung gia công</td>
             <td>Đồ gá</td>
             <td>SL/1 lần gá</td>
@@ -104,12 +112,12 @@
         {
             <tr>
                 <td class="text-center">@s.StepNumber/@steps.Count</td>
-                <td class="text-center">
+                @* <td class="text-center">
                     @if (!string.IsNullOrEmpty(s.Picture))
                     {
                         <img src="@s.Picture" class="img-step">
                     }
-                </td>
+                </td> *@
                 <td>@s.Department</td>
                 <td>@s.Content</td>
                 <td class="text-center">@s.Fixture</td>

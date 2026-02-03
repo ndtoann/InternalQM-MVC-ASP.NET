@@ -70,7 +70,7 @@ namespace Web_QM.Areas.Warehouse.Controllers
                     Note = x.log.Note ?? "",
                     ToolCode = x.t != null ? (x.t.ToolCode ?? "") : "N/A",
                     ToolName = x.t != null ? (x.t.ToolName ?? "") : "N/A"
-                }).ToList();
+                }).Take(500).ToList();
 
                 return Json(result);
             }

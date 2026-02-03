@@ -36,9 +36,9 @@
                     </form>
                     <a class="btn btn-success" id="import" href="#" data-bs-toggle="modal" data-bs-target="#importExcelModal" asp-policy="AddToolSupplyLog">Nhập excel</a>
                     <a class="btn btn-success" id="export" href="~/warehouse/toolSupplyLog/ExportToExcel">Xuất excel</a>
-                    <div class="table-responsive">
+                    <div class="table-responsive overflow-auto" style="height: 1000px;">
                         <table class="table table-hover table-bordered">
-                            <thead>
+                            <thead class="text-white bg-dark" style="position: sticky; top: 0; z-index: 1;">
                                 <tr>
                                     <th>STT</th>
                                     <th>Ngày thực hiện</th>
@@ -179,6 +179,7 @@
             const logModal = new bootstrap.Modal(document.getElementById('logModal'));
             const logForm = document.getElementById('logForm');
             const contextMenu = document.getElementById('contextMenu');
+            const searchForm = document.querySelector('.form-sample');
             let selectedId = null;
 
             loadLogData();
@@ -209,6 +210,15 @@
                     tableBody.innerHTML = html;
                 });
             }
+
+            searchForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const formData = new FormData(searchForm);
+                loadLogData({
+                    type: formData.get('type'),
+                    key_search: formData.get('key_search')
+                });
+            });
 
             tableBody.addEventListener('contextmenu', function (e) {
                 const row = e.target.closest('tr');

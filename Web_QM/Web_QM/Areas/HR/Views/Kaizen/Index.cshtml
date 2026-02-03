@@ -64,9 +64,9 @@
                     </form>
                     <a class="btn btn-success" href="~/hr/kaizen/add" asp-policy="AddKaizen">Thêm mới</a>
                     <a class="btn btn-success" href="#" data-bs-toggle="modal" data-bs-target="#importExcelModal" asp-policy="AddKaizen">Import Excel</a>
-                    <div class="table-responsive">
+                    <div class="table-responsive overflow-auto" style="height: 1000px;">
                         <table class="table table-hover table-bordered">
-                            <thead>
+                            <thead class="text-white bg-dark" style="position: sticky; top: 0; z-index: 1;">
                                 <tr>
                                     <th>STT</th>
                                     <th>Ngày-Tháng</th>

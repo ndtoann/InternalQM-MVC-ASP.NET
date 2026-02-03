@@ -464,6 +464,7 @@ public partial class QMContext : DbContext
 
         modelBuilder.Entity<ProductionProcessess>(entity => {
             entity.Property(e => e.PartName).HasMaxLength(255);
+            entity.Property(e => e.DrawingName).HasMaxLength(255);
             entity.Property(e => e.WorkpieceSize).HasMaxLength(255);
             entity.Property(e => e.Material).HasMaxLength(255);
             entity.Property(e => e.CreatedBy).HasMaxLength(255);

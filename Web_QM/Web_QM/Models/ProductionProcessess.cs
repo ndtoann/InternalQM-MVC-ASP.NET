@@ -9,6 +9,8 @@ namespace Web_QM.Models
         [Required]
         public string PartName { get; set; }
 
+        public string? DrawingName { get; set; }
+
         public string? Picture { get; set; }
 
         [Required]

@@ -45,13 +45,17 @@
 
                     <div class="filter-section mb-3">
                         <form id="searchForm" class="row g-2">
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="small fw-bold">Tìm kiếm</label>
-                                <input type="text" class="form-control" name="key_search" placeholder="Nhập vào đây để tìm kiếm" />
+                                <input type="text" class="form-control" name="tool_s" placeholder="Vật tư" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="small fw-bold">Tìm kiếm</label>
+                                <input type="text" class="form-control" name="machine_s" placeholder="Máy" />
                             </div>
                             <div class="col-md-2">
                                 <label class="small fw-bold">Trạng thái</label>
-                                <select class="form-control" name="status">
+                                <select class="form-control" name="status" style="color:#000">
                                     <option value="">-- Tất cả --</option>
                                     <option value="pending">Chưa trả</option>
                                     <option value="completed">Đã trả</option>
@@ -65,7 +69,7 @@
                                 <label class="small fw-bold">Đến ngày</label>
                                 <input type="date" class="form-control" name="toDate" value="@currDate" />
                             </div>
-                            <div class="col-md-3 d-flex align-items-end">
+                            <div class="col-md-2 d-flex align-items-end">
                                 <button type="submit" class="btn btn-primary me-1">Tìm kiếm</button>
                             </div>
                         </form>
@@ -75,9 +79,9 @@
                     <a class="btn btn-success" id="import" href="#" data-bs-toggle="modal" data-bs-target="#importExcelModal" asp-policy="AddIssueReturnLog">Nhập excel</a>
                     <a class="btn btn-success" id="export" href="~/warehouse/IssueReturnLog/ExportToExcel">Xuất excel</a>
 
-                    <div class="table-responsive mt-3">
+                    <div class="table-responsive overflow-auto" style="height: 1000px;">
                         <table class="table table-hover table-bordered">
-                            <thead>
+                            <thead class="text-white bg-dark" style="position: sticky; top: 0; z-index: 1;">
                                 <tr>
                                     <th>STT</th>
                                     <th>Vật tư</th>
@@ -164,7 +168,7 @@
                             <div class="col-md-3">
                                 <div class="form-group">
                                     <label>Vật liệu sử dụng</label>
-                                    <select class="form-control" name="IntendedUse">
+                                    <select class="form-control" name="IntendedUse" style="color: #000;">
                                         <option value="">--- Chọn ---</option>
                                         <option value="AL">AL</option>
                                         <option value="CU">CU</option>
@@ -239,14 +243,15 @@
             loadMachines();
             loadEmployees();
 
-            $.get('/warehouse/tool/GetTools', function (data) {
+            $.get('/warehouse/IssueReturnLog/GetTools', function (data) {
                 toolOptions = '<option value="">-- Chọn vật tư --</option>';
-                data.forEach(t => toolOptions += `<option value="${t.id}">${t.toolCode} - ${t.toolName} (Tồn: ${t.availableQty})</option>`);
+                data.forEach(t => toolOptions += `<option value="${t.id}">${t.text})</option>`);
             });
 
             function loadLogs() {
                 let params = {
-                    key_search: $('input[name="key_search"]').val(),
+                    tool_s: $('input[name="tool_s"]').val(),
+                    machine_s: $('input[name="machine_s"]').val(),
                     status: $('select[name="status"]').val(),
                     fromDate: $('input[name="fromDate"]').val(),
                     toDate: $('input[name="toDate"]').val()
@@ -312,7 +317,7 @@
                 const row = `
                 <tr class="issue-row" id="${rowId}">
                     <td><select class="form-control select2-tool" name="ToolId" style="width:100%" required>${toolOptions}</select></td>
-                    <td><select class="form-control" name="IntendedUse"><option value="">--- Chọn ---</option><option value="AL">AL</option><option value="CU">CU</option><option value="POM">POM</option><option value="SS, SUS">SS, SUS</option></select></td>
+                    <td><select class="form-control" name="IntendedUse" style="color:#000;"><option value="">--- Chọn ---</option><option value="AL">AL</option><option value="CU">CU</option><option value="POM">POM</option><option value="SS, SUS">SS, SUS</option></select></td>
                     <td><input type="date" class="form-control" name="IssuedDate" value="${today}" required /></td>
                     <td><input type="number" class="form-control" name="IssuedQty" min="1" value="1" required /></td>
                     <td><input type="text" class="form-control" name="IssuedStaff" list="employeeList" required /></td>

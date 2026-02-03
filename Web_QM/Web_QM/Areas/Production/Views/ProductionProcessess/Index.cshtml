@@ -34,13 +34,17 @@
             </div>
             <a href="#" class="btn btn-success" onclick="openModal(0)" asp-policy="AddProductionProcessess">Thêm mới</a>
             <a class="btn btn-success" id="import" href="#" data-bs-toggle="modal" data-bs-target="#importExcelModal" asp-policy="AddProductionProcessess">Nhập excel</a>
-            <div class="table-responsive">
+            <a href="#" class="btn btn-success" id="btnExport">Xuất excel</a>
+            <div class="table-responsive overflow-auto" style="height: 1000px;">
                 <table class="table table-hover table-bordered align-middle" id="mainTable">
-                    <thead class="table-dark text-center">
+                    <thead class="text-white bg-dark" style="position: sticky; top: 0; z-index: 1;">
                         <tr>
                             <th>STT</th>
-                            <th>Ảnh</th>
+                            <th>
+                                <input type="checkbox" id="checkAll" />
+                            </th>
                             <th>Tên chi tiết</th>
+                            <th>Bản vẽ</th>
                             <th>Kích thước phôi</th>
                             <th>Vật liệu</th>
                             <th>Phiên bản</th>
@@ -68,6 +72,7 @@
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">QUY TRÌNH: <span id="v_PartNameHeader"></span></h5>
+                <span id="v_Version" class="badge rounded-pill bg-info text-dark px-3"></span>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -85,6 +90,12 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="p-2 border-bottom">
+                                            <small class="text-muted d-block fw-bold mb-1 text-uppercase" style="font-size: 0.75rem;">Bản vẽ</small>
+                                            <span id="v_DrawingName" class="copy-cursor fw-bold text-primary"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-2 border-bottom">
                                             <small class="text-muted d-block fw-bold mb-1 text-uppercase" style="font-size: 0.75rem;">Kích thước phôi</small>
                                             <span id="v_Size" class="copy-cursor" style="white-space: pre-line;"></span>
                                         </div>
@@ -96,12 +107,6 @@
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="p-2 border-bottom text-center">
-                                            <small class="text-muted d-block fw-bold mb-1 text-uppercase text-start" style="font-size: 0.75rem;">Phiên bản</small>
-                                            <span id="v_Version" class="badge rounded-pill bg-info text-dark px-3"></span>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
                                         <div class="p-2 bg-white rounded shadow-xs mt-1 border">
                                             <small class="text-muted d-block fw-bold mb-1 text-uppercase" style="font-size: 0.75rem;">Ghi chú</small>
                                             <span id="v_Note" class="copy-cursor italic"></span>
@@ -109,7 +114,7 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="p-2 bg-white rounded shadow-xs mt-1 border">
-                                            <small class="text-muted d-block fw-bold mb-1 text-uppercase" style="font-size: 0.75rem;">Nội dung sửa đổi</small>
+                                            <small id="modifiedHistory" class="text-muted d-block fw-bold mb-1 text-uppercase" style="font-size: 0.75rem; cursor:pointer">Nội dung sửa đổi</small>
                                             <span id="v_ModifiedContent" class="copy-cursor text-danger"></span>
                                         </div>
                                     </div>
@@ -150,6 +155,32 @@
     </div>
 </div>
 
+<div class="modal fade" id="historyModal" tabindex="-1" style="z-index: 1060;">
+    <div class="modal-dialog modal-lg modal-right">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-info text-dark">
+                <h6 class="modal-title fw-bold"><i class="fas fa-history me-2"></i>LỊCH SỬ SỬA ĐỔI</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover border">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center" style="width: 15%;">Phiên bản</th>
+                                <th>Nội dung sửa đổi</th>
+                                <th style="width: 20%;">Ngày tạo</th>
+                                <th style="width: 20%;">Ngày cập nhật</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="processModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -170,10 +201,11 @@
                         <div class="col-md-9">
                             <div class="row g-3">
                                 <div class="col-md-4"><label class="form-label">Tên chi tiết *</label><input type="text" class="form-control" id="partName"></div>
+                                <div class="col-md-4"><label class="form-label">Tên bản vẽ</label><input type="text" class="form-control" id="drawingName"></div>
                                 <div class="col-md-4"><label class="form-label">Kích thước phôi *</label><textarea class="form-control" id="workpieceSize" style="height: auto; min-height: 50px;"></textarea></div>
                                 <div class="col-md-4"><label class="form-label">Vật liệu *</label><input type="text" class="form-control" id="material"></div>
-                                <div class="col-md-6"><label class="form-label">Ghi chú</label><input type="text" class="form-control" id="note"></div>
-                                <div class="col-md-6"><label class="form-label">Nội dung sửa đổi</label><input type="text" class="form-control" id="modifiedContent"></div>
+                                <div class="col-md-4"><label class="form-label">Ghi chú</label><textarea class="form-control" id="note" style="height: auto; min-height: 50px;"></textarea></div>
+                                <div class="col-md-4"><label class="form-label">Nội dung sửa đổi</label><textarea class="form-control" id="modifiedContent" style="height: auto; min-height: 50px;"></textarea></div>
                             </div>
                         </div>
                     </div>
@@ -184,7 +216,7 @@
                                     <th style="width:30px"></th>
                                     <th style="width:40px">Nguyên công</th>
                                     <th style="width:100px">Ảnh mô tả</th>
-                                    <th style="width:200px">Bộ phận *</th>
+                                    <th style="width:200px">Máy *</th>
                                     <th>Nội dung gia công</th>
                                     <th style="width:150px">Đồ gá</th>
                                     <th style="width:150px">SL/1 lần gá</th>
@@ -301,10 +333,11 @@
 
                 html += `<tr data-id="${i.id}" style="cursor:context-menu">
                     <td class="text-center">${index + 1}</td>
-                    <td class="text-center">
-                        ${i.picture ? `<img src="${i.picture}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">` : ''}
+                    <td>
+                        <input type="checkbox" class="checkItem" data-id="${i.id}" />
                     </td>
                     <td class="fw-bold" onclick="viewDetail(${i.id})">${i.partName}</td>
+                    <td class="fw-bold">${i.drawingName || ''}</td>
                     <td>${i.workpieceSize || ''}</td>
                     <td>${i.material || ''}</td>
                     <td class="text-center"><span class="badge bg-info">V${i.version}</span></td>
@@ -326,6 +359,7 @@
             const res = await $.get('/Production/ProductionProcessess/GetDetails?id=' + id);
             const h = res.header;
             $('#v_PartNameHeader, #v_PartName').text(h.partName);
+            $('#v_DrawingName').text(h.drawingName || '');
             $('#v_Version').text('V' + h.version);
             $('#v_Size').html(h.workpieceSize);
             $('#v_Material').text(h.material || '');
@@ -354,15 +388,54 @@
             $('#viewModal').modal('show');
         }
 
+        $(document).on('click', '#modifiedHistory', function () {
+            const partName = $('#v_PartName').text();
+            const currentVerText = $('#v_Version').text();
+            const currentVersion = parseInt(currentVerText.replace(/[^\d]/g, ''));
+
+            if (!partName) return;
+
+            $.get('/production/ProductionProcessess/GetRevisionHistory', {
+                partName: partName,
+                currentVersion: currentVersion
+            }, function (data) {
+                let html = '';
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        html += `
+                            <tr>
+                                <td class="text-center"><span class="badge bg-info">V${item.version}</span></td>
+                                <td class="text-wrap">${item.content || '---'}</td>
+                                <td>${item.created || '---'}</td>
+                                <td>${item.updated || '---'}</td>
+                            </tr>`;
+                    });
+                } else {
+                    html = '<tr><td colspan="4" class="text-center text-muted">Không có dữ liệu</td></tr>';
+                }
+                $('#historyTableBody').html(html);
+                $('#historyModal').modal('show');
+            });
+        });
+        $(document).on('hidden.bs.modal', '#historyModal', function () {
+            if ($('#viewModal').hasClass('show')) {
+                $('body').addClass('modal-open');
+                $('#viewModal').css('overflow-y', 'auto');
+            }
+        });
+
         async function openModal(id) {
             $('#processForm')[0].reset();
+            $('#chkNewVersion').prop('checked', false);
             $('#stepBody').empty();
             $('#headerPreview').hide().attr('src', '');
             $('#processId').val(id);
             $('#versionOption').toggleClass('d-none', id === 0);
+            $('#modifiedContent').toggleClass('d-none', id === 0);
             if (id > 0) {
                 const res = await $.get('/Production/ProductionProcessess/GetDetails?id=' + id);
                 $('#partName').val(res.header.partName);
+                $('#drawingName').val(res.header.drawingName);
                 $('#workpieceSize').val(res.header.workpieceSize);
                 $('#material').val(res.header.material);
                 $('#note').val(res.header.note);
@@ -377,7 +450,17 @@
         }
 
         function addStepRow(data) {
+            const departments = [
+                "Phay CNC", "Tiện CNC", "Phay cơ", "Tiện cơ", "Cắt dây", 
+                "Taro", "Bavia", "Kiểm tra", "Đánh bóng", "Mạ", "Cưa", "Phun cát"
+            ];
+
+            let depOptions = departments.map(dep => 
+                `<option value="${dep}" ${data.department === dep ? 'selected' : ''}>${dep}</option>`
+            ).join('');
+
             const imgHtml = data.picture ? `<img src="${data.picture}" class="img-step-edit" onclick="$(this).prev().click()">` : `<button type="button" class="btn btn-sm btn-outline-secondary" onclick="$(this).prev().click()"><i class="fa fa-image"></i></button>`;
+    
             return $(`<tr>
                 <td class="drag-handle text-center">☰</td>
                 <td class="step-num text-center fw-bold"></td>
@@ -385,7 +468,12 @@
                     <input type="file" class="d-none step-file" accept="image/*" onchange="previewStepImg(this)">
                     ${imgHtml}<input type="hidden" class="old-path" value="${data.picture || ''}">
                 </td>
-                <td><input type="text" class="form-control form-control-sm dep" value="${data.department || ''}"></td>
+                <td>
+                    <select class="form-select form-select-sm dep">
+                        <option value="">-- Chọn --</option>
+                        ${depOptions}
+                    </select>
+                </td>
                 <td>
                     <textarea class="form-control content" style="height: auto; min-height: 50px;">${data.content || ''}</textarea>
                 </td>
@@ -418,6 +506,7 @@
             const formData = new FormData();
             formData.append('header.Id', $('#processId').val());
             formData.append('header.PartName', $('#partName').val().trim());
+            formData.append('header.DrawingName', $('#drawingName').val().trim());
             formData.append('header.WorkpieceSize', $('#workpieceSize').val());
             formData.append('header.Material', $('#material').val());
             formData.append('header.Note', $('#note').val());
@@ -572,5 +661,76 @@
                     spinner.classList.add('d-none');
                 });
             });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const btnExport = document.getElementById('btnExport');
+
+            $(document).on('change', '#checkAll', function () {
+                $('.checkItem').prop('checked', this.checked);
+            });
+
+            $(document).on('change', '.checkItem', function () {
+                const allChecked = $('.checkItem').length > 0 && $('.checkItem:checked').length === $('.checkItem').length;
+                $('#checkAll').prop('checked', allChecked);
+            });
+
+            if (btnExport) {
+                btnExport.addEventListener('click', function () {
+                    const selectedIds = Array.from(document.querySelectorAll('.checkItem:checked'))
+                        .map(item => parseInt(item.getAttribute('data-id')));
+
+                    if (selectedIds.length === 0) {
+                        Swal.fire('Thông báo', 'Vui lòng chọn ít nhất một mục để xuất excel.', 'warning');
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'Xuất excel',
+                        text: `Xuất ${selectedIds.length} quy trình đã chọn?`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Đồng ý',
+                        cancelButtonText: 'Hủy'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            Swal.fire({
+                                title: 'Đang xử lý...',
+                                didOpen: () => { Swal.showLoading(); }
+                            });
+
+                            fetch('/production/ProductionProcessess/ExportExcels', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(selectedIds)
+                            })
+                            .then(response => {
+                                if (!response.ok) throw new Error('Lỗi xuất file.');
+                                return response.blob();
+                            })
+                            .then(blob => {
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                const now = new Date();
+                                const d = String(now.getDate()).padStart(2, '0');
+                                const m = String(now.getMonth() + 1).padStart(2, '0');
+                                const y = now.getFullYear();
+                                a.download = `QuyTrinhGiaCong_${d}${m}${y}.zip`;
+                                document.body.appendChild(a);
+                                a.click();
+                                a.remove();
+                                window.URL.revokeObjectURL(url);
+                                Swal.close();
+                            })
+                            .catch(error => {
+                                Swal.fire('Lỗi!', error.message, 'error');
+                            });
+                        }
+                    });
+                });
+            }
+        });
     </script>
 }

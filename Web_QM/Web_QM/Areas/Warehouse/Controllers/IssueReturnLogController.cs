@@ -29,19 +29,23 @@ namespace Web_QM.Areas.Warehouse.Controllers
         }
 
         [Authorize(Policy = "ViewIssueReturnLog")]
-        public async Task<IActionResult> GetIssueReturnLogs(string? key_search, string? status, string? fromDate, string? toDate)
+        public async Task<IActionResult> GetIssueReturnLogs(string? tool_s, string? machine_s, string? status, string? fromDate, string? toDate)
         {
             var query = from log in _context.IssueReturnLogs
                         join tool in _context.Tools on log.ToolId equals tool.Id into toolJoin
                         from t in toolJoin.DefaultIfEmpty()
                         select new { log, t };
 
-            if (!string.IsNullOrEmpty(key_search))
+            if (!string.IsNullOrEmpty(tool_s))
             {
-                string s = key_search.ToLower();
+                string s = tool_s.ToLower();
                 query = query.Where(x => (x.t != null && x.t.ToolCode.ToLower().Contains(s)) ||
-                                         (x.t != null && x.t.ToolName.ToLower().Contains(s)) ||
-                                         (x.log.Machine.ToLower().Contains(s)));
+                                         (x.t != null && x.t.ToolName.ToLower().Contains(s)));
+            }
+            if (!string.IsNullOrEmpty(machine_s))
+            {
+                string s = machine_s.ToLower();
+                query = query.Where(x => (x.t != null && x.log.Machine.ToLower().Contains(s)));
             }
 
             if (!string.IsNullOrEmpty(status))
@@ -72,7 +76,7 @@ namespace Web_QM.Areas.Warehouse.Controllers
                 }
             }
 
-            var data = await query.OrderByDescending(x => x.log.Id).ToListAsync();
+            var data = await query.OrderByDescending(x => x.log.Id).Take(500).ToListAsync();
 
             var result = data.Select(x => new {
                 x.log.Id,
@@ -93,6 +97,17 @@ namespace Web_QM.Areas.Warehouse.Controllers
             });
 
             return Json(result);
+        }
+
+        [Authorize(Policy = "ViewIssueReturnLog")]
+        public async Task<IActionResult> GetTools()
+        {
+            var res = await _context.Tools.AsNoTracking().
+                Select(t => new {
+                id = t.Id,
+                text = $"{t.ToolCode} - {t.ToolName} (Tồn: {t.AvailableQty})"
+                }).ToListAsync();
+            return Json(res);
         }
 
         [Authorize(Policy = "AddIssueReturnLog")]

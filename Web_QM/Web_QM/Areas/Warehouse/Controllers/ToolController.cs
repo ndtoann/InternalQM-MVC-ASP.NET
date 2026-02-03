@@ -39,10 +39,11 @@ namespace Web_QM.Areas.Warehouse.Controllers
 
             if (!string.IsNullOrEmpty(key_search))
             {
-                query = query.Where(x => x.ToolName.Contains(key_search) || x.ToolCode.Contains(key_search));
+                string search = key_search.ToLower();
+                query = query.Where(x => x.ToolName.ToLower().Contains(search) || x.ToolCode.ToLower().Contains(search));
             }
 
-            var tools = await query.ToListAsync();
+            var tools = await query.Take(500).ToListAsync();
             return Json(tools);
         }
 

@@ -72,11 +72,29 @@
     border: 1px solid #dee2e6;
 }
 
-#v_StepTableBody td, #mainTable td, #v_Size {
+#v_StepTableBody td, #mainTable td, #v_Size, #v_ModifiedContent {
     line-height: 1.2;
     white-space: pre-line;
 }
 
 #workpieceSize, .content {
     line-height: 1.2;
+}
+
+.modal-right {
+    position: fixed;
+    margin: 0;
+    width: 1000px;
+    height: 100%;
+    right: 0;
+    top: 0;
+    transition: transform 0.3s ease-out;
+}
+
+.modal.fade .modal-right {
+    transform: translateX(100%);
+}
+
+.modal.show .modal-right {
+    transform: translateX(0);
 }
