@@ -33,7 +33,7 @@ builder.Services.AddAuthentication("SecurityScheme")
             SameSite = SameSiteMode.Strict,
             SecurePolicy = CookieSecurePolicy.SameAsRequest
         };
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(300);
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(600);
         options.LoginPath = new PathString("/home/login");
         options.ReturnUrlParameter = "ReturnUrl";
         options.SlidingExpiration = true;

@@ -168,7 +168,7 @@
                             <div class="col-md-3">
                                 <div class="form-group">
                                     <label>Vật liệu sử dụng</label>
-                                    <select class="form-control" name="IntendedUse" style="color: #000;">
+                                    <select class="form-control" name="IntendedUse">
                                         <option value="">--- Chọn ---</option>
                                         <option value="AL">AL</option>
                                         <option value="CU">CU</option>
@@ -243,10 +243,17 @@
             loadMachines();
             loadEmployees();
 
-            $.get('/warehouse/IssueReturnLog/GetTools', function (data) {
-                toolOptions = '<option value="">-- Chọn vật tư --</option>';
-                data.forEach(t => toolOptions += `<option value="${t.id}">${t.text})</option>`);
-            });
+            async function loadTools(){
+                try {
+                    const data = await $.get('/warehouse/IssueReturnLog/GetTools');
+                    toolOptions = '<option value="">-- Chọn vật tư --</option>';
+                    data.forEach(t => {
+                        toolOptions += `<option value="${t.id}">${t.text}</option>`;
+                    });
+                } catch (error) {
+                    console.error("Lỗi khi tải dữ liệu vật tư:", error);
+                }
+            }
 
             function loadLogs() {
                 let params = {
@@ -375,7 +382,8 @@
                 $('.select2-tool').trigger('change');
             });
 
-            $('#btn-add-log').click(function () {
+            $('#btn-add-log').click(async function () {
+                await loadTools();
                 isEditing = false;
                 $('#formLogId').val(0);
                 $('#modalTitle').text("Xuất Vật Tư");
@@ -395,7 +403,8 @@
 
             $(document).click(() => $(contextMenu).hide());
 
-            $('#editLog').click(function () {
+            $('#editLog').click(async function () {
+                await loadTools();
                 isEditing = true;
                 const today = new Date().toISOString().split('T')[0];
                 $('#modalTitle').text("Sửa phiếu Xuất/Trả");

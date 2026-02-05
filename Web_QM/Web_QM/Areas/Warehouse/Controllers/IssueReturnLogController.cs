@@ -136,7 +136,7 @@ namespace Web_QM.Areas.Warehouse.Controllers
         [Authorize(Policy = "ViewIssueReturnLog")]
         public async Task<IActionResult> GetLogById(long id) => Json(await _context.IssueReturnLogs.FindAsync(id));
 
-        [Authorize(Policy = "ViewEmployee")]
+        [Authorize(Policy = "AddIssueReturnLog")]
         [HttpGet]
         public async Task<IActionResult> GetEmployeeSuggestions(string term)
         {
@@ -152,7 +152,6 @@ namespace Web_QM.Areas.Warehouse.Controllers
                     id = e.EmployeeCode,
                     text = e.EmployeeCode + " - " + e.EmployeeName
                 })
-                .OrderByDescending(e => e.id)
                 .ToListAsync();
 
             return Json(employees);

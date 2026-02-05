@@ -419,6 +419,75 @@ namespace Web_QM.Areas.Warehouse.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> ExportInventoryReport(int month, int year)
+        {
+            var firstDayOfTarget = new DateOnly(year, month, 1);
+
+            var tools = await _context.Tools.ToListAsync();
+            var allLogs = await _context.ToolSupplyLogs.ToListAsync();
+
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Báo cáo tồn kho");
+
+                string[] headers = { "Mã vật tư", "Tên Vật tư", "Loại", "Đơn vị", "Tồn đầu", "Nhập", "Hủy", "Tồn cuối" };
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    var cell = worksheet.Cell(1, i + 1);
+                    cell.Value = headers[i];
+                    cell.Style.Font.Bold = true;
+                    cell.Style.Font.FontSize = 14;
+                    cell.Style.Fill.BackgroundColor = XLColor.LightGray;
+                    cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                }
+
+                int currentRow = 2;
+                foreach (var t in tools)
+                {
+                    var toolLogs = allLogs.Where(l => l.ToolId == t.Id).ToList();
+
+                    var logsBefore = toolLogs.Where(l => l.DateMonth < firstDayOfTarget).ToList();
+                    int nhapTruoc = logsBefore.Where(l => l.Type == "Nhập").Sum(l => l.Qty);
+                    int huyTruoc = logsBefore.Where(l => l.Type == "Hủy").Sum(l => l.Qty);
+                    int tonDau = t.InitialQty + nhapTruoc - huyTruoc;
+
+                    var logsInMonth = toolLogs.Where(l => l.DateMonth.Month == month && l.DateMonth.Year == year).ToList();
+                    int nhapTrongThang = logsInMonth.Where(l => l.Type == "Nhập").Sum(l => l.Qty);
+                    int huyTrongThang = logsInMonth.Where(l => l.Type == "Hủy").Sum(l => l.Qty);
+
+                    int tonCuoi = tonDau + nhapTrongThang - huyTrongThang;
+
+                    worksheet.Cell(currentRow, 1).Value = t.ToolCode;
+                    worksheet.Cell(currentRow, 2).Value = t.ToolName;
+                    worksheet.Cell(currentRow, 3).Value = t.Type;
+                    worksheet.Cell(currentRow, 4).Value = t.Unit;
+                    worksheet.Cell(currentRow, 5).Value = tonDau;
+                    worksheet.Cell(currentRow, 6).Value = nhapTrongThang;
+                    worksheet.Cell(currentRow, 7).Value = huyTrongThang;
+                    worksheet.Cell(currentRow, 8).Value = tonCuoi;
+
+                    for (int i = 1; i <= 8; i++)
+                    {
+                        worksheet.Cell(currentRow, i).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                    }
+
+                    currentRow++;
+                }
+
+                worksheet.Range(1, 1, 1, 8).SetAutoFilter();
+                worksheet.Columns().AdjustToContents();
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    var content = stream.ToArray();
+                    return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Báo cáo tồn kho đồ gá - dao cụ {month}.{year}.xlsx");
+                }
+            }
+        }
+
         private bool IsDuplicateToolCode(string toolCode, long toolId = 0)
         {
             var existingTool = _context.Tools
